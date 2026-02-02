@@ -1,0 +1,59 @@
+import { lazy } from "react";
+import Loadable from "app/components/Loadable";
+
+// ===== Material UI Samples =====
+const AppForm = Loadable(lazy(() => import("./forms/AppForm")));
+const AppMenu = Loadable(lazy(() => import("./menu/AppMenu")));
+const AppIcon = Loadable(lazy(() => import("./icons/AppIcon")));
+const AppProgress = Loadable(lazy(() => import("./AppProgress")));
+const AppRadio = Loadable(lazy(() => import("./radio/AppRadio")));
+const AppSwitch = Loadable(lazy(() => import("./switch/AppSwitch")));
+const AppSlider = Loadable(lazy(() => import("./slider/AppSlider")));
+const AppDialog = Loadable(lazy(() => import("./dialog/AppDialog")));
+const AppCheckbox = Loadable(lazy(() => import("./checkbox/AppCheckbox")));
+const AppSnackbar = Loadable(lazy(() => import("./snackbar/AppSnackbar")));
+const AppExpansionPanel = Loadable(lazy(() => import("./expansion-panel/AppExpansionPanel")));
+
+// ===== Forms & Data Entry =====
+const AppAddcatagory = Loadable(lazy(() => import("./addcatagory/addcatagory")));
+const AppAddmedication = Loadable(lazy(() => import("./addinformation/addmedication")));
+const AppAddsuppliers = Loadable(lazy(() => import("./tables/addsuppliers")));
+const AppAddcustomers = Loadable(lazy(() => import("./addcustomers/addcustomers")));
+const AppAdddoctors = Loadable(lazy(() => import("./doctor_insert/doctor_insert")));
+const AppAddprescriptions = Loadable(lazy(() => import("./pres_insert/pres_insert")));
+const AppAddsales = Loadable(lazy(() => import("./sales_insert/sales_insert")));
+const AppAddparchases = Loadable(lazy(() => import("./parchases/parchases")));
+const AppRegistrationForm = Loadable(lazy(() => import("./registrations/RegistrationForm")));
+
+// ===== Reports =====
+const AppStock_report = Loadable(lazy(() => import("./reports/stock_report")));
+
+
+// ===== Routes =====
+const materialRoutes = [
+  { path: "/material/form", element: <AppForm /> },
+  { path: "/material/icons", element: <AppIcon /> },
+  { path: "/material/progress", element: <AppProgress /> },
+  { path: "/material/menu", element: <AppMenu /> },
+  { path: "/material/checkbox", element: <AppCheckbox /> },
+  { path: "/material/switch", element: <AppSwitch /> },
+  { path: "/material/radio", element: <AppRadio /> },
+  { path: "/material/slider", element: <AppSlider /> },
+  { path: "/material/expansion-panel", element: <AppExpansionPanel /> },
+  { path: "/material/dialog", element: <AppDialog /> },
+  { path: "/material/snackbar", element: <AppSnackbar /> },
+
+  { path: "/material/addinformation", element: <AppAddmedication /> },
+  { path: "/material/tables", element: <AppAddsuppliers /> },
+  { path: "/material/addcustomers", element: <AppAddcustomers /> },
+  { path: "/material/doctor_insert", element: <AppAdddoctors /> },
+  { path: "/material/pres_insert", element: <AppAddprescriptions /> },
+  { path: "/material/sales_insert", element: <AppAddsales /> },
+  { path: "/material/parchases", element: <AppAddparchases /> },
+  { path: "/material/addcatagory", element: <AppAddcatagory /> },
+  { path: "/material/registrations", element: <AppRegistrationForm /> },
+
+  { path: "/material/reports", element: <AppStock_report /> },
+];
+
+export default materialRoutes;

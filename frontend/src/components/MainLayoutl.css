@@ -1,0 +1,159 @@
+  /* ===================== */
+/* Global Styles for Purchase Form */
+/* ===================== */
+
+/* ریشه صفحه */
+.main-layout {
+  min-height: 100vh;
+  width: 100%;
+
+  display: flex;
+  justify-content: center;     /* مرکز افقی */
+  align-items: center;         /* مرکز عمودی */
+
+  padding: 20px;
+  box-sizing: border-box;
+
+  overflow-y: auto;            /* جلوگیری از مخفی شدن در زوم */
+
+  color: rgb(253, 253, 253);
+  font-family: "Arial", sans-serif;
+
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* ===================== */
+/* فرم اصلی */
+/* ===================== */
+.form-container {
+  width: 100%;
+  max-width: 600px;            /* کنترل عرض */
+
+  background-color: #0b061e;
+  padding: 12px;
+  border-radius: 8px;
+
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+
+  margin: auto;                /* مهم: همیشه وسط */
+}
+
+/* لیبل‌ها */
+.form-container label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: normal;
+  font-size: 13px;
+}
+
+/* اینپوت‌ها و سلکت‌ها */
+.form-container input[type="text"],
+.form-container input[type="number"],
+.form-container input[type="date"],
+.form-container select {
+  width: 100%;
+  padding: 6px 8px;
+  margin-bottom: 8px;
+
+  border: 1px solid #0a041d;
+  border-radius: 6px;
+
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+/* دکمه‌ها */
+.form-container button {
+  width: 100%;
+  padding: 10px 15px;
+
+  background-color: #4caf50;
+  color: #fff;
+
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.form-container button:hover {
+  background-color: #45a049;
+}
+
+/* ====================== */
+/* آیتم‌ها */
+/* ====================== */
+.purchase-card {
+  border: 1px solid #2a2a40;
+  padding: 12px 18px;
+  margin-bottom: 12px;
+
+  border-radius: 8px;
+  background-color: #1a1a2e;
+
+  font-size: 18px;
+  font-weight: bold;
+  color: #f0f0f0;
+  line-height: 1.5;
+}
+
+.purchase-card strong {
+  color: #e0e0ff;
+  font-size: 15px;
+}
+
+.purchase-card ul {
+  padding-left: 15px;
+  margin-top: 5px;
+  list-style-type: none;
+}
+
+.purchase-card ul li {
+  margin-bottom: 6px;
+  padding: 3px 0;
+  border-bottom: 1px dashed #333;
+
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.purchase-card ul li:last-child {
+  border-bottom: none;
+}
+
+/* ===================== */
+/* عنوان صفحه */
+/* ===================== */
+.layout-title {
+  width: 100%;
+  text-align: center;
+
+  font-size: 2.2rem;
+  font-weight: bold;
+  margin-bottom: 15px;
+
+  color: rgb(246, 247, 249);
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
+}
+
+/* ===================== */
+/* واکنش‌گرایی */
+/* ===================== */
+@media (max-width: 768px) {
+  .form-container {
+    max-width: 95%;
+    padding: 10px;
+  }
+
+  .purchase-card {
+    font-size: 15px;
+  }
+
+  .purchase-card ul li {
+    font-size: 14px;
+  }
+}

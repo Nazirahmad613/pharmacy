@@ -1,0 +1,35 @@
+ .animated-background {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.bg-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  animation: fadeAnimation 21s infinite;
+}
+
+.bg-image:nth-child(1) { animation-delay: 0s; }
+.bg-image:nth-child(2) { animation-delay: 7s; }
+.bg-image:nth-child(3) { animation-delay: 14s; }
+
+@keyframes fadeAnimation {
+  0% { opacity: 0; }
+  5% { opacity: 1; }
+  30% { opacity: 1; }
+  35% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+}
