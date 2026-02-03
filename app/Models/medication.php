@@ -22,11 +22,11 @@ class Medication extends Model
         
     ];
 
-    // ارتباط با یک تأمین‌کننده (One-to-One)
-    public function supplier()
-    {
-        return $this->belongsTo(Supplier::class, 'supplier_id', 'supplier_id');
-    }
+  
+public function supplier()
+{
+    return $this->belongsTo(\App\Models\Registrations::class, 'supplier_id', 'reg_id');
+}
 
     // ارتباط با دسته‌بندی (Category)
     public function category()
@@ -43,7 +43,7 @@ class Medication extends Model
     // ارتباط با جزئیات فروش
     public function salesDetails()
     {
-        return $this->hasMany(SalesDetails::class, 'med_id', 'med_id');
+        return $this->hasMany(SalesItem::class, 'med_id', 'med_id');
     }
 
     // ارتباط با نسخه‌ها

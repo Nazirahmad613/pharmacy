@@ -57,22 +57,28 @@ export default function SaleForm() {
   }, [netSales, totalPaid]);
 
   // ================= لود داده‌ها =================
-  useEffect(() => {
-    api.get("/categories").then(res => setCategories(res.data.data ?? res.data));
-    api.get("/medications").then(res => setMedications(res.data.data ?? res.data));
-    api.get("/suppliers").then(res => setSuppliers(res.data.suppliers ?? res.data.data ?? res.data));
+   useEffect(() => {
+  api.get("/categories").then(res => setCategories(res.data.data ?? res.data));
+  api.get("/medications").then(res => setMedications(res.data.data ?? res.data));
+  api.get("/suppliers").then(res =>
+    setSuppliers(res.data.suppliers ?? res.data.data ?? res.data)
+  );
 
-    // ================= مشتری‌ها از جدول registration =================
-    api.get("/customers")
-      .then(res => {
-        const data = res.data.data ?? res.data ?? [];
-        setCustomers(Array.isArray(data) ? data : []);
-      })
-      .catch(err => {
-        console.error("Error loading customers:", err);
-        setCustomers([]); // همیشه آرایه باشد
-      });
-  }, [api]);
+  // ✅ مشتری‌ها از جدول registration بر اساس reg_type
+  api.get("/registrations")
+    .then(res => {
+      const data = res.data.data ?? res.data ?? [];
+      const onlyCustomers = Array.isArray(data)
+        ? data.filter(r => r.reg_type === "customer")
+        : [];
+      setCustomers(onlyCustomers);
+    })
+    .catch(err => {
+      console.error("Error loading registrations:", err);
+      setCustomers([]);
+    });
+}, [api]);
+
 
   const filteredMedications = medications.filter(
     m => Number(m.category_id) === Number(formItem.category_id)
@@ -212,20 +218,26 @@ export default function SaleForm() {
 
       {/* ================= اطلاعات اصلی ================= */}
       <div className="form-container">
-        <h2 align="center"> ثبت فروشات </h2>
+ <h2 style={{ textAlign: "center" }}> فروشات </h2>
 
         <label>تاریخ فروش</label>
         <input type="date" value={saleDate} onChange={e => setSaleDate(e.target.value)} />
-
         <label>مشتری</label>
-        <select value={formItem.cust_id} onChange={e => handleChange("cust_id", e.target.value)}>
-          <option value="">-- انتخاب مشتری --</option>
-          {Array.isArray(customers) &&
-            customers.map(c => (
-              <option key={c.id} value={c.id}>{c.name ?? c.full_name}</option>
-            ))
-          }
-        </select>
+<select
+  value={formItem.cust_id}
+  onChange={e => handleChange("cust_id", e.target.value)}
+>
+  <option value="">-- انتخاب مشتری --</option>
+  {customers.map((c, index) => (
+    <option
+      key={c.id ?? c.reg_id ?? `cust-${index}`}
+      value={c.id ?? c.reg_id}
+    >
+      {c.full_name ?? c.name}
+    </option>
+  ))}
+</select>
+
 
         <label>مجموع فروش</label>
         <input type="number" value={totalSale} readOnly />

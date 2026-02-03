@@ -15,7 +15,7 @@ return new class extends Migration {
             $table->integer('unit_price');
             $table->integer('quantity');
             $table->date('exp_date');
-            $table->foreignId('supplier_id')->constrained()->onDelete('cascade');
+        
             $table->foreignId('category_id')->constrained()->onDelete('cascade');
             $table->timestamp('created_at')->useCurrent();
             $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();

@@ -3,8 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Sales;
-use App\Models\SalesItem;
+ 
 use App\Models\Journal; // 🔗 برای ثبت ژورنال
+ // 🔗 برای ثبت ژورنال
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -25,8 +26,8 @@ class SalesController extends Controller
         // اعتبارسنجی داده‌ها
         $validated = $request->validate([
             'sales_date' => 'required|date',
-            'cust_id'    => 'required|exists:registration,id', // ✅ تغییر به جدول registration
-            'discount'   => 'nullable|numeric|min:0',
+            'cust_id' => 'required|exists:registrations,reg_id',
+             'discount'   => 'nullable|numeric|min:0',
             'total_paid' => 'nullable|numeric|min:0',
 
             'items'                  => 'required|array|min:1',

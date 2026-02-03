@@ -162,7 +162,7 @@ export default function ParchaseForm() {
 
       {/* ================= اطلاعات اصلی ================= */}
       <div className="form-container">
-        <h2 align="center"> ثبت خرید دارو </h2>
+ <h2 style={{ textAlign: "center" }}>ثبت خرید دوا</h2>
 
         <label>تاریخ خرید</label>
         <input type="date" value={parchaseDate} onChange={e => setParchaseDate(e.target.value)} />

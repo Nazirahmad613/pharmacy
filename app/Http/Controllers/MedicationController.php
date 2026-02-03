@@ -1,9 +1,10 @@
 <?php
- namespace App\Http\Controllers;
+
+namespace App\Http\Controllers;
 
 use App\Models\Medication;
-use App\Models\Supplier;
 use App\Models\Category;
+use App\Models\Registrations;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Exception;
@@ -11,11 +12,11 @@ use Exception;
 class MedicationController extends Controller
 {
     /**
-     * 📋 لیست تمام دواها با کتگوری و سپلایر
+     * 📋 لیست دواها با کتگوری و حمایت‌کننده
      */
     public function index()
     {
-        $medications = Medication::with(['supplier', 'category'])
+        $medications = Medication::with(['category', 'supplier'])
             ->orderBy('med_id', 'desc')
             ->get();
 
@@ -23,97 +24,111 @@ class MedicationController extends Controller
     }
 
     /**
-     * 💾 ثبت دوا جدید از طریق React
+     * 💾 ثبت دوا جدید
      */
     public function store(Request $request)
     {
-        // دریافت نام تیبل‌های واقعی
-        $catTable = (new Category())->getTable(); // categories
-        $supplierTable = (new Supplier())->getTable(); // suppliers
+        $categoryTable = (new Category())->getTable();        // categories
+        $registrationTable = (new Registrations())->getTable(); // registrations
 
-        // اعتبارسنجی داده‌ها
         $validated = $request->validate([
-            'category_id' => ['required', 'integer', Rule::exists($catTable, 'category_id')],
-            'supplier_id' => ['required', 'integer', Rule::exists($supplierTable, 'supplier_id')],
-            'gen_name'    => 'required|string|max:255',
-            'dosage'      => 'required|string|max:255',
-            'type'      => 'required|string|max:255',
-             
+            'category_id' => [
+                'required',
+                'integer',
+                Rule::exists($categoryTable, 'category_id')
+            ],
+
+            // ✅ supplier از registrations با reg_type = supporter
+            'supplier_id' => [
+                'required',
+                'integer',
+                Rule::exists($registrationTable, 'reg_id')
+                    ->where('reg_type', 'supplier')
+            ],
+
+            'gen_name' => 'required|string|max:255',
+            'dosage'   => 'required|string|max:255',
+            'type'     => 'required|string|max:255',
         ]);
 
         try {
             $medication = Medication::create($validated);
 
-            $medication = Medication::with(['supplier', 'category'])
+            $medication = Medication::with(['category', 'supplier'])
                 ->find($medication->med_id);
 
             return response()->json([
-                'message' => '✅ دارو با موفقیت ثبت شد',
+                'message' => '✅ دوا با موفقیت ثبت شد',
                 'medication' => $medication
             ], 201);
+
         } catch (Exception $e) {
             return response()->json([
-                'error' => '❌ خطا در ثبت دارو',
+                'error' => '❌ خطا در ثبت دوا',
                 'message' => $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * 🧾 نمایش یک داروی خاص (برای صفحه Edit در React)
+     * 🧾 نمایش یک دوا
      */
     public function show($med_id)
     {
-        $medication = Medication::with(['supplier', 'category'])->find($med_id);
+        $medication = Medication::with(['category', 'supplier'])->find($med_id);
 
         if (!$medication) {
-            return response()->json(['error' => 'دارو پیدا نشد.'], 404);
+            return response()->json(['error' => 'دوا پیدا نشد'], 404);
         }
 
         return response()->json($medication);
     }
 
     /**
-     * ✏️ ویرایش دارو
+     * ✏️ ویرایش دوا
      */
     public function update(Request $request, $med_id)
     {
         $validated = $request->validate([
-            'supplier_id' => 'required|exists:suppliers,supplier_id',
             'category_id' => 'required|exists:categories,category_id',
-            'gen_name'    => 'required|string|max:255',
-            'dosage'      => 'required|string|max:255',
-            'unit_price'  => 'required|numeric|min:0',
-            'quantity'    => 'nullable|integer|min:0',
-            'exp_date'    => 'nullable|date',
+
+            // ✅ دوباره فقط supporter
+            'supplier_id' => [
+                'required',
+                Rule::exists('registrations', 'id')
+                    ->where('reg_type', 'supporter')
+            ],
+
+            'gen_name' => 'required|string|max:255',
+            'dosage'   => 'required|string|max:255',
+            'type'     => 'required|string|max:255',
         ]);
 
         $medication = Medication::find($med_id);
         if (!$medication) {
-            return response()->json(['error' => 'دارو پیدا نشد.'], 404);
+            return response()->json(['error' => 'دوا پیدا نشد'], 404);
         }
 
         $medication->update($validated);
 
         return response()->json([
-            'message' => '✅ دارو با موفقیت به‌روزرسانی شد.',
+            'message' => '✅ دوا با موفقیت ویرایش شد',
             'medication' => $medication
         ]);
     }
 
     /**
-     * ❌ حذف دارو
+     * ❌ حذف دوا
      */
     public function destroy($med_id)
     {
         $medication = Medication::find($med_id);
         if (!$medication) {
-            return response()->json(['error' => 'دارو پیدا نشد.'], 404);
+            return response()->json(['error' => 'دوا پیدا نشد'], 404);
         }
 
         $medication->delete();
 
-        return response()->json(['message' => '✅ دارو با موفقیت حذف شد.']);
+        return response()->json(['message' => '✅ دوا با موفقیت حذف شد']);
     }
-    
 }
