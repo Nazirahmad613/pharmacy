@@ -14,8 +14,10 @@ return new class extends Migration
             $table->bigInteger('total_parchase')->default(0);
             $table->bigInteger('par_paid')->default(0);
             $table->bigInteger('due_par')->default(0);
-            $table->string('purpose')->default('دارو'); // هدف خرید
+            
+            // حذف فیلد purpose چون دیگر لازم نیست
             $table->unsignedBigInteger('par_user')->nullable(); // کاربر ثبت‌کننده
+            
             $table->timestamps();
         });
     }

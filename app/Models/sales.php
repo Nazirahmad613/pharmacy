@@ -19,19 +19,19 @@ class Sales extends Model
         'discount',
         'net_sales',
         'sales_user',
-        'total_paid',       // اضافه شد
+        'total_paid',
     ];
 
-    // 🔗 محاسبه ستون‌های derived در مدل
+    // 🔗 ستون‌های محاسبه‌شده
     protected $appends = [
         'remaining_amount',
         'payment_status',
     ];
 
-    // 🔗 مشتری
+    // 🔗 رابطه مشتری (از جدول registration)
     public function customer()
     {
-        return $this->belongsTo(Customer::class, 'cust_id', 'cust_id');
+        return $this->belongsTo(\App\Models\Registration::class, 'cust_id', 'id');
     }
 
     // 🔗 آیتم‌های فروش

@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Sales;
 use App\Models\SalesItem;
-use App\Models\Journal; // ✅ اضافه شد برای ثبت ژورنال
+use App\Models\Journal; // 🔗 برای ثبت ژورنال
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -14,7 +14,7 @@ class SalesController extends Controller
 {
     public function index()
     {
-        // لود فروش‌ها همراه با آیتم‌ها و مشتری
+        // لود فروش‌ها همراه با آیتم‌ها و مشتری (از جدول registration)
         $sales = Sales::with(['items', 'customer'])->get();
 
         return response()->json($sales);
@@ -25,9 +25,9 @@ class SalesController extends Controller
         // اعتبارسنجی داده‌ها
         $validated = $request->validate([
             'sales_date' => 'required|date',
-            'cust_id'    => 'required|exists:customers,cust_id',
+            'cust_id'    => 'required|exists:registration,id', // ✅ تغییر به جدول registration
             'discount'   => 'nullable|numeric|min:0',
-            'total_paid' => 'nullable|numeric|min:0', // اضافه شد برای ثبت پرداخت
+            'total_paid' => 'nullable|numeric|min:0',
 
             'items'                  => 'required|array|min:1',
             'items.*.med_id'         => 'required|exists:medications,med_id',
@@ -57,13 +57,13 @@ class SalesController extends Controller
             // 💰 پرداخت ثبت شده
             $totalPaid = $validated['total_paid'] ?? 0;
             if ($totalPaid > $netSales) {
-                $totalPaid = $netSales; // جلوگیری از پرداخت بیشتر از کل
+                $totalPaid = $netSales;
             }
 
             // 💾 ذخیره فروش
             $sale = Sales::create([
                 'sales_date'  => $validated['sales_date'],
-                'cust_id'     => $validated['cust_id'],
+                'cust_id'     => $validated['cust_id'], // ✅ استفاده از جدول registration
                 'total_sales' => $totalSales,
                 'discount'    => $discount,
                 'net_sales'   => $netSales,
@@ -88,24 +88,22 @@ class SalesController extends Controller
             // ===============================
             // 🔗 ثبت خودکار ژورنال (Journal)
             // ===============================
-            // 1️⃣ ثبت فروش (حساب مشتری بدهکار)
             Journal::create([
                 'journal_date' => $sale->sales_date,
                 'description'  => 'ثبت فروش',
-                'debit'        => $netSales, // مشتری بدهکار
+                'debit'        => $netSales,
                 'credit'       => 0,
-                'ref_type'     => 'sale',    // مشخص می‌کند این ژورنال مربوط به فروش است
+                'ref_type'     => 'sale',
                 'ref_id'       => $sale->sales_id,
                 'user_id'      => Auth::id(),
             ]);
 
-            // 2️⃣ ثبت پرداخت (اگر پرداخت شده)
             if ($totalPaid > 0) {
                 Journal::create([
                     'journal_date' => $sale->sales_date,
                     'description'  => 'دریافت وجه فروش',
                     'debit'        => 0,
-                    'credit'       => $totalPaid, // وجه دریافت شده
+                    'credit'       => $totalPaid,
                     'ref_type'     => 'payment_in',
                     'ref_id'       => $sale->sales_id,
                     'user_id'      => Auth::id(),

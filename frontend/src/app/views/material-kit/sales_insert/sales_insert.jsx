@@ -11,7 +11,7 @@ export default function SaleForm() {
   const [categories, setCategories] = useState([]);
   const [medications, setMedications] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
-  const [customers, setCustomers] = useState([]);
+  const [customers, setCustomers] = useState([]); // مشتری‌ها از جدول registration
 
   const [discount, setDiscount] = useState(0);
   const [totalSale, setTotalSale] = useState(0);
@@ -61,7 +61,17 @@ export default function SaleForm() {
     api.get("/categories").then(res => setCategories(res.data.data ?? res.data));
     api.get("/medications").then(res => setMedications(res.data.data ?? res.data));
     api.get("/suppliers").then(res => setSuppliers(res.data.suppliers ?? res.data.data ?? res.data));
-    api.get("/customers").then(res => setCustomers(res.data.data ?? res.data));
+
+    // ================= مشتری‌ها از جدول registration =================
+    api.get("/customers")
+      .then(res => {
+        const data = res.data.data ?? res.data ?? [];
+        setCustomers(Array.isArray(data) ? data : []);
+      })
+      .catch(err => {
+        console.error("Error loading customers:", err);
+        setCustomers([]); // همیشه آرایه باشد
+      });
   }, [api]);
 
   const filteredMedications = medications.filter(
@@ -122,7 +132,7 @@ export default function SaleForm() {
       return;
     }
 
-    setSaleItems([...saleItems, { ...formItem }]);
+    setSaleItems([...saleItems, { ...formItem, id: Date.now() }]); // id موقت برای key
     setFormItem({
       cust_id: formItem.cust_id,
       category_id: "",
@@ -136,8 +146,8 @@ export default function SaleForm() {
     });
   };
 
-  const handleRemoveItem = (index) => {
-    setSaleItems(saleItems.filter((_, i) => i !== index));
+  const handleRemoveItem = (id) => {
+    setSaleItems(saleItems.filter(item => item.id !== id));
   };
 
   // ================= ثبت فروش =================
@@ -210,9 +220,11 @@ export default function SaleForm() {
         <label>مشتری</label>
         <select value={formItem.cust_id} onChange={e => handleChange("cust_id", e.target.value)}>
           <option value="">-- انتخاب مشتری --</option>
-          {customers.map(c => (
-            <option key={c.cust_id} value={c.cust_id}>{c.cust_name}</option>
-          ))}
+          {Array.isArray(customers) &&
+            customers.map(c => (
+              <option key={c.id} value={c.id}>{c.name ?? c.full_name}</option>
+            ))
+          }
         </select>
 
         <label>مجموع فروش</label>
@@ -313,16 +325,16 @@ export default function SaleForm() {
           </thead>
           <tbody>
             {saleItems.map((item, idx) => (
-              <tr key={idx}>
+              <tr key={item.id}>
                 <td style={{ padding: "8px", textAlign: "center" }}>{idx + 1}</td>
                 <td style={{ padding: "8px", textAlign:"center"}}>{item.type}</td>
                 <td style={{ padding: "8px", textAlign:"center" }}>{item.quantity}</td>
                 <td style={{ padding: "8px", textAlign: "right" }}>{item.unit_sales}</td>
                 <td style={{ padding: "8px", textAlign: "right" }}>{item.total_sales}</td>
-                <td style={{ padding: "8px", textAlign: "center" }}>{item.exp_date}</td>
+                <td style={{ padding: "8px", textAlign:"center" }}>{item.exp_date}</td>
                 <td style={{ padding: "8px", textAlign: "center" }}>
                   <button
-                    onClick={() => handleRemoveItem(idx)}
+                    onClick={() => handleRemoveItem(item.id)}
                     style={{
                       backgroundColor: "#ef4444",
                       color: "white",

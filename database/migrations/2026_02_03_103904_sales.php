@@ -13,7 +13,7 @@ return new class extends Migration
 
             $table->date('sales_date');
 
-            // 🔗 مشتری
+            // 🔗 مشتری (از جدول registration عمومی)
             $table->unsignedBigInteger('cust_id');
 
             // 🔗 کاربر فروشنده
@@ -27,10 +27,11 @@ return new class extends Migration
             // ===== پرداخت =====
             $table->decimal('total_paid', 15, 2)->default(0);
 
-            // ⛔ توجه: این دو ستون فقط در MySQL 8+ درست کار می‌کند
+            // 💡 ستون محاسبه شده باقی مانده
             $table->decimal('remaining_amount', 15, 2)
                   ->virtualAs('net_sales - total_paid');
 
+            // 💡 وضعیت پرداخت
             $table->enum('payment_status', [
                 'پرداخت نشده',
                 'پرداخت جزئی',
@@ -45,8 +46,8 @@ return new class extends Migration
 
             // 🔐 کلیدهای خارجی
             $table->foreign('cust_id')
-                  ->references('cust_id')
-                  ->on('customers')
+                  ->references('id')   // کلید اصلی جدول registration
+                  ->on('registration')
                   ->onDelete('cascade');
 
             $table->foreign('sales_user')
