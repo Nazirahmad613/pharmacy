@@ -3,8 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Parchase;
-use App\Models\ParchaseItem;
-use App\Models\Supplier;
+ 
 use App\Models\Medication;
 use App\Models\Category;
 use App\Models\Journal; // ژورنال برای ثبت تراکنش‌ها
@@ -50,7 +49,7 @@ class ParchasesController extends Controller
             'par_paid'      => 'required|numeric|min:0',
             'items'         => 'required|array|min:1',
             'items.*.med_id'      => 'required|exists:medications,med_id',
-            'items.*.supplier_id' => 'required|exists:suppliers,supplier_id',
+            'items.*.supplier_id' => 'required|exists:registrations,reg_id', // توجه: از جدول registrations
             'items.*.category_id' => 'required|exists:categories,category_id',
             'items.*.type'        => 'nullable|string',
             'items.*.quantity'    => 'required|integer|min:1',
@@ -81,7 +80,7 @@ class ParchasesController extends Controller
             foreach ($validated['items'] as $item) {
                 $parchase->items()->create([
                     'med_id'      => $item['med_id'],
-                    'supplier_id' => $item['supplier_id'],
+                    'supplier_id' => $item['supplier_id'], // از registrations
                     'category_id' => $item['category_id'],
                     'type'        => $item['type'] ?? null,
                     'quantity'    => $item['quantity'],
@@ -160,12 +159,18 @@ class ParchasesController extends Controller
 
     /**
      * لود داده‌های انتخابی فرم خرید دارو
+     * واکشی حمایت‌کنندگان از registrations با reg_type='supplier'
      */
     public function loadOptions()
     {
+        $suppliers = DB::table('registrations')
+            ->select('reg_id', 'full_name', 'name')
+            ->where('reg_type', 'supplier')
+            ->get();
+
         return response()->json([
-            'medications' => Medication::select('med_id', 'gen_name')->get(),
-            'suppliers'   => Supplier::select('supplier_id', 'supplier_name')->get(),
+            'medications' => Medication::select('med_id', 'gen_name', 'supplier_id', 'type', 'unit_price', 'category_id')->get(),
+            'suppliers'   => $suppliers,
             'categories'  => Category::select('category_id', 'category_name')->get(),
         ]);
     }

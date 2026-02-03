@@ -1,6 +1,5 @@
 <?php
-  namespace App\Models;
- 
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,11 +11,12 @@ class ParchaseItem extends Model
 
     protected $table = 'parchaseitems';
     protected $primaryKey = 'parchase_it_id';
+    public $timestamps = false; // اگر جدول timestamps ندارد
 
     protected $fillable = [
         'parchase_id',
         'med_id',
-        'supplier_id',
+        'supplier_id',   // اینجا reg_id از جدول registrations ذخیره می‌شود
         'type',
         'category_id',
         'quantity',
@@ -50,14 +50,14 @@ class ParchaseItem extends Model
     }
 
     /**
-     * ارتباط با حمایت‌کننده (Supplier)
+     * ارتباط با حمایت‌کننده (Registration) به جای Supplier
      */
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(
-            Supplier::class,
-            'supplier_id',  // کلید خارجی در parchaseitems
-            'supplier_id'   // کلید اصلی در suppliers
+            \App\Models\Registrations::class,  // جدول registrations
+            'supplier_id',                     // کلید خارجی در parchaseitems
+            'reg_id'                           // کلید اصلی در registrations
         );
     }
 

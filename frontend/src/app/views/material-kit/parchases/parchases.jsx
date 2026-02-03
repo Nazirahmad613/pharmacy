@@ -1,4 +1,4 @@
- import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import MainLayoutpur from "../../../../components/MainLayoutpur";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -48,7 +48,10 @@ export default function ParchaseForm() {
   useEffect(() => {
     api.get("/categories").then(res => setCategories(res.data.data ?? res.data));
     api.get("/medications").then(res => setMedications(res.data.data ?? res.data));
-    api.get("/suppliers").then(res => setSuppliers(res.data.suppliers ?? res.data.data ?? res.data));
+    api.get("/registrations").then(res => {
+      const data = res.data.data ?? res.data ?? [];
+      setSuppliers(data.filter(r => r.reg_type === "supplier"));
+    });
   }, [api]);
 
   // ================= فیلترها =================
@@ -60,11 +63,14 @@ export default function ParchaseForm() {
     m => Number(m.med_id) === Number(formItem.med_id)
   );
 
+  // ======= فیلتر سپلایرها بر اساس دوا =======
   const filteredSuppliers = selectedMedication
     ? suppliers.filter(s => {
-        const sup = selectedMedication.supplier_id;
-        if (Array.isArray(sup)) return sup.includes(s.supplier_id);
-        return Number(sup) === Number(s.supplier_id);
+        // فرض می‌کنیم هر دوا یک لیست supplier_id دارد
+        if (Array.isArray(selectedMedication.supplier_id)) {
+          return selectedMedication.supplier_id.includes(s.reg_id);
+        }
+        return Number(selectedMedication.supplier_id) === Number(s.reg_id);
       })
     : [];
 
@@ -162,7 +168,7 @@ export default function ParchaseForm() {
 
       {/* ================= اطلاعات اصلی ================= */}
       <div className="form-container">
- <h2 style={{ textAlign: "center" }}>ثبت خرید دوا</h2>
+        <h2 style={{ textAlign: "center", marginBottom: "20px" }}>ثبت خرید دوا</h2>
 
         <label>تاریخ خرید</label>
         <input type="date" value={parchaseDate} onChange={e => setParchaseDate(e.target.value)} />
@@ -180,7 +186,7 @@ export default function ParchaseForm() {
       {/* ================= فرم آیتم‌ها ================= */}
       <form
         className="medication-page"
-        style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}
+        style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginTop: "20px" }}
         onKeyDown={handleKeyDown}
       >
         <div>
@@ -208,7 +214,7 @@ export default function ParchaseForm() {
           <select value={formItem.supplier_id} onChange={e => handleChange("supplier_id", e.target.value)}>
             <option value="">-- انتخاب --</option>
             {filteredSuppliers.map(s => (
-              <option key={s.supplier_id} value={s.supplier_id}>{s.supplier_name ?? s.name}</option>
+              <option key={s.reg_id} value={s.reg_id}>{s.full_name ?? s.name}</option>
             ))}
           </select>
         </div>
@@ -240,7 +246,7 @@ export default function ParchaseForm() {
       </form>
 
       {/* ================= جدول آیتم‌ها ================= */}
-      <h4>موارد اضافه شده</h4>
+      <h4 style={{ marginTop: "30px" }}>موارد اضافه شده</h4>
       {purchasedItems.length > 0 && (
         <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "10px" }}>
           <thead>
