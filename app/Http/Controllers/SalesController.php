@@ -3,9 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Sales;
- 
-use App\Models\Journal; // 🔗 برای ثبت ژورنال
- // 🔗 برای ثبت ژورنال
+use App\Models\Journal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -15,8 +13,15 @@ class SalesController extends Controller
 {
     public function index()
     {
-        // لود فروش‌ها همراه با آیتم‌ها و مشتری (از جدول registration)
-        $sales = Sales::with(['items', 'customer'])->get();
+        // لود فروش‌ها همراه با آیتم‌ها و مشتری (حمایت‌کننده‌ها از جدول registrations با reg_type = 'supplier')
+        $sales = Sales::with([
+            'items.medication',
+            'items.category',
+            'items.supplier' => function ($query) {
+                $query->where('reg_type', 'supplier');
+            },
+            'customer'
+        ])->get();
 
         return response()->json($sales);
     }
@@ -27,12 +32,12 @@ class SalesController extends Controller
         $validated = $request->validate([
             'sales_date' => 'required|date',
             'cust_id' => 'required|exists:registrations,reg_id',
-             'discount'   => 'nullable|numeric|min:0',
+            'discount'   => 'nullable|numeric|min:0',
             'total_paid' => 'nullable|numeric|min:0',
 
             'items'                  => 'required|array|min:1',
             'items.*.med_id'         => 'required|exists:medications,med_id',
-            'items.*.supplier_id'    => 'required|exists:suppliers,supplier_id',
+            'items.*.supplier_id'    => 'required|exists:registrations,reg_id', // ✅ اصلاح به registrations
             'items.*.category_id'    => 'required|exists:categories,category_id',
             'items.*.type'           => 'required|string',
             'items.*.quantity'       => 'required|integer|min:1',
@@ -43,7 +48,7 @@ class SalesController extends Controller
         DB::beginTransaction();
 
         try {
-            // 🔢 محاسبه مجموع فروش از آیتم‌ها
+            // محاسبه مجموع فروش از آیتم‌ها
             $totalSales = collect($validated['items'])->sum(function($item) {
                 return $item['quantity'] * $item['unit_sales'];
             });
@@ -55,16 +60,16 @@ class SalesController extends Controller
                 throw new \Exception('Net sales cannot be negative');
             }
 
-            // 💰 پرداخت ثبت شده
+            // پرداخت ثبت شده
             $totalPaid = $validated['total_paid'] ?? 0;
             if ($totalPaid > $netSales) {
                 $totalPaid = $netSales;
             }
 
-            // 💾 ذخیره فروش
+            // ذخیره فروش
             $sale = Sales::create([
                 'sales_date'  => $validated['sales_date'],
-                'cust_id'     => $validated['cust_id'], // ✅ استفاده از جدول registration
+                'cust_id'     => $validated['cust_id'], 
                 'total_sales' => $totalSales,
                 'discount'    => $discount,
                 'net_sales'   => $netSales,
@@ -72,11 +77,11 @@ class SalesController extends Controller
                 'sales_user'  => Auth::id(),
             ]);
 
-            // 💾 ذخیره آیتم‌ها
+            // ذخیره آیتم‌ها
             foreach ($validated['items'] as $item) {
                 $sale->items()->create([
                     'med_id'      => $item['med_id'],
-                    'supplier_id' => $item['supplier_id'],
+                    'supplier_id' => $item['supplier_id'], // ✅ از جدول registrations با reg_type = supplier
                     'category_id' => $item['category_id'],
                     'type'        => $item['type'],
                     'quantity'    => $item['quantity'],
@@ -86,9 +91,7 @@ class SalesController extends Controller
                 ]);
             }
 
-            // ===============================
-            // 🔗 ثبت خودکار ژورنال (Journal)
-            // ===============================
+            // ثبت خودکار ژورنال
             Journal::create([
                 'journal_date' => $sale->sales_date,
                 'description'  => 'ثبت فروش',

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+ import { useState, useEffect } from "react";
 import MainLayoutpur from "../../../../components/MainLayoutpur";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -10,8 +10,8 @@ export default function SaleForm() {
   const [saleDate, setSaleDate] = useState("");
   const [categories, setCategories] = useState([]);
   const [medications, setMedications] = useState([]);
-  const [suppliers, setSuppliers] = useState([]);
-  const [customers, setCustomers] = useState([]); // مشتری‌ها از جدول registration
+  const [suppliers, setSuppliers] = useState([]); // از جدول registrations با reg_type=supplier
+  const [customers, setCustomers] = useState([]);
 
   const [discount, setDiscount] = useState(0);
   const [totalSale, setTotalSale] = useState(0);
@@ -57,28 +57,38 @@ export default function SaleForm() {
   }, [netSales, totalPaid]);
 
   // ================= لود داده‌ها =================
-   useEffect(() => {
-  api.get("/categories").then(res => setCategories(res.data.data ?? res.data));
-  api.get("/medications").then(res => setMedications(res.data.data ?? res.data));
-  api.get("/suppliers").then(res =>
-    setSuppliers(res.data.suppliers ?? res.data.data ?? res.data)
-  );
+  useEffect(() => {
+    api.get("/categories").then(res => setCategories(res.data.data ?? res.data));
+    api.get("/medications").then(res => setMedications(res.data.data ?? res.data));
 
-  // ✅ مشتری‌ها از جدول registration بر اساس reg_type
-  api.get("/registrations")
-    .then(res => {
-      const data = res.data.data ?? res.data ?? [];
-      const onlyCustomers = Array.isArray(data)
-        ? data.filter(r => r.reg_type === "customer")
-        : [];
-      setCustomers(onlyCustomers);
-    })
-    .catch(err => {
-      console.error("Error loading registrations:", err);
-      setCustomers([]);
-    });
-}, [api]);
+    // حمایت‌کننده‌ها از registrations با reg_type = supplier
+    api.get("/registrations")
+      .then(res => {
+        const data = res.data.data ?? res.data ?? [];
+        const onlySuppliers = Array.isArray(data)
+          ? data.filter(r => r.reg_type === "supplier")
+          : [];
+        setSuppliers(onlySuppliers);
+      })
+      .catch(err => {
+        console.error("Error loading suppliers:", err);
+        setSuppliers([]);
+      });
 
+    // مشتری‌ها از registrations با reg_type = customer
+    api.get("/registrations")
+      .then(res => {
+        const data = res.data.data ?? res.data ?? [];
+        const onlyCustomers = Array.isArray(data)
+          ? data.filter(r => r.reg_type === "customer")
+          : [];
+        setCustomers(onlyCustomers);
+      })
+      .catch(err => {
+        console.error("Error loading customers:", err);
+        setCustomers([]);
+      });
+  }, [api]);
 
   const filteredMedications = medications.filter(
     m => Number(m.category_id) === Number(formItem.category_id)
@@ -88,11 +98,12 @@ export default function SaleForm() {
     m => Number(m.med_id) === Number(formItem.med_id)
   );
 
+  // ================= فیلتر حمایت‌کننده‌ها بر اساس دوا =================
   const filteredSuppliers = selectedMedication
     ? suppliers.filter(s => {
-        const sup = selectedMedication.supplier_id;
-        if (Array.isArray(sup)) return sup.includes(s.supplier_id);
-        return Number(sup) === Number(s.supplier_id);
+        const supList = selectedMedication.supplier_id;
+        if (Array.isArray(supList)) return supList.includes(s.reg_id);
+        return Number(supList) === Number(s.reg_id);
       })
     : [];
 
@@ -138,7 +149,7 @@ export default function SaleForm() {
       return;
     }
 
-    setSaleItems([...saleItems, { ...formItem, id: Date.now() }]); // id موقت برای key
+    setSaleItems([...saleItems, { ...formItem, id: Date.now() }]);
     setFormItem({
       cust_id: formItem.cust_id,
       category_id: "",
@@ -167,8 +178,6 @@ export default function SaleForm() {
       sales_date: saleDate || new Date().toISOString().split("T")[0],
       cust_id: formItem.cust_id,
       discount,
-      total_sales: totalSale,
-      net_sales: netSales,
       total_paid: totalPaid,
       items: saleItems.map(item => ({
         category_id: item.category_id,
@@ -211,7 +220,6 @@ export default function SaleForm() {
       toast.error("❌ خطا در ثبت فروش");
     }
   };
-
   return (
     <MainLayoutpur>
       <ToastContainer />
@@ -284,15 +292,24 @@ export default function SaleForm() {
           </select>
         </div>
 
-        <div>
-          <label>حمایت‌کننده</label>
-          <select value={formItem.supplier_id} onChange={e => handleChange("supplier_id", e.target.value)}>
-            <option value="">-- انتخاب حمایت‌کننده --</option>
-            {filteredSuppliers.map(s => (
-              <option key={s.supplier_id} value={s.supplier_id}>{s.supplier_name ?? s.name}</option>
-            ))}
-          </select>
-        </div>
+                <div>
+  <label>حمایت‌کننده</label>
+  <select
+    value={formItem.supplier_id}
+    onChange={e => handleChange("supplier_id", e.target.value)}
+  >
+    <option value="">-- انتخاب حمایت‌کننده --</option>
+    {filteredSuppliers.map((s, index) => (
+      <option
+        key={s.reg_id ?? `sup-${index}`}
+        value={s.reg_id}
+      >
+        {s.full_name ?? s.name ?? s.supplier_name}
+      </option>
+    ))}
+  </select>
+</div>
+
 
         <div>
           <label>نوع دوا</label>

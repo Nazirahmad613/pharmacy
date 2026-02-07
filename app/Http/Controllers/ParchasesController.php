@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Parchase;
- 
+use App\Models\ParchaseItem;
 use App\Models\Medication;
 use App\Models\Category;
 use App\Models\Journal; // ژورنال برای ثبت تراکنش‌ها
