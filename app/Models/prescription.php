@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Prescription extends Model
 {
@@ -13,7 +13,12 @@ class Prescription extends Model
 
     protected $fillable = [
         'patient_id',
+        'patient_name',
+        'patient_age',
+        'patient_phone',
+        'patient_blood_group',
         'doc_id',
+        'doc_name',
         'pres_num',
         'pres_date',
         'total_amount',
@@ -24,15 +29,5 @@ class Prescription extends Model
     public function items()
     {
         return $this->hasMany(PrescriptionItem::class, 'pres_id', 'pres_id');
-    }
-
-    public function patient()
-    {
-        return $this->belongsTo(Registration::class, 'patient_id', 'reg_id');
-    }
-
-    public function doctor()
-    {
-        return $this->belongsTo(Registration::class, 'doc_id', 'reg_id');
     }
 }

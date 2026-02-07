@@ -36,6 +36,6 @@ class PrescriptionItem extends Model
 
     public function supplier()
     {
-        return $this->belongsTo(Registration::class, 'supplier_id', 'reg_id');
+        return $this->belongsTo(Registrations::class, 'supplier_id', 'reg_id');
     }
 }

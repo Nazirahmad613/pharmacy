@@ -10,8 +10,16 @@ return new class extends Migration {
         Schema::create('prescriptions', function (Blueprint $table) {
             $table->id('pres_id');
 
-            $table->unsignedBigInteger('patient_id'); // reg_id مریض
-            $table->unsignedBigInteger('doc_id');     // reg_id داکتر
+            // مریض
+            $table->unsignedBigInteger('patient_id');
+            $table->string('patient_name')->nullable();
+            $table->integer('patient_age')->nullable();
+            $table->string('patient_phone')->nullable();
+            $table->string('patient_blood_group')->nullable();
+
+            // داکتر
+            $table->unsignedBigInteger('doc_id');
+            $table->string('doc_name')->nullable();
 
             $table->string('pres_num')->nullable();
             $table->date('pres_date');
@@ -22,7 +30,6 @@ return new class extends Migration {
 
             $table->timestamps();
 
-            // اگر registrations داری
             $table->foreign('patient_id')->references('reg_id')->on('registrations');
             $table->foreign('doc_id')->references('reg_id')->on('registrations');
         });

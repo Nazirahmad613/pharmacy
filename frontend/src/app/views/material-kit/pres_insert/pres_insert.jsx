@@ -171,6 +171,10 @@ export default function PrescriptionForm() {
     await api.post("/prescriptions", {
       patient_id: selectedPatientId,
       pres_num: patientInfo.pres_num,
+      patient_age: patientInfo.age,
+      patient_phone: patientInfo.phone,
+      patient_reg_id: patientInfo.reg_id,
+      patient_blood_group: patientInfo.blood_group,
       doc_id: selectedDoctorId,
       pres_date: prescriptionDate || new Date().toISOString().slice(0, 10),
       total_amount: totalAmount,
@@ -189,11 +193,17 @@ export default function PrescriptionForm() {
       {/* ===== معلومات نسخه ===== */}
       <div className="form-container" style={{ flexWrap: "wrap" }}>
         <h2 align="center">ثبت نسخه</h2>
+ <div>
+  <label>شماره نسخه</label>
+  <input
+    value={patientInfo.pres_num}
+    onChange={e =>
+      setPatientInfo({ ...patientInfo, pres_num: e.target.value })
+    }
+    placeholder="شماره نسخه را وارد کنید"
+  />
+</div>
 
-        <div>
-          <label>شماره نسخه</label>
-          <input value={patientInfo.pres_num} readOnly />
-        </div>
 
         <div>
           <label>مریض</label>
@@ -205,6 +215,26 @@ export default function PrescriptionForm() {
               </option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <label>سن</label>
+          <input value={patientInfo.age} readOnly />
+        </div>
+
+        <div>
+          <label>شماره تماس</label>
+          <input value={patientInfo.phone} readOnly />
+        </div>
+
+        <div>
+          <label>آی‌دی مریض</label>
+          <input value={patientInfo.reg_id} readOnly />
+        </div>
+
+        <div>
+          <label>گروه خون</label>
+          <input value={patientInfo.blood_group} readOnly />
         </div>
 
         <div>
@@ -245,28 +275,27 @@ export default function PrescriptionForm() {
         style={{ display: "flex", gap: "6px", flexWrap: "wrap", fontSize: "18px" }}
         onKeyDown={handleKeyDown}
       >
-        {[
-          ["کتگوری", <select value={formItem.category_id} onChange={e => handleChange("category_id", e.target.value)}>
-            <option value="">انتخاب</option>
-            {categories.map(c => <option key={c.category_id} value={c.category_id}>{c.category_name}</option>)}
-          </select>],
+        {[["کتگوری", <select value={formItem.category_id} onChange={e => handleChange("category_id", e.target.value)}>
+          <option value="">انتخاب</option>
+          {categories.map(c => <option key={c.category_id} value={c.category_id}>{c.category_name}</option>)}
+        </select>],
 
-          ["دوا", <select value={formItem.med_id} onChange={e => handleChange("med_id", e.target.value)}>
-            <option value="">انتخاب</option>
-            {filteredMedications.map(m => <option key={m.med_id} value={m.med_id}>{m.gen_name}</option>)}
-          </select>],
+        ["دوا", <select value={formItem.med_id} onChange={e => handleChange("med_id", e.target.value)}>
+          <option value="">انتخاب</option>
+          {filteredMedications.map(m => <option key={m.med_id} value={m.med_id}>{m.gen_name}</option>)}
+        </select>],
 
-          ["حمایت‌کننده", <select value={formItem.supplier_id} onChange={e => handleChange("supplier_id", e.target.value)}>
-            <option value="">انتخاب</option>
-            {filteredSuppliers.map(s => <option key={s.reg_id} value={s.reg_id}>{s.full_name ?? s.name}</option>)}
-          </select>],
+        ["حمایت‌کننده", <select value={formItem.supplier_id} onChange={e => handleChange("supplier_id", e.target.value)}>
+          <option value="">انتخاب</option>
+          {filteredSuppliers.map(s => <option key={s.reg_id} value={s.reg_id}>{s.full_name ?? s.name}</option>)}
+        </select>],
 
-          ["نوع دوا", <input value={formItem.type} readOnly />],
-          ["مقدار مصرف", <input value={formItem.dosage} onChange={e => handleChange("dosage", e.target.value)} />],
-          ["تعداد", <input type="number" value={formItem.quantity} onChange={e => handleChange("quantity", e.target.value)} />],
-          ["قیمت واحد", <input type="number" value={formItem.unit_price} onChange={e => handleChange("unit_price", e.target.value)} />],
-          ["قیمت مجموعی", <input value={formItem.total_price} readOnly />],
-          ["ملاحظات", <input value={formItem.remarks} onChange={e => handleChange("remarks", e.target.value)} />],
+        ["نوع دوا", <input value={formItem.type} readOnly />],
+        ["مقدار مصرف", <input value={formItem.dosage} onChange={e => handleChange("dosage", e.target.value)} />],
+        ["تعداد", <input type="number" value={formItem.quantity} onChange={e => handleChange("quantity", e.target.value)} />],
+        ["قیمت واحد", <input type="number" value={formItem.unit_price} onChange={e => handleChange("unit_price", e.target.value)} />],
+        ["قیمت مجموعی", <input value={formItem.total_price} readOnly />],
+        ["ملاحظات", <input value={formItem.remarks} onChange={e => handleChange("remarks", e.target.value)} />]
         ].map(([label, input], i) => (
           <div key={i}>
             <label>{label}</label>
@@ -274,7 +303,8 @@ export default function PrescriptionForm() {
           </div>
         ))}
       </form>
-  <h4>موارد اضافه شده </h4>
+
+      <h4>موارد اضافه شده</h4>
       {prescriptionItems.length > 0 ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           <div style={{
@@ -305,7 +335,6 @@ export default function PrescriptionForm() {
             const cat = categories.find(c => c.category_id == item.category_id);
             const sup = suppliers.find(s => s.reg_id == item.supplier_id);
 
-
             return (
               <div key={idx} style={{
                 display: "grid",
@@ -320,7 +349,7 @@ export default function PrescriptionForm() {
                 <span>{idx + 1}</span>
                 <span>{cat?.category_name ?? "-"}</span>
                 <span>{med?.gen_name ?? "-"}</span>
-                 <span>{sup?.full_name ?? sup?.name ?? "-"}</span>
+                <span>{sup?.full_name ?? sup?.name ?? "-"}</span>
                 <span>{item.type}</span>
                 <span>{item.dosage}</span>
                 <span>{item.quantity}</span>
@@ -329,16 +358,16 @@ export default function PrescriptionForm() {
                 <span>{item.remarks}</span>
                 <button
                   onClick={() => handleRemoveItem(idx)}
-                   style={{
-          backgroundColor: "#ef4444",
-              color: "white",
-              padding: "6px 12px",
-              fontSize: "14px",
-              border: "none",
-              borderRadius: "6px",
-              cursor: "pointer",
-              transition: "background-color 0.3s",
-            }}
+                  style={{
+                    backgroundColor: "#ef4444",
+                    color: "white",
+                    padding: "6px 12px",
+                    fontSize: "14px",
+                    border: "none",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    transition: "background-color 0.3s",
+                  }}
                 >
                   حذف
                 </button>
@@ -350,20 +379,20 @@ export default function PrescriptionForm() {
         <p>هیچ موارد اضافه نشده است</p>
       )}
 
-      <button onClick={handleSavePrescription}     style={{
-      backgroundColor: "#311f79",
-      color: "white",
-      padding: "12px 30px",
-      fontSize: "18px",
-      border: "none",
-      borderRadius: "10px",
-      cursor: "pointer",
-      textAlign: "center",
-      boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-      transition: "background-color 0.3s",
-      marginRight:"600px",
-      marginTop:"50px",
-    }}   >ثبت نسخه</button>
+      <button onClick={handleSavePrescription} style={{
+        backgroundColor: "#311f79",
+        color: "white",
+        padding: "12px 30px",
+        fontSize: "18px",
+        border: "none",
+        borderRadius: "10px",
+        cursor: "pointer",
+        textAlign: "center",
+        boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+        transition: "background-color 0.3s",
+        marginRight: "600px",
+        marginTop: "50px",
+      }}>ثبت نسخه</button>
     </MainLayoutpur>
   );
 }
