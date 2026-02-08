@@ -17,11 +17,9 @@
     name: "ثبت معلومات جدید",
     iconText: "F",
     children: [
-      { name: "addmedication", path: "/material/addinformation", iconText: "AM" },
       { name: "RegistationForm", path: "/material/registrations", iconText: "RG" },
-      { name: "addsuppliers", path: "/material/tables", iconText: "AS" },
-      { name: "addcustomers", path: "/material/addcustomers", iconText: "AC" },
-      { name: "doctor_insert", path: "/material/doctor_insert", iconText: "DI" },
+      { name: "addmedication", path: "/material/addinformation", iconText: "AM" },
+      { name: "addchanges", path: "/material/changes", iconText: "AS" },
       { name: "pres_insert", path: "/material/pres_insert", iconText: "PI" },
       { name: "sales_insert", path: "/material/sales_insert", iconText: "SI" },
       { name: "parchases", path: "/material/parchases", iconText: "PR" },

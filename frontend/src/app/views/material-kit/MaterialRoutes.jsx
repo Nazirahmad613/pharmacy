@@ -17,9 +17,7 @@ const AppExpansionPanel = Loadable(lazy(() => import("./expansion-panel/AppExpan
 // ===== Forms & Data Entry =====
 const AppAddcatagory = Loadable(lazy(() => import("./addcatagory/addcatagory")));
 const AppAddmedication = Loadable(lazy(() => import("./addinformation/addmedication")));
-const AppAddsuppliers = Loadable(lazy(() => import("./tables/addsuppliers")));
-const AppAddcustomers = Loadable(lazy(() => import("./addcustomers/addcustomers")));
-const AppAdddoctors = Loadable(lazy(() => import("./doctor_insert/doctor_insert")));
+const AppAddchanges = Loadable(lazy(() => import("./changes/addchanges")));
 const AppAddprescriptions = Loadable(lazy(() => import("./pres_insert/pres_insert")));
 const AppAddsales = Loadable(lazy(() => import("./sales_insert/sales_insert")));
 const AppAddparchases = Loadable(lazy(() => import("./parchases/parchases")));
@@ -44,9 +42,7 @@ const materialRoutes = [
   { path: "/material/snackbar", element: <AppSnackbar /> },
 
   { path: "/material/addinformation", element: <AppAddmedication /> },
-  { path: "/material/tables", element: <AppAddsuppliers /> },
-  { path: "/material/addcustomers", element: <AppAddcustomers /> },
-  { path: "/material/doctor_insert", element: <AppAdddoctors /> },
+  { path: "/material/changes", element: <AppAddchanges /> },
   { path: "/material/pres_insert", element: <AppAddprescriptions /> },
   { path: "/material/sales_insert", element: <AppAddsales /> },
   { path: "/material/parchases", element: <AppAddparchases /> },
