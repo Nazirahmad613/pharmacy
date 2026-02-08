@@ -4,44 +4,49 @@ namespace App\Http\Controllers;
 
 use App\Models\Prescription;
 use App\Models\PrescriptionItem;
+use App\Models\Registrations;
+use App\Models\Journal; // ⬅️ مدل ژورنال
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Models\Registrations;
 
 class PrescriptionController extends Controller
 {
     public function store(Request $request)
     {
         $request->validate([
-            'patient_id' => 'required',
-            'doc_id' => 'required',
-            'pres_date' => 'required|date',
-            'items' => 'required|array|min:1',
+            'patient_id'   => 'required',
+            'doc_id'       => 'required',
+            'pres_date'    => 'required|date',
+            'items'        => 'required|array|min:1',
+            'total_amount' => 'required|numeric',
+            'net_amount'   => 'required|numeric',
         ]);
 
         DB::transaction(function () use ($request) {
 
-            // اطلاعات snapshot مریض
+            // ===== snapshot مریض و داکتر =====
             $patient = Registrations::find($request->patient_id);
-            $doc = Registrations::find($request->doc_id);
+            $doc     = Registrations::find($request->doc_id);
 
+            // ===== ثبت نسخه =====
             $prescription = Prescription::create([
-                'patient_id'         => $request->patient_id,
-                'patient_name'       => $patient->full_name ?? $patient->name ?? null,
-                'patient_age'        => $patient->age ?? null,
-                'patient_phone'      => $patient->phone ?? null,
-                'patient_blood_group'=> $patient->blood_group ?? null,
+                'patient_id'           => $request->patient_id,
+                'patient_name'         => $patient->full_name ?? $patient->name ?? null,
+                'patient_age'          => $patient->age ?? null,
+                'patient_phone'        => $patient->phone ?? null,
+                'patient_blood_group'  => $patient->blood_group ?? null,
 
-                'doc_id'             => $request->doc_id,
-                'doc_name'           => $doc->full_name ?? $doc->name ?? null,
+                'doc_id'               => $request->doc_id,
+                'doc_name'             => $doc->full_name ?? $doc->name ?? null,
 
-                'pres_num'           => $request->pres_num,
-                'pres_date'          => $request->pres_date,
-                'total_amount'       => $request->total_amount,
-                'discount'           => $request->discount,
-                'net_amount'         => $request->net_amount,
+                'pres_num'             => $request->pres_num,
+                'pres_date'            => $request->pres_date,
+                'total_amount'         => $request->total_amount,
+                'discount'             => $request->discount ?? 0,
+                'net_amount'           => $request->net_amount,
             ]);
 
+            // ===== آیتم‌های نسخه =====
             foreach ($request->items as $item) {
                 PrescriptionItem::create([
                     'pres_id'     => $prescription->pres_id,
@@ -56,10 +61,31 @@ class PrescriptionController extends Controller
                     'remarks'     => $item['remarks'] ?? null,
                 ]);
             }
+
+            // ===== ثبت ژورنال =====
+            // بدهکار: مریض
+            Journal::create([
+                'journal_date' => $request->pres_date,
+                'ref_type'     => 'prescription',
+                'ref_id'       => $prescription->pres_id,
+                'description'  => 'ثبت نسخه شماره ' . $request->pres_num,
+                'debit'        => $request->net_amount,
+                'credit'       => 0,
+            ]);
+
+            // بستانکار: فروش دوا
+            Journal::create([
+                'journal_date' => $request->pres_date,
+                'ref_type'     => 'prescription',
+                'ref_id'       => $prescription->pres_id,
+                'description'  => 'فروش دوا بابت نسخه ' . $request->pres_num,
+                'debit'        => 0,
+                'credit'       => $request->net_amount,
+            ]);
         });
 
         return response()->json([
-            'message' => 'Prescription saved successfully'
+            'message' => 'Prescription & Journal saved successfully'
         ], 201);
     }
 }

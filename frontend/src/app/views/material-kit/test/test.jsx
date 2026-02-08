@@ -1,35 +1,42 @@
- CREATE OR REPLACE VIEW sales_full_details AS
-SELECT
-    s.sales_id AS sales_id,
-    s.sales_date,
-    s.cust_id,
-    c.cust_name AS customer_name,
-    c.cust_phone_num AS customer_phone,
-    
-    si.sales_it_id AS sale_item_id,
-    si.med_id,
-    m.gen_name AS medication_name,
-    si.supplier_id,
-    sup.name AS supplier_name,
-    si.quantity,
-    si.unit_sales AS unit_price,
-    (si.quantity * si.total_sales) AS total_price,
-    
-    si.discount,
-    ((si.quantity * si.unit_sales) - si.discount) AS net_price,
-    
-    COALESCE(p.total_paid, 0) AS total_paid,
-    (((si.quantity * si.unit_sales) - si.discount) - COALESCE(p.total_paid, 0)) AS remaining_amount,
-    
-    s.notes AS sale_notes
+<?php
 
-FROM sales s
-JOIN sales_items si ON si.sale_id = s.id
-JOIN customers c ON c.id = s.cust_id
-JOIN medications m ON m.id = si.med_id
-JOIN suppliers sup ON sup.id = si.supplier_id
-LEFT JOIN (
-    SELECT sale_id, SUM(amount) AS total_paid
-    FROM payments
-    GROUP BY sale_id
-) p ON p.sale_id = s.id;
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration {
+    public function up(): void
+    {
+        Schema::create('prescriptions', function (Blueprint $table) {
+            $table->id('pres_id');
+
+            // مریض
+            $table->unsignedBigInteger('patient_id');
+            $table->string('patient_name')->nullable();
+            $table->integer('patient_age')->nullable();
+            $table->string('patient_phone')->nullable();
+            $table->string('patient_blood_group')->nullable();
+
+            // داکتر
+            $table->unsignedBigInteger('doc_id');
+            $table->string('doc_name')->nullable();
+
+            $table->string('pres_num')->nullable();
+            $table->date('pres_date');
+
+            $table->decimal('total_amount', 12, 2)->default(0);
+            $table->decimal('discount', 12, 2)->default(0);
+            $table->decimal('net_amount', 12, 2)->default(0);
+
+            $table->timestamps();
+
+            $table->foreign('patient_id')->references('reg_id')->on('registrations');
+            $table->foreign('doc_id')->references('reg_id')->on('registrations');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('prescriptions');
+    }
+};
