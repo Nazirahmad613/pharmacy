@@ -9,35 +9,30 @@ use Illuminate\Validation\Rule;
 
 class JournalController extends Controller
 {
-    /**
-     * نمایش لیست ژورنال‌ها
-     * قابلیت فیلتر بر اساس نوع (ref_type) و تاریخ
-     */
-    public function index(Request $request)
-    {
-        $query = Journal::query()->with('user');
+  public function index(Request $request)
+{
+    $query = Journal::query();
 
-        // فیلتر بر اساس نوع رویداد
-        if ($request->has('type') && in_array($request->type, Journal::TYPES)) {
-            $query->where('ref_type', $request->type);
-        }
-
-        // فیلتر بر اساس بازه تاریخ
-        if ($request->has('from')) {
-            $query->whereDate('journal_date', '>=', $request->from);
-        }
-        if ($request->has('to')) {
-            $query->whereDate('journal_date', '<=', $request->to);
-        }
-
-        $journals = $query->orderBy('journal_date', 'desc')->paginate(20);
-
-        return response()->json($journals);
+    // فیلتر بر اساس نوع
+    if ($request->has('type') && $request->type) {
+        $query->where('ref_type', $request->type);
     }
 
-    /**
-     * نمایش جزئیات یک ژورنال
-     */
+    // فیلتر تاریخ
+    if ($request->has('from') && $request->from) {
+        $query->whereDate('journal_date', '>=', $request->from);
+    }
+    if ($request->has('to') && $request->to) {
+        $query->whereDate('journal_date', '<=', $request->to);
+    }
+
+    // مرتب‌سازی تاریخ وار
+    $query->orderBy('journal_date', 'desc');
+
+    // paginate یا تمام رکوردها
+    return response()->json($query->get());
+}
+     
     public function show(Journal $journal)
     {
         $journal->load('user', 'reference');

@@ -1,10 +1,11 @@
-// src/pages/JournalPage.jsx
 import { useState, useEffect } from "react";
-import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useAuth } from "app/contexts/AuthContext";
+import MainLayoutpur from "../../../../components/MainLayoutpur";
 
 export default function JournalPage() {
+  const { api } = useAuth();
   const [journals, setJournals] = useState([]);
   const [pagination, setPagination] = useState({});
   const [form, setForm] = useState({
@@ -36,10 +37,9 @@ export default function JournalPage() {
     "refund_purchase",
   ];
 
-  // بارگذاری ژورنال‌ها
-  const fetchJournals = async (url = "/api/journals") => {
+  const fetchJournals = async (url = "/journals") => {
     try {
-      const res = await axios.get(url, {
+      const res = await api.get(url, {
         params: {
           type: filterType || undefined,
           from: filterFrom || undefined,
@@ -47,22 +47,14 @@ export default function JournalPage() {
         },
       });
 
-      // اگر paginate باشد
-      if (res.data.data) {
-        setJournals(res.data.data);
-        setPagination({
-          current_page: res.data.current_page,
-          last_page: res.data.last_page,
-          next_page_url: res.data.next_page_url,
-          prev_page_url: res.data.prev_page_url,
-        });
-      } else {
-        setJournals(Array.isArray(res.data) ? res.data : []);
-        setPagination({});
-      }
-    } catch (err) {
+      setJournals(res.data.data ?? res.data ?? []);
+      setPagination({
+        last_page: res.data.last_page ?? 1,
+        prev_page_url: res.data.prev_page_url ?? null,
+        next_page_url: res.data.next_page_url ?? null,
+      });
+    } catch {
       toast.error("خطا در بارگذاری ژورنال‌ها");
-      console.error(err);
     }
   };
 
@@ -70,17 +62,13 @@ export default function JournalPage() {
     fetchJournals();
   }, [filterType, filterFrom, filterTo]);
 
-  // تغییرات فرم
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((p) => ({ ...p, [name]: value }));
   };
 
-  // ذخیره یا بروزرسانی ژورنال
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // اعتبارسنجی debit/credit
     if (form.debit && form.credit) {
       toast.error("فقط یکی از Debit یا Credit باید پر باشد.");
       return;
@@ -88,11 +76,11 @@ export default function JournalPage() {
 
     try {
       if (editing) {
-        await axios.put(`/api/journals/${form.id}`, form);
-        toast.success("ژورنال با موفقیت بروزرسانی شد");
+        await api.put(`/journals/${form.id}`, form);
+        toast.success("بروزرسانی شد");
       } else {
-        await axios.post("/api/journals", form);
-        toast.success("ژورنال با موفقیت ذخیره شد");
+        await api.post("/journals", form);
+        toast.success("ذخیره شد");
       }
       setForm({
         id: null,
@@ -105,233 +93,166 @@ export default function JournalPage() {
       });
       setEditing(false);
       fetchJournals();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "خطا در ذخیره ژورنال");
-      console.error(err);
+    } catch {
+      toast.error("خطا در ذخیره");
     }
   };
 
-  // ویرایش ژورنال
-  const handleEdit = (journal) => {
-    setForm({
-      id: journal.id,
-      journal_date: journal.journal_date,
-      description: journal.description || "",
-      debit: journal.debit || "",
-      credit: journal.credit || "",
-      ref_type: journal.ref_type || "",
-      ref_id: journal.ref_id || "",
-    });
+  const handleEdit = (j) => {
+    setForm(j);
     setEditing(true);
   };
 
-  // حذف ژورنال
   const handleDelete = async (id) => {
-    if (!window.confirm("آیا مطمئن هستید که می‌خواهید حذف کنید؟")) return;
+    if (!confirm("حذف شود؟")) return;
     try {
-      await axios.delete(`/api/journals/${id}`);
-      toast.success("ژورنال با موفقیت حذف شد");
+      await api.delete(`/journals/${id}`);
+      toast.success("حذف شد");
       fetchJournals();
-    } catch (err) {
-      toast.error("خطا در حذف ژورنال");
-      console.error(err);
+    } catch {
+      toast.error("خطا در حذف");
     }
   };
 
   return (
-    <div className="p-4">
-      <ToastContainer />
-      <h1 className="text-2xl font-bold mb-4">ژورنال‌ها</h1>
+     <MainLayoutpur>
+        
+    <div className="min-h-screen bg-blue-900 flex justify-center py-8">
+  
+          <ToastContainer />
+  
+      <div className="w-full max-w-7xl px-4">
+        {/* عنوان */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-white">مدیریت ژورنال‌ها</h1>
+          <p className="text-blue-200 mt-1">نمایش و ثبت رویدادهای مالی</p>
+        </div>
 
-      {/* فیلتر */}
-      <div className="mb-4 flex gap-2">
-        <select
-          value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
-          className="border p-2 rounded"
-        >
-          <option value="">همه نوع‌ها</option>
-          {TYPES.map((t) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
-
-        <input
-          type="date"
-          value={filterFrom}
-          onChange={(e) => setFilterFrom(e.target.value)}
-          className="border p-2 rounded"
-          placeholder="از تاریخ"
-        />
-
-        <input
-          type="date"
-          value={filterTo}
-          onChange={(e) => setFilterTo(e.target.value)}
-          className="border p-2 rounded"
-          placeholder="تا تاریخ"
-        />
-
-        <button
-          onClick={() => fetchJournals()}
-          className="bg-blue-600 text-white px-3 py-1 rounded"
-        >
-          فیلتر
-        </button>
-      </div>
-
-      {/* فرم ژورنال */}
-      <form onSubmit={handleSubmit} className="mb-6 p-4 border rounded">
-        <h2 className="text-xl font-semibold mb-2">
-          {editing ? "ویرایش ژورنال" : "ژورنال جدید"}
-        </h2>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label>تاریخ</label>
-            <input
-              type="date"
-              name="journal_date"
-              value={form.journal_date}
-              onChange={handleChange}
-              required
-              className="border p-2 w-full rounded"
-            />
-          </div>
-          <div>
-            <label>شرح</label>
-            <input
-              type="text"
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-              className="border p-2 w-full rounded"
-            />
-          </div>
-          <div>
-            <label>Debit</label>
-            <input
-              type="number"
-              name="debit"
-              value={form.debit}
-              onChange={handleChange}
-              className="border p-2 w-full rounded"
-            />
-          </div>
-          <div>
-            <label>Credit</label>
-            <input
-              type="number"
-              name="credit"
-              value={form.credit}
-              onChange={handleChange}
-              className="border p-2 w-full rounded"
-            />
-          </div>
-          <div>
-            <label>نوع رویداد</label>
+        {/* فیلتر */}
+        <div className="bg-white rounded-xl shadow p-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <select
-              name="ref_type"
-              value={form.ref_type}
-              onChange={handleChange}
-              className="border p-2 w-full rounded"
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="border rounded-lg p-2"
             >
-              <option value="">انتخاب کنید</option>
+              <option value="">همه نوع‌ها</option>
               {TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
+                <option key={t} value={t}>{t}</option>
               ))}
             </select>
-          </div>
-          <div>
-            <label>شناسه مرجع (ref_id)</label>
-            <input
-              type="number"
-              name="ref_id"
-              value={form.ref_id}
-              onChange={handleChange}
-              className="border p-2 w-full rounded"
-            />
+
+            <input type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} className="border rounded-lg p-2" />
+            <input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} className="border rounded-lg p-2" />
+
+            <button onClick={() => fetchJournals()} className="bg-blue-700 text-white rounded-lg">
+              اعمال فیلتر
+            </button>
           </div>
         </div>
-        <button
-          type="submit"
-          className="mt-4 bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
-        >
-          {editing ? "بروزرسانی" : "ذخیره تغییرات"}
-        </button>
-      </form>
 
-      {/* جدول ژورنال‌ها */}
-      <table className="w-full border-collapse border border-gray-300">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="border p-2">تاریخ</th>
-            <th className="border p-2">شرح</th>
-            <th className="border p-2">Debit</th>
-            <th className="border p-2">Credit</th>
-            <th className="border p-2">نوع</th>
-            <th className="border p-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {Array.isArray(journals) && journals.length > 0 ? (
-            journals.map((j) => (
-              <tr key={j.id}>
-                <td className="border p-2">{j.journal_date}</td>
-                <td className="border p-2">{j.description}</td>
-                <td className="border p-2">{j.debit}</td>
-                <td className="border p-2">{j.credit}</td>
-                <td className="border p-2">{j.ref_type}</td>
-                <td className="border p-2">
-                  <button
-                    onClick={() => handleEdit(j)}
-                    className="bg-yellow-400 text-white px-2 py-1 rounded mr-2"
-                  >
-                    ویرایش
-                  </button>
-                  <button
-                    onClick={() => handleDelete(j.id)}
-                    className="bg-red-600 text-white px-2 py-1 rounded"
-                  >
-                    حذف
-                  </button>
-                </td>
+        {/* فرم */}
+        <div className="bg-white rounded-xl shadow p-6 mb-8">
+          <h2 className="text-lg font-semibold mb-4 text-center">
+            {editing ? "ویرایش ژورنال" : "ثبت ژورنال"}
+          </h2>
+
+          <form onSubmit={handleSubmit}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                ["journal_date", "date", "تاریخ"],
+                ["description", "text", "شرح"],
+                ["debit", "number", "Debit"],
+                ["credit", "number", "Credit"],
+              ].map(([name, type, label]) => (
+                <div key={name}>
+                  <label className="text-sm">{label}</label>
+                  <input
+                    type={type}
+                    name={name}
+                    value={form[name]}
+                    onChange={handleChange}
+                    className="w-full border rounded-lg p-2"
+                  />
+                </div>
+              ))}
+
+              <div>
+                <label className="text-sm">نوع رویداد</label>
+                <select name="ref_type" value={form.ref_type} onChange={handleChange} className="w-full border rounded-lg p-2">
+                  <option value="">انتخاب کنید</option>
+                  {TYPES.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm">شناسه مرجع</label>
+                <input type="number" name="ref_id" value={form.ref_id} onChange={handleChange} className="w-full border rounded-lg p-2" />
+              </div>
+            </div>
+
+            <div className="text-center mt-5">
+              <button className="bg-blue-700 hover:bg-blue-800 text-white px-8 py-2 rounded-lg">
+                {editing ? "بروزرسانی" : "ذخیره"}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {/* جدول */}
+        <div className="bg-white rounded-xl shadow overflow-x-auto">
+          <table className="w-full text-sm text-center">
+            <thead className="bg-blue-100 text-blue-900">
+              <tr>
+                <th className="p-3">تاریخ</th>
+                <th className="p-3">شرح</th>
+                <th className="p-3">Debit</th>
+                <th className="p-3">Credit</th>
+                <th className="p-3">نوع</th>
+                <th className="p-3">عملیات</th>
               </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="6" className="text-center p-4">
-                رکوردی یافت نشد
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-
-      {/* Pagination ساده */}
-      {pagination.last_page > 1 && (
-        <div className="mt-4 flex justify-center gap-2">
-          {pagination.prev_page_url && (
-            <button
-              onClick={() => fetchJournals(pagination.prev_page_url)}
-              className="px-3 py-1 bg-gray-300 rounded"
-            >
-              قبلی
-            </button>
-          )}
-          {pagination.next_page_url && (
-            <button
-              onClick={() => fetchJournals(pagination.next_page_url)}
-              className="px-3 py-1 bg-gray-300 rounded"
-            >
-              بعدی
-            </button>
-          )}
+            </thead>
+            <tbody>
+              {journals.length ? journals.map((j) => (
+                <tr key={j.id} className="border-t hover:bg-gray-50">
+                  <td className="p-2">{j.journal_date}</td>
+                  <td className="p-2">{j.description}</td>
+                  <td className="p-2">{j.debit}</td>
+                  <td className="p-2">{j.credit}</td>
+                  <td className="p-2">{j.ref_type}</td>
+                  <td className="p-2 space-x-2 space-x-reverse">
+                    <button onClick={() => handleEdit(j)} className="bg-yellow-400 px-3 py-1 rounded text-white">ویرایش</button>
+                    <button onClick={() => handleDelete(j.id)} className="bg-red-600 px-3 py-1 rounded text-white">حذف</button>
+                  </td>
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan="6" className="p-6 text-gray-500">رکوردی یافت نشد</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
-      )}
+
+        {/* pagination */}
+        {pagination.last_page > 1 && (
+          <div className="flex justify-center gap-3 mt-6">
+            {pagination.prev_page_url && (
+              <button onClick={() => fetchJournals(pagination.prev_page_url)} className="px-4 py-1 bg-white rounded shadow">
+                قبلی
+              </button>
+            )}
+            {pagination.next_page_url && (
+              <button onClick={() => fetchJournals(pagination.next_page_url)} className="px-4 py-1 bg-white rounded shadow">
+                بعدی
+              </button>
+            )}
+          </div>
+        )}
+      </div>
     </div>
+       </MainLayoutpur>
   );
 }

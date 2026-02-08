@@ -29,6 +29,7 @@ use App\Http\Controllers\StockReportController;
 use App\Http\Controllers\ParchasesController;
 use App\Http\Controllers\SalesFullDetailsController;
 use App\Http\Controllers\RegistrationsController;
+use App\Http\Controllers\JournalController;
 
 /*
 |--------------------------------------------------------------------------
@@ -124,7 +125,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index']);
 
 
-
+//   journals   // ===== Journals =====
+    Route::get('/journals', [JournalController::class, 'index']); // نمایش همه یا فیلتر شده
+    Route::get('/journals/{id}', [JournalController::class, 'show']); // نمایش جزئیات یک ژورنال
+    Route::post('/journals', [JournalController::class, 'store']); // ثبت ژورنال جدید
+    Route::put('/journals/{id}', [JournalController::class, 'update']); // بروزرسانی ژورنال
+    Route::delete('/journals/{id}', [JournalController::class, 'destroy']); // حذف ژورنال
  
 
 
