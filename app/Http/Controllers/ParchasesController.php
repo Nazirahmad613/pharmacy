@@ -93,43 +93,47 @@ class ParchasesController extends Controller
             // ===============================
             // 🔗 ثبت خودکار ژورنال
             // ===============================
+                    // ===============================
+// 🔗 ثبت خودکار ژورنال
+// ===============================
 
-            // 1️⃣ بدهکار - موجودی دارو
-            Journal::create([
-                'journal_date' => $parchase->parchase_date,
-                'description'  => "خرید دارو - شماره {$parchase->parchase_id}",
-                'debit'        => $total_parchase,
-                'credit'       => 0,
-                'ref_type'     => 'parchase',
-                'ref_id'       => $parchase->parchase_id,
-                'user_id'      => Auth::id(),
-            ]);
+// 1️⃣ بدهکار - موجودی دارو (Inventory)
+Journal::create([
+    'journal_date' => $parchase->parchase_date,
+    'description'  => "خرید دارو - شماره {$parchase->parchase_id}",
+    'entry_type'   => Journal::ENTRY_DEBIT,   // موجودی افزایش → بدهکار
+    'amount'       => $total_parchase,
+    'ref_type'     => 'parchase',
+    'ref_id'       => $parchase->parchase_id,
+    'user_id'      => Auth::id(),
+]);
 
-            // 2️⃣ بستانکار - پرداخت نقد
-            if($validated['par_paid'] > 0){
-                Journal::create([
-                    'journal_date' => $parchase->parchase_date,
-                    'description'  => "پرداخت نقد - خرید دارو شماره {$parchase->parchase_id}",
-                    'debit'        => 0,
-                    'credit'       => $validated['par_paid'],
-                    'ref_type'     => 'payment_out',
-                    'ref_id'       => $parchase->parchase_id,
-                    'user_id'      => Auth::id(),
-                ]);
-            }
+// 2️⃣ بستانکار - پرداخت نقد (Cash)
+if($validated['par_paid'] > 0){
+    Journal::create([
+        'journal_date' => $parchase->parchase_date,
+        'description'  => "پرداخت نقد - خرید دارو شماره {$parchase->parchase_id}",
+        'entry_type'   => Journal::ENTRY_CREDIT,  // پول نقد خارج شده → بستانکار
+        'amount'       => $validated['par_paid'],
+        'ref_type'     => 'payment_out',
+        'ref_id'       => $parchase->parchase_id,
+        'user_id'      => Auth::id(),
+    ]);
+}
 
-            // 3️⃣ بستانکار - بدهی مانده
-            if($due_par > 0){
-                Journal::create([
-                    'journal_date' => $parchase->parchase_date,
-                    'description'  => "بدهی خرید دارو شماره {$parchase->parchase_id}",
-                    'debit'        => 0,
-                    'credit'       => $due_par,
-                    'ref_type'     => 'parchase_due',
-                    'ref_id'       => $parchase->parchase_id,
-                    'user_id'      => Auth::id(),
-                ]);
-            }
+// 3️⃣ بستانکار - بدهی مانده (Accounts Payable)
+if($due_par > 0){
+    Journal::create([
+        'journal_date' => $parchase->parchase_date,
+        'description'  => "بدهی خرید دارو شماره {$parchase->parchase_id}",
+        'entry_type'   => Journal::ENTRY_CREDIT,  // بدهی → بستانکار
+        'amount'       => $due_par,
+        'ref_type'     => 'parchase_due',
+        'ref_id'       => $parchase->parchase_id,
+        'user_id'      => Auth::id(),
+    ]);
+}
+
 
             DB::commit();
 

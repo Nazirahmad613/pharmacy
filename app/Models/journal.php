@@ -14,35 +14,24 @@ class Journal extends Model
     protected $fillable = [
         'journal_date',
         'description',
-        'debit',
-        'credit',
-        'ref_type',
-        'ref_id',
+        'entry_type',   // debit | credit
+        'amount',
+        'ref_type',     // doctor, patient, sale, ...
+        'ref_id',       // registrations.reg_id
         'user_id',
     ];
 
     protected $casts = [
         'journal_date' => 'date',
-        'debit'        => 'decimal:2',
-        'credit'       => 'decimal:2',
+        'amount'       => 'decimal:2',
     ];
 
-    /**
-     * انواع رویدادهای مالی (ref_type)
-     */
-    public const TYPES = [
-        'sale',
-        'purchase',
-        'expense',
-        'payment_in',
-        'payment_out',
-        'receivable',
-        'payable',
-        'cash_opening',
-        'cash_adjustment',
-        'refund_sale',
-        'refund_purchase',
-    ];
+    /* =========================
+       Constants
+    ========================= */
+
+    public const ENTRY_DEBIT  = 'debit';
+    public const ENTRY_CREDIT = 'credit';
 
     /* =========================
        Relationships
@@ -57,28 +46,34 @@ class Journal extends Model
     }
 
     /**
-     * ارتباط چندمنظوره با رکورد اصلی (sale, purchase, expense, ...)
+     * ارتباط ساده با جدول registrations
+     * شرط ref_type = reg_type در Controller بررسی شود
      */
-    public function reference()
-    {
-        return $this->morphTo(null, 'ref_type', 'ref_id');
-    }
+ public function registration()
+{
+    return $this->belongsTo(
+        Registrations::class,
+        'ref_id',
+        'reg_id'
+    );
+}
+
 
     /* =========================
-       Scopes (برای گزارش‌ها)
+       Scopes (گزارش‌گیری)
     ========================= */
 
     public function scopeDebit($query)
     {
-        return $query->where('debit', '>', 0);
+        return $query->where('entry_type', self::ENTRY_DEBIT);
     }
 
     public function scopeCredit($query)
     {
-        return $query->where('credit', '>', 0);
+        return $query->where('entry_type', self::ENTRY_CREDIT);
     }
 
-    public function scopeByType($query, $type)
+    public function scopeByType($query, string $type)
     {
         return $query->where('ref_type', $type);
     }
@@ -88,19 +83,31 @@ class Journal extends Model
     ========================= */
 
     /**
-     * بررسی صحت ثبت (یکی از debit یا credit)
+     * بررسی صحت رکورد
      */
     public function isValid(): bool
     {
-        return ($this->debit > 0 && $this->credit == 0)
-            || ($this->credit > 0 && $this->debit == 0);
+        return in_array($this->entry_type, [
+            self::ENTRY_DEBIT,
+            self::ENTRY_CREDIT
+        ]) && $this->amount > 0;
     }
 
     /**
-     * محاسبه مانده رکورد
+     * مانده حساب (حسابداری استاندارد)
      */
-    public function getBalanceAttribute()
+    public function getBalanceAttribute(): float
     {
-        return $this->credit - $this->debit;
+        return $this->entry_type === self::ENTRY_CREDIT
+            ? $this->amount
+            : -$this->amount;
+    }
+
+    /**
+     * نام رویداد (برای نمایش، بدون ذخیره)
+     */
+    public function getRefNameAttribute(): ?string
+    {
+        return $this->registration?->reg_name;
     }
 }

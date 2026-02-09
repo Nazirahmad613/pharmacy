@@ -90,29 +90,30 @@ class SalesController extends Controller
                     'exp_date'    => $item['exp_date'],
                 ]);
             }
+                // ثبت ژورنال فروش (درآمد)
+Journal::create([
+    'journal_date' => $sale->sales_date,
+    'description'  => 'ثبت فروش',
+    'entry_type'   => Journal::ENTRY_CREDIT,  // چون فروش درآمد است
+    'amount'       => $netSales,
+    'ref_type'     => 'sale',
+    'ref_id'       => $sale->sales_id,
+    'user_id'      => Auth::id(),
+]);
 
-            // ثبت خودکار ژورنال
-            Journal::create([
-                'journal_date' => $sale->sales_date,
-                'description'  => 'ثبت فروش',
-                'debit'        => $netSales,
-                'credit'       => 0,
-                'ref_type'     => 'sale',
-                'ref_id'       => $sale->sales_id,
-                'user_id'      => Auth::id(),
-            ]);
+// ثبت دریافت وجه (اگر پول پرداخت شده)
+if ($totalPaid > 0) {
+    Journal::create([
+        'journal_date' => $sale->sales_date,
+        'description'  => 'دریافت وجه فروش',
+        'entry_type'   => Journal::ENTRY_DEBIT, // چون پول نقد وارد شده
+        'amount'       => $totalPaid,
+        'ref_type'     => 'payment_in',
+        'ref_id'       => $sale->sales_id,
+        'user_id'      => Auth::id(),
+    ]);
+}
 
-            if ($totalPaid > 0) {
-                Journal::create([
-                    'journal_date' => $sale->sales_date,
-                    'description'  => 'دریافت وجه فروش',
-                    'debit'        => 0,
-                    'credit'       => $totalPaid,
-                    'ref_type'     => 'payment_in',
-                    'ref_id'       => $sale->sales_id,
-                    'user_id'      => Auth::id(),
-                ]);
-            }
 
             DB::commit();
 
