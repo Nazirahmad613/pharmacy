@@ -2,7 +2,21 @@ import { useState, useEffect } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useAuth } from "app/contexts/AuthContext";
-import MainLayoutpur from "../../../../components/MainLayoutpur";
+import MainLayoutjur from "../../../../components/MainLayoutjur";
+
+/* ===== دیکشنری ترجمه ===== */
+const ENTRY_TYPE_FA = { debit: "اخذ پول", credit: "پرداخت پول" };
+const REF_TYPE_FA = {
+  sale: "فروش",
+  parchase: "خرید",
+  payment_in: "دریافت وجه",
+  payment_out: "پرداخت وجه",
+  parchase_due: "پرداخت قرض خرید",
+  doctor: "داکتر",
+  patient: "مریض",
+  supplier: "حمایت‌کننده",
+  customer: "مشتری",
+};
 
 export default function JournalPage() {
   const { api } = useAuth();
@@ -27,34 +41,52 @@ export default function JournalPage() {
 
   const ENTRY_TYPES = ["debit", "credit"];
 
-  const fetchJournals = async (url = "/journals") => {
-    try {
-      const res = await api.get(url, {
-        params: {
-          type: filterType || undefined,
-          from: filterFrom || undefined,
-          to: filterTo || undefined,
-        },
-      });
+ // تغییر تابع fetchJournals
+const fetchJournals = async (url = "/journals") => {
+  try {
+    const res = await api.get(url, {
+      params: {
+        type: filterType || undefined,        // نوع (debit/credit)
+        from: filterFrom || undefined,        // تاریخ شروع
+        to: filterTo || undefined,            // تاریخ پایان
+        ref_type: form.ref_type || undefined, // نوع رویداد
+        ref_id: form.ref_id || undefined,     // شناسه منبع
+      },
+    });
 
-      setJournals(res.data.data ?? res.data ?? []);
-      setPagination({
-        last_page: res.data.last_page ?? 1,
-        prev_page_url: res.data.prev_page_url ?? null,
-        next_page_url: res.data.next_page_url ?? null,
-      });
-    } catch {
-      toast.error("خطا در بارگذاری ژورنال‌ها");
-    }
-  };
+    // نمایش آخرین ژورنال‌ها ابتدا
+    const data = res.data.data ?? res.data ?? [];
+    setJournals(data.slice().reverse());
 
-  // دریافت همه registrations برای ref_type / ref_id
+    setPagination({
+      last_page: res.data.last_page ?? 1,
+      prev_page_url: res.data.prev_page_url ?? null,
+      next_page_url: res.data.next_page_url ?? null,
+    });
+  } catch {
+    toast.error("خطا در دریافت ژورنال‌ها");
+  }
+};
+
+// دکمه اعمال فیلتر
+<button
+  onClick={(e) => {
+    e.preventDefault();
+    fetchJournals("/journals?page=1");
+  }}
+  className="px-4 py-2 bg-blue-700 rounded-xl text-white font-medium hover:bg-blue-800 transition"
+>
+  اعمال فیلتر
+</button>
+
+
+
   const fetchRegistrations = async () => {
     try {
-      const res = await api.get("/registrations"); // backend باید route بدهد
+      const res = await api.get("/registrations");
       setRegistrations(res.data ?? []);
     } catch {
-      toast.error("خطا در بارگذاری ثبت‌نام‌ها");
+      toast.error("خطا در دریافت منابع");
     }
   };
 
@@ -72,12 +104,7 @@ export default function JournalPage() {
     e.preventDefault();
 
     if (!form.amount || form.amount <= 0) {
-      toast.error("مبلغ باید بزرگتر از صفر باشد.");
-      return;
-    }
-
-    if (!form.entry_type) {
-      toast.error("نوع Entry را انتخاب کنید.");
+      toast.error("مبلغ باید بزرگتر از صفر باشد");
       return;
     }
 
@@ -118,231 +145,244 @@ export default function JournalPage() {
     });
     setEditing(true);
   };
+ const handleDelete = async (id) => {
+  if (!confirm("حذف شود؟")) return;
+  try {
+    await api.delete(`/journals/${id}`);
+    toast.success("حذف شد");
+    fetchJournals("/journals?page=1"); // همیشه داده‌ها را از صفحه اول بارگذاری کن
+  } catch {
+    toast.error("خطا در حذف");
+  }
+};
 
-  const handleDelete = async (id) => {
-    if (!confirm("حذف شود؟")) return;
-    try {
-      await api.delete(`/journals/${id}`);
-      toast.success("حذف شد");
-      fetchJournals();
-    } catch {
-      toast.error("خطا در حذف");
-    }
-  };
 
-  // Filter registrations by selected type
-  const filteredRegistrations = registrations.filter(r => r.reg_type === form.ref_type);
+  const filteredRegistrations = registrations.filter(
+    (r) => r.reg_type === form.ref_type
+  );
+
+  const inputClass =
+    "w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-[#122b55] text-white border border-[#1e3a8a]";
 
   return (
-    <MainLayoutpur>
-      <div className="min-h-screen bg-blue-900 flex justify-center py-8">
-        <ToastContainer />
+    <MainLayoutjur title="مدیریت ژورنال‌ها">
+      <ToastContainer />
 
-        <div className="w-full max-w-7xl px-4">
-          {/* عنوان */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-white">مدیریت ژورنال‌ها</h1>
-            <p className="text-blue-200 mt-1">نمایش و ثبت رویدادهای مالی</p>
-          </div>
+  {/* Filter */} 
+<div className="form-container mb-8">
+  <div className="form-grid">
+    <select
+      value={filterType}
+      onChange={(e) => setFilterType(e.target.value)}
+      className={inputClass}
+    >
+      <option value="">همه نوع‌ها</option>
+      {ENTRY_TYPES.map((t) => (
+        <option key={t} value={t}>
+          {ENTRY_TYPE_FA[t]}
+        </option>
+      ))}
+    </select>
 
-          {/* فیلتر */}
-          <div className="bg-white rounded-xl shadow p-4 mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+    <input
+      type="date"
+      value={filterFrom}
+      onChange={(e) => setFilterFrom(e.target.value)}
+      className={inputClass}
+    />
+    <input
+      type="date"
+      value={filterTo}
+      onChange={(e) => setFilterTo(e.target.value)}
+      className={inputClass}
+    />
+    <button
+      onClick={() => fetchJournals("/journals?page=1")}
+      className="px-4 py-2 bg-blue-700 rounded-xl text-white font-medium hover:bg-blue-800 transition"
+    >
+      اعمال فیلتر
+    </button>
+  </div>
+</div>
+
+
+      {/* Form */}
+      <div className="form-container">
+        <h2 className="text-center text-xl font-semibold mb-6 text-white">
+          {editing ? "ویرایش ژورنال" : "ثبت ژورنال جدید"}
+        </h2>
+        <form onSubmit={handleSubmit}>
+          <div className="form-grid">
+            <div>
+              <label>تاریخ ثبت</label>
+              <input
+                type="date"
+                name="journal_date"
+                value={form.journal_date}
+                onChange={handleChange}
+                className={inputClass}
+              />
+            </div>
+
+            <div>
+              <label>نوع ثبت</label>
               <select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-                className="border rounded-lg p-2"
+                name="entry_type"
+                value={form.entry_type}
+                onChange={handleChange}
+                className={inputClass}
               >
-                <option value="">همه نوع‌ها</option>
                 {ENTRY_TYPES.map((t) => (
-                  <option key={t} value={t}>{t}</option>
+                  <option key={t} value={t}>
+                    {ENTRY_TYPE_FA[t]}
+                  </option>
                 ))}
               </select>
+            </div>
 
-              <input type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} className="border rounded-lg p-2" />
-              <input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} className="border rounded-lg p-2" />
+            <div>
+              <label>توضیحات</label>
+              <input
+                type="text"
+                name="description"
+                value={form.description}
+                onChange={handleChange}
+                className={inputClass}
+              />
+            </div>
 
-              <button onClick={() => fetchJournals()} className="bg-blue-700 text-white rounded-lg">
-                اعمال فیلتر
-              </button>
+            <div>
+              <label>مبلغ</label>
+              <input
+                type="number"
+                name="amount"
+                value={form.amount}
+                onChange={handleChange}
+                className={inputClass}
+              />
+            </div>
+
+            <div>
+              <label>نوع رویداد</label>
+              <select
+                name="ref_type"
+                value={form.ref_type}
+                onChange={handleChange}
+                className={inputClass}
+              >
+                <option value="">انتخاب کنید</option>
+                {[...new Set(registrations.map((r) => r.reg_type))].map((t) => (
+                  <option key={t} value={t}>
+                    {REF_TYPE_FA[t] ?? t}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label>نام منبع</label>
+              <select
+                name="ref_id"
+                value={form.ref_id}
+                onChange={handleChange}
+                disabled={!form.ref_type}
+                className={inputClass}
+              >
+                <option value="">انتخاب کنید</option>
+                {filteredRegistrations.map((r) => (
+                  <option key={r.reg_id} value={r.reg_id}>
+                    {r.full_name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
-          {/* فرم */}
-          <div className="bg-white rounded-xl shadow p-6 mb-8">
-            <h2 className="text-lg font-semibold mb-4 text-center">
-              {editing ? "ویرایش ژورنال" : "ثبت ژورنال"}
-            </h2>
-
-            <form onSubmit={handleSubmit}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* تاریخ و توضیحات */}
-                <div>
-                  <label className="text-sm">تاریخ</label>
-                  <input
-                    type="date"
-                    name="journal_date"
-                    value={form.journal_date}
-                    onChange={handleChange}
-                    className="w-full border rounded-lg p-2"
-                  />
-                </div>
-                   {/* Entry Type */}
-                <div>
-                  <label className="text-sm">نوع Entry</label>
-                  <select
-                    name="entry_type"
-                    value={form.entry_type}
-                    onChange={handleChange}
-                    className="w-full border rounded-lg p-2"
-                  >
-                    {ENTRY_TYPES.map((t) => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </select>
-                </div>
-
-
-
-
-
-                <div>
-                  <label className="text-sm">شرح</label>
-                  <input
-                    type="text"
-                    name="description"
-                    value={form.description}
-                    onChange={handleChange}
-                    className="w-full border rounded-lg p-2"
-                  />
-                </div>
-
-               
-                {/* Amount */}
-                <div>
-                  <label className="text-sm">مبلغ</label>
-                  <input
-                    type="number"
-                    name="amount"
-                    value={form.amount}
-                    onChange={handleChange}
-                    className="w-full border rounded-lg p-2"
-                  />
-                </div>
-
-                {/* ref_type */}
-                <div>
-                  <label className="text-sm">نوع رویداد</label>
-                  <select
-                    name="ref_type"
-                    value={form.ref_type}
-                    onChange={handleChange}
-                    className="w-full border rounded-lg p-2"
-                  >
-                    <option value="">انتخاب کنید</option>
-                    {[...new Set(registrations.map(r => r.reg_type))].map(t => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </select>
-                </div>
-
-             <select
-  name="ref_id"
-  value={form.ref_id}
-  onChange={handleChange}
-  className="w-full border rounded-lg p-2"
-  disabled={!form.ref_type}
->
-  <option value="">انتخاب کنید</option>
-  {filteredRegistrations.map(r => (
-    <option key={r.reg_id} value={r.reg_id}>
-      {r.full_name} {/* ← اینجا فول نیم نمایش داده می‌شود */}
-    </option>
-  ))}
-</select>
-
-              </div>
-
-              <div className="text-center mt-5">
-                <button className="bg-blue-700 hover:bg-blue-800 text-white px-8 py-2 rounded-lg">
-                  {editing ? "بروزرسانی" : "ذخیره"}
-                </button>
-              </div>
-            </form>
+          <div className="text-center mt-6">
+            <button className="px-10 py-2 bg-blue-700 rounded-xl text-white font-semibold hover:bg-blue-800 transition">
+              {editing ? "بروزرسانی" : "ذخیره"}
+            </button>
           </div>
- {/* جدول */}
-<div className="bg-white rounded-xl shadow overflow-x-auto">
-  <table className="w-full text-sm text-center">
-    <thead className="bg-blue-100 text-blue-900">
+        </form>
+      </div>
+ {/* Table */}
+<div className="table-container">
+  <table>
+    <thead>
       <tr>
-        <th className="p-3">تاریخ</th>
-        <th className="p-3">نوع</th>
-        <th className="p-3">شرح</th>
-        <th className="p-3">مبلغ</th>
-        <th className="p-3">منبع</th> {/* ref_type به فارسی */}
-        <th className="p-3">نام منبع</th>
-        <th className="p-3">عملیات</th>
+        <th>تاریخ</th>
+        <th>نوع</th>
+        <th>توضیحات</th>
+        <th>مبلغ</th>
+        <th>منبع</th>
+        <th>نام منبع</th>
+        <th>عملیات</th>
       </tr>
     </thead>
     <tbody>
-      {journals.length ? journals.map((j) => {
-        // پیدا کردن نام مرتبط با ref_id و ref_type
-        const refObj = registrations.find(r => r.reg_type === j.ref_type && r.reg_id === j.ref_id);
-        const refName = refObj ? refObj.full_name : j.ref_id; // اگر پیدا نشد، آی‌دی نمایش داده شود
-
-        // ترجمه ref_type به فارسی
-        let refTypeFa = "";
-        switch(j.ref_type){
-          case "sale": refTypeFa = "فروش"; break;
-          case "parchase": refTypeFa = "خرید"; break;
-          case "payment_in": refTypeFa = "دریافت وجه"; break;
-          case "payment_out": refTypeFa = "پرداخت وجه"; break;
-          case "parchase_due": refTypeFa = "بدهی خرید"; break;
-          default: refTypeFa = j.ref_type; // اگر چیز دیگری بود همان را نشان بده
-        }
-
-        return (
-          <tr key={j.id} className="border-t hover:bg-gray-50">
-            <td className="p-2">{j.journal_date}</td>
-            <td className="p-2">{j.entry_type === "debit" ? "بدهکار" : "بستانکار"}</td>
-            <td className="p-2">{j.description || "-"}</td>
-            <td className="p-2">{j.amount}</td>
-            <td className="p-2">{refTypeFa}</td> {/* ← نمایش فارسی منبع */}
-            <td className="p-2">{refName}</td> {/* ← نام واقعی نمایش داده می‌شود */}
-            <td className="p-2 space-x-2 space-x-reverse">
-              <button onClick={() => handleEdit(j)} className="bg-yellow-400 px-3 py-1 rounded text-white">ویرایش</button>
-              <button onClick={() => handleDelete(j.id)} className="bg-red-600 px-3 py-1 rounded text-white">حذف</button>
+      {journals.length
+        ? journals.map((j) => {
+            const refObj = registrations.find(
+              (r) => r.reg_type === j.ref_type && r.reg_id === j.ref_id
+            );
+            return (
+              <tr key={j.id}>
+                <td>{j.journal_date}</td>
+                <td>{ENTRY_TYPE_FA[j.entry_type]}</td>
+                <td>{j.description || "-"}</td>
+                <td>{j.amount}</td>
+                <td>{REF_TYPE_FA[j.ref_type] ?? j.ref_type}</td>
+                <td>{refObj ? refObj.full_name : j.ref_id}</td>
+                <td className="space-x-2 space-x-reverse">
+                  <button
+                    onClick={() => handleEdit(j)}
+                    className="edit"
+                  >
+                    ویرایش
+                  </button>
+                  <button
+                    onClick={() => handleDelete(j.id)}
+                    className="delete"
+                  >
+                    حذف
+                  </button>
+                </td>
+              </tr>
+            );
+          })
+        : (
+          <tr>
+            <td colSpan="7" className="text-center text-gray-300 p-6">
+              رکوردی یافت نشد
             </td>
           </tr>
-        )
-      }) : (
-        <tr>
-          <td colSpan="7" className="p-6 text-gray-500">رکوردی یافت نشد</td>
-        </tr>
-      )}
+        )}
     </tbody>
   </table>
 </div>
 
 
-
-          {/* pagination */}
-          {pagination.last_page > 1 && (
-            <div className="flex justify-center gap-3 mt-6">
-              {pagination.prev_page_url && (
-                <button onClick={() => fetchJournals(pagination.prev_page_url)} className="px-4 py-1 bg-white rounded shadow">
-                  قبلی
-                </button>
-              )}
-              {pagination.next_page_url && (
-                <button onClick={() => fetchJournals(pagination.next_page_url)} className="px-4 py-1 bg-white rounded shadow">
-                  بعدی
-                </button>
-              )}
-            </div>
+      {/* Pagination */}
+      {pagination.last_page > 1 && (
+        <div className="flex justify-center gap-4 mt-6">
+          {pagination.prev_page_url && (
+            <button
+              onClick={() => fetchJournals(pagination.prev_page_url)}
+              className="px-5 py-2 bg-blue-700 rounded-xl text-white hover:bg-blue-800 transition"
+            >
+              قبلی
+            </button>
+          )}
+          {pagination.next_page_url && (
+            <button
+              onClick={() => fetchJournals(pagination.next_page_url)}
+              className="px-5 py-2 bg-blue-700 rounded-xl text-white hover:bg-blue-800 transition"
+            >
+              بعدی
+            </button>
           )}
         </div>
-      </div>
-    </MainLayoutpur>
+      )}
+    </MainLayoutjur>
   );
 }

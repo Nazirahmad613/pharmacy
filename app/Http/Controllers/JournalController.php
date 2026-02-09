@@ -14,26 +14,35 @@ class JournalController extends Controller
        لیست ژورنال‌ها
     ========================= */
     public function index(Request $request)
-    {
-        $query = Journal::with('registration', 'user');
+{
+    $query = Journal::with('registration', 'user');
 
-        // فیلتر بر اساس نوع رویداد (ref_type)
-        if ($request->filled('type')) {
-            $query->where('ref_type', $request->type);
-        }
-
-        // فیلتر بر اساس تاریخ
-        if ($request->filled('from')) {
-            $query->whereDate('journal_date', '>=', $request->from);
-        }
-        if ($request->filled('to')) {
-            $query->whereDate('journal_date', '<=', $request->to);
-        }
-
-        return response()->json(
-            $query->orderBy('journal_date', 'desc')->get()
-        );
+    // فیلتر نوع ثبت (entry_type)
+    if ($request->filled('type')) {
+        $query->where('entry_type', $request->type);
     }
+
+    // فیلتر تاریخ
+    if ($request->filled('from')) {
+        $query->whereDate('journal_date', '>=', $request->from);
+    }
+    if ($request->filled('to')) {
+        $query->whereDate('journal_date', '<=', $request->to);
+    }
+
+    // فیلتر بر اساس نوع رویداد و نام منبع
+    if ($request->filled('ref_type')) {
+        $query->where('ref_type', $request->ref_type);
+    }
+    if ($request->filled('ref_id')) {
+        $query->where('ref_id', $request->ref_id);
+    }
+
+    return response()->json(
+        $query->orderBy('journal_date', 'desc')->get()
+    );
+}
+
 
     /* =========================
        نمایش یک ژورنال
