@@ -54,24 +54,38 @@ html, body {
   text-align: center;         
 }
 
+/* ===== input / select / textarea ===== */
 .form-container input,
-.form-container select {
+.form-container select,
+.form-container textarea {
   width: 100%;
   padding: 3px 6px;       
   background: #122b55;
   border: 1px solid #1e3a8a;
-  color: #000000;
+  color: #ffffff;
   border-radius: 5px;           
   font-size: 12px;
+  outline: none;
 }
 
-/* placeholder سیاه */
+.form-container input:focus,
+.form-container select:focus,
+.form-container textarea:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 5px rgba(59,130,246,0.5);
+}
+
 .form-container ::placeholder {
-  color: #000000;
+  color: #cfe3ff;
   opacity: 0.7;
 }
 
-/* ===== جدول اطلاعات ژورنال ===== */
+.form-container textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* ===== جدول ===== */
 .table-container {
   background: #0b1d3a;
   border-radius: 8px;           
@@ -98,27 +112,26 @@ html, body {
   padding: 5px 4px;             
   border-bottom: 1px solid #2c3e8c;
   text-align: center;
-  min-width: 80px;
-  box-sizing: border-box;
 }
 
 .table-container tr:hover {
   background-color: #0f1c3d;
-  transition: background-color 0.2s;
 }
 
+/* ===== دکمه‌های جدول ===== */
 .table-container td button {
-  padding: 3px 5px;             
+  padding: 3px 6px;
   border-radius: 4px;
-  font-size: 10px;              
+  font-size: 10px;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.2s;
+  border: none;
 }
 
 .table-container td button.edit {
   background-color: #fbbf24;
-  color: #000;
+  color: #000 !important;
 }
 
 .table-container td button.edit:hover {
@@ -127,24 +140,36 @@ html, body {
 
 .table-container td button.delete {
   background-color: #ef4444;
-  color: #fff;
+  color: #ffffff !important;
 }
 
 .table-container td button.delete:hover {
   background-color: #b91c1c;
 }
 
-/* ===== سفید شدن تمام متن‌ها ===== */
-.main-layout,
-.main-layout * {
-  color: #ffffff !important;
+/* ===== سفید شدن متن‌ها (به‌جز دکمه‌ها) ===== */
+.main-layout {
+  color: #ffffff;
 }
 
-/* ===== دکمه ثبت نسخه وسط صفحه ===== */
+.main-layout *:not(button) {
+  color: #ffffff;
+}
+
+/* ===== دکمه ثبت ===== */
 button.edit {
   display: block;
   margin: 25px auto;  
-  background-color: #000;  
-  height: 28px;         
-  width: 150px;         
+  background-color: #2563eb;   /* آبی واضح */
+  color: #ffffff !important;
+  height: 32px;         
+  width: 160px;
+  border-radius: 6px;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+}
+
+button.edit:hover {
+  background-color: #1e40af;
 }

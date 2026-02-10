@@ -42,42 +42,53 @@ html, body {
   box-shadow: 0 5px 15px rgba(0,0,0,0.4);
 }
 
- /* ===== فرم دوم (آیتم‌های فروش) ===== */
+/* ===== فرم ===== */
 .form-grid div {
   display: flex;
   flex-direction: column;
 }
 
 .form-grid label {
-  color: #cfe3ff;      /* رنگ متن label */
+  color: #cfe3ff;
   font-size: 12px;
   margin-bottom: 3px;
 }
 
+/* 🔥 اصلاح اصلی اینجاست */
 .form-grid input,
-.form-grid select {
+.form-grid select,
+.form-grid textarea {
   width: 100%;
   padding: 6px 8px;
-  background: #122b55;   /* رنگ پس‌زمینه آبی تیره */
+  background: #122b55;        /* آبی تیره مثل بقیه */
   border: 1px solid #1e3a8a;
-  color: #ffffff;         /* متن سفید */
+  color: #ffffff;
   border-radius: 5px;
   font-size: 12px;
   outline: none;
   transition: all 0.2s;
 }
 
+/* فوکِس */
 .form-grid input:focus,
-.form-grid select:focus {
+.form-grid select:focus,
+.form-grid textarea:focus {
   border-color: #3b82f6;
   box-shadow: 0 0 5px rgba(59,130,246,0.5);
+  background: #122b55;
 }
 
+/* placeholder */
 .form-grid ::placeholder {
   color: #cfe3ff;
   opacity: 0.7;
 }
 
+/* textarea خاص */
+.form-grid textarea {
+  resize: vertical;
+  min-height: 80px;
+}
 
 /* ===== جدول ===== */
 .table-container {
@@ -129,7 +140,7 @@ html, body {
   background-color: #b91c1c;
 }
 
-/* ===== دکمه ثبت فروش ===== */
+/* ===== دکمه ===== */
 button.edit {
   display: block;
   margin: 25px auto;
