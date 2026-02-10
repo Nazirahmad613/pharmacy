@@ -14,44 +14,42 @@ class JournalController extends Controller
        لیست ژورنال‌ها
     ========================= */
     public function index(Request $request)
-{
-    $query = Journal::with('registration', 'user');
+    {
+        $query = Journal::with('registration', 'user');
 
-    // فیلتر نوع ثبت (entry_type)
-    if ($request->filled('type')) {
-        $query->where('entry_type', $request->type);
-    }
+        if ($request->filled('type')) {
+            $query->where('entry_type', $request->type);
+        }
 
-    // فیلتر تاریخ
-    if ($request->filled('from')) {
-        $query->whereDate('journal_date', '>=', $request->from);
-    }
-    if ($request->filled('to')) {
-        $query->whereDate('journal_date', '<=', $request->to);
-    }
+        if ($request->filled('from')) {
+            $query->whereDate('journal_date', '>=', $request->from);
+        }
 
-    // فیلتر بر اساس نوع رویداد و نام منبع
-    if ($request->filled('ref_type')) {
-        $query->where('ref_type', $request->ref_type);
-    }
-    if ($request->filled('ref_id')) {
-        $query->where('ref_id', $request->ref_id);
-    }
+        if ($request->filled('to')) {
+            $query->whereDate('journal_date', '<=', $request->to);
+        }
 
-    return response()->json(
-        $query->orderBy('journal_date', 'desc')->get()
-    );
-}
+        if ($request->filled('ref_type')) {
+            $query->where('ref_type', $request->ref_type);
+        }
 
+        if ($request->filled('ref_id')) {
+            $query->where('ref_id', $request->ref_id);
+        }
+
+        return response()->json(
+            $query->orderBy('journal_date', 'desc')->get()
+        );
+    }
 
     /* =========================
        نمایش یک ژورنال
     ========================= */
     public function show(Journal $journal)
     {
-        $journal->load('user', 'registration');
-
-        return response()->json($journal);
+        return response()->json(
+            $journal->load('user', 'registration')
+        );
     }
 
     /* =========================
@@ -68,7 +66,6 @@ class JournalController extends Controller
             'ref_id'       => 'required|integer',
         ]);
 
-        // بررسی صحت ref_type و ref_id در جدول registrations
         $exists = Registrations::where('reg_type', $validated['ref_type'])
             ->where('reg_id', $validated['ref_id'])
             ->exists();
@@ -86,12 +83,12 @@ class JournalController extends Controller
 
         return response()->json([
             'message' => 'ژورنال با موفقیت ذخیره شد.',
-            'journal' => $journal->load('registration') // نام کامل ثبت‌نام برای نمایش
+            'journal' => $journal->load('registration')
         ], 201);
     }
 
     /* =========================
-       بروزرسانی ژورنال
+       ویرایش ژورنال
     ========================= */
     public function update(Request $request, Journal $journal)
     {
@@ -123,7 +120,7 @@ class JournalController extends Controller
     }
 
     /* =========================
-       حذف ژورنال
+       حذف
     ========================= */
     public function destroy(Journal $journal)
     {
@@ -154,49 +151,18 @@ class JournalController extends Controller
     }
 
     /* =========================
-       لیست registrations برای select
-       با full_name
+       لیست registrations
     ========================= */
     public function registrations(Request $request)
     {
         $query = Registrations::query();
 
         if ($request->filled('type')) {
-            $query->where('reg_type', $request->type); // فقط از reg_type استفاده شود
+            $query->where('reg_type', $request->type);
         }
 
-        // فقط ستون‌های لازم: reg_id و full_name
-        $registrations = $query->select('reg_id', 'full_name', 'reg_type')->get();
-
-        return response()->json($registrations);
-
-$exists = Registrations::where('reg_id', $validated['ref_id'])
-    ->where('reg_type', $validated['ref_type']) // شرط اینجا باشد
-    ->exists();
-
-if (!$exists) {
-    return response()->json([
-        'message' => 'رویداد انتخاب‌شده معتبر نیست.'
-    ], 422);
-}
-
-$journal = Journal::create([
-    ...$validated,
-    'user_id' => Auth::id(),
-]);
-
-// فقط اینجا eager load بدون شرط مشکل‌ساز
-return response()->json([
-    'message' => 'ژورنال با موفقیت ذخیره شد.',
-    'journal' => $journal->load('registration') // بدون شرط اضافی
-], 201);
-
-
-
-
-
-
-
-
+        return response()->json(
+            $query->select('reg_id', 'full_name', 'reg_type')->get()
+        );
     }
 }

@@ -42,13 +42,19 @@ export default function JournalPage() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const ENTRY_TYPES = ["debit", "credit"];
-
   const ROWS_PER_PAGE = 4;
   const [currentPage, setCurrentPage] = useState(1);
 
+  /* ===== دریافت ژورنال‌ها و منابع ===== */
   const fetchJournals = async () => {
     try {
-      const res = await api.get("/journals");
+      const res = await api.get("/journals", {
+        params: {
+          type: filterType || undefined,
+          from: filterFrom || undefined,
+          to: filterTo || undefined,
+        },
+      });
       setJournals((res.data.data ?? res.data ?? []).reverse());
       setCurrentPage(1);
     } catch {
@@ -68,8 +74,9 @@ export default function JournalPage() {
   useEffect(() => {
     fetchJournals();
     fetchRegistrations();
-  }, []);
+  }, [filterType, filterFrom, filterTo]);
 
+  /* ===== جستجوی هوشمند ===== */
   const filteredJournals = useMemo(() => {
     if (!searchTerm.trim()) return journals;
     const term = searchTerm.toLowerCase();
@@ -91,6 +98,7 @@ export default function JournalPage() {
     currentPage * ROWS_PER_PAGE
   );
 
+  /* ===== تغییر فرم ===== */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((p) => ({
@@ -100,11 +108,32 @@ export default function JournalPage() {
     }));
   };
 
+  /* ===== ویرایش ژورنال ===== */
+  const handleEdit = (journal) => {
+    setForm({
+      id: journal.id,
+      journal_date: journal.journal_date,
+      description: journal.description ?? "",
+      entry_type: journal.entry_type,
+      amount: journal.amount,
+      ref_type: journal.ref_type,
+      ref_id: String(journal.ref_id), // ✅ اصلاح حیاتی
+    });
+    setEditing(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  /* ===== ثبت / ویرایش ===== */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!form.amount || form.amount <= 0) {
       toast.error("مبلغ باید بزرگتر از صفر باشد");
+      return;
+    }
+
+    if (!form.ref_type || !form.ref_id) {
+      toast.error("نوع منبع و نام منبع الزامی است");
       return;
     }
 
@@ -114,13 +143,15 @@ export default function JournalPage() {
       entry_type: form.entry_type,
       amount: Number(form.amount),
       ref_type: form.ref_type,
-      ref_id: Number(form.ref_id),
+      ref_id: Number(form.ref_id), // مثل قبل
     };
 
     try {
-      editing
-        ? await api.put(`/journals/${form.id}`, payload)
-        : await api.post("/journals", payload);
+      if (editing) {
+        await api.put(`/journals/${form.id}`, payload);
+      } else {
+        await api.post("/journals", payload);
+      }
 
       toast.success(editing ? "ویرایش شد" : "ذخیره شد");
 
@@ -133,27 +164,14 @@ export default function JournalPage() {
         ref_type: "",
         ref_id: "",
       });
-
       setEditing(false);
       fetchJournals();
     } catch (err) {
-      toast.error("خطا در ذخیره");
+      toast.error(err.response?.data?.message || "خطا در ذخیره");
     }
   };
 
-  const handleEdit = (j) => {
-    setForm({
-      id: j.id,
-      journal_date: j.journal_date,
-      description: j.description ?? "",
-      entry_type: j.entry_type,
-      amount: String(j.amount),
-      ref_type: j.ref_type,
-      ref_id: String(j.ref_id), // ⭐ حیاتی
-    });
-    setEditing(true);
-  };
-
+  /* ===== حذف ===== */
   const handleDelete = async (id) => {
     if (!confirm("حذف شود؟")) return;
     await api.delete(`/journals/${id}`);
@@ -167,7 +185,6 @@ export default function JournalPage() {
   const inputClass =
     "w-full rounded-xl px-3 py-1 text-sm bg-[#122b55] text-white border border-[#1e3a8a]";
 
- 
   return (
     <MainLayoutjur>
       <ToastContainer />
@@ -200,7 +217,7 @@ export default function JournalPage() {
         </div>
       </div>
 
-      {/* ===== ثبت / ویرایش ژورنال ===== */}
+      {/* ===== فرم ثبت / ویرایش ===== */}
       <div className="form-container mb-10">
         <h2 className="text-center text-white mb-4">
           {editing ? "ویرایش ژورنال" : "ثبت ژورنال جدید"}
@@ -228,7 +245,9 @@ export default function JournalPage() {
             <select name="ref_id" value={form.ref_id} onChange={handleChange} disabled={!form.ref_type} className={inputClass}>
               <option value="">نام منبع</option>
               {filteredRegistrations.map((r) => (
-                <option key={r.reg_id} value={r.reg_id}>{r.full_name}</option>
+                <option key={r.reg_id} value={String(r.reg_id)}>
+                  {r.full_name}
+                </option>
               ))}
             </select>
           </div>
@@ -241,7 +260,7 @@ export default function JournalPage() {
         </form>
       </div>
 
-      {/* ===== جدول ===== */}
+      {/* ===== جدول ژورنال‌ها ===== */}
       <div className="table-container">
         <table>
           <thead>
@@ -257,9 +276,7 @@ export default function JournalPage() {
           </thead>
           <tbody>
             {currentRows.length ? currentRows.map((j) => {
-              const ref = registrations.find(
-                (r) => r.reg_type === j.ref_type && r.reg_id === j.ref_id
-              );
+              const ref = registrations.find(r => r.reg_type === j.ref_type && r.reg_id === j.ref_id);
               return (
                 <tr key={j.id}>
                   <td>{j.journal_date}</td>
@@ -293,5 +310,3 @@ export default function JournalPage() {
     </MainLayoutjur>
   );
 }
-
-
