@@ -1,4 +1,4 @@
- import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import MainLayoutpur from "../../../../components/MainLayoutpur";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -10,7 +10,7 @@ export default function SaleForm() {
   const [saleDate, setSaleDate] = useState("");
   const [categories, setCategories] = useState([]);
   const [medications, setMedications] = useState([]);
-  const [suppliers, setSuppliers] = useState([]); // از جدول registrations با reg_type=supplier
+  const [suppliers, setSuppliers] = useState([]);
   const [customers, setCustomers] = useState([]);
 
   const [discount, setDiscount] = useState(0);
@@ -61,31 +61,15 @@ export default function SaleForm() {
     api.get("/categories").then(res => setCategories(res.data.data ?? res.data));
     api.get("/medications").then(res => setMedications(res.data.data ?? res.data));
 
-    // حمایت‌کننده‌ها از registrations با reg_type = supplier
     api.get("/registrations")
       .then(res => {
         const data = res.data.data ?? res.data ?? [];
-        const onlySuppliers = Array.isArray(data)
-          ? data.filter(r => r.reg_type === "supplier")
-          : [];
-        setSuppliers(onlySuppliers);
+        setSuppliers(data.filter(r => r.reg_type === "supplier"));
+        setCustomers(data.filter(r => r.reg_type === "customer"));
       })
       .catch(err => {
-        console.error("Error loading suppliers:", err);
+        console.error("Error loading registrations:", err);
         setSuppliers([]);
-      });
-
-    // مشتری‌ها از registrations با reg_type = customer
-    api.get("/registrations")
-      .then(res => {
-        const data = res.data.data ?? res.data ?? [];
-        const onlyCustomers = Array.isArray(data)
-          ? data.filter(r => r.reg_type === "customer")
-          : [];
-        setCustomers(onlyCustomers);
-      })
-      .catch(err => {
-        console.error("Error loading customers:", err);
         setCustomers([]);
       });
   }, [api]);
@@ -98,7 +82,6 @@ export default function SaleForm() {
     m => Number(m.med_id) === Number(formItem.med_id)
   );
 
-  // ================= فیلتر حمایت‌کننده‌ها بر اساس دوا =================
   const filteredSuppliers = selectedMedication
     ? suppliers.filter(s => {
         const supList = selectedMedication.supplier_id;
@@ -107,7 +90,6 @@ export default function SaleForm() {
       })
     : [];
 
-  // ================= تغییر فیلدهای آیتم =================
   const handleChange = (field, value) => {
     let updated = { ...formItem, [field]: value };
 
@@ -131,7 +113,6 @@ export default function SaleForm() {
     setFormItem(updated);
   };
 
-  // ================= اضافه کردن آیتم با Enter =================
   const handleKeyDown = (e) => {
     if (e.key !== "Enter") return;
     e.preventDefault();
@@ -167,7 +148,6 @@ export default function SaleForm() {
     setSaleItems(saleItems.filter(item => item.id !== id));
   };
 
-  // ================= ثبت فروش =================
   const handleSaveSale = async () => {
     if (saleItems.length === 0) {
       toast.error("❌ حداقل یک آیتم اضافه کنید");
@@ -220,32 +200,26 @@ export default function SaleForm() {
       toast.error("❌ خطا در ثبت فروش");
     }
   };
+
   return (
     <MainLayoutpur>
       <ToastContainer />
 
-      {/* ================= اطلاعات اصلی ================= */}
       <div className="form-container">
- <h2 style={{ textAlign: "center" }}> فروشات </h2>
+        <h2 style={{ textAlign: "center" }}>فروشات</h2>
 
         <label>تاریخ فروش</label>
         <input type="date" value={saleDate} onChange={e => setSaleDate(e.target.value)} />
-        <label>مشتری</label>
-<select
-  value={formItem.cust_id}
-  onChange={e => handleChange("cust_id", e.target.value)}
->
-  <option value="">-- انتخاب مشتری --</option>
-  {customers.map((c, index) => (
-    <option
-      key={c.id ?? c.reg_id ?? `cust-${index}`}
-      value={c.id ?? c.reg_id}
-    >
-      {c.full_name ?? c.name}
-    </option>
-  ))}
-</select>
 
+        <label>مشتری</label>
+        <select value={formItem.cust_id} onChange={e => handleChange("cust_id", e.target.value)}>
+          <option value="">-- انتخاب مشتری --</option>
+          {customers.map((c, index) => (
+            <option key={c.id ?? c.reg_id ?? `cust-${index}`} value={c.id ?? c.reg_id}>
+              {c.full_name ?? c.name}
+            </option>
+          ))}
+        </select>
 
         <label>مجموع فروش</label>
         <input type="number" value={totalSale} readOnly />
@@ -266,12 +240,7 @@ export default function SaleForm() {
         <input type="text" value={paymentStatus} readOnly />
       </div>
 
-      {/* ================= فرم آیتم‌ها ================= */}
-      <form
-        className="medication-page"
-        style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}
-        onKeyDown={handleKeyDown}
-      >
+      <form className="form-grid" onKeyDown={handleKeyDown}>
         <div>
           <label>کتگوری</label>
           <select value={formItem.category_id} onChange={e => handleChange("category_id", e.target.value)}>
@@ -292,24 +261,17 @@ export default function SaleForm() {
           </select>
         </div>
 
-                <div>
-  <label>حمایت‌کننده</label>
-  <select
-    value={formItem.supplier_id}
-    onChange={e => handleChange("supplier_id", e.target.value)}
-  >
-    <option value="">-- انتخاب حمایت‌کننده --</option>
-    {filteredSuppliers.map((s, index) => (
-      <option
-        key={s.reg_id ?? `sup-${index}`}
-        value={s.reg_id}
-      >
-        {s.full_name ?? s.name ?? s.supplier_name}
-      </option>
-    ))}
-  </select>
-</div>
-
+        <div>
+          <label>حمایت‌کننده</label>
+          <select value={formItem.supplier_id} onChange={e => handleChange("supplier_id", e.target.value)}>
+            <option value="">-- انتخاب حمایت‌کننده --</option>
+            {filteredSuppliers.map((s, index) => (
+              <option key={s.reg_id ?? `sup-${index}`} value={s.reg_id}>
+                {s.full_name ?? s.name ?? s.supplier_name}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <div>
           <label>نوع دوا</label>
@@ -337,77 +299,47 @@ export default function SaleForm() {
         </div>
       </form>
 
-      {/* ================= لیست آیتم‌ها ================= */}
-      <h4>موارد اضافه شده</h4>
-      {saleItems.length > 0 && (
-        <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "10px" }}>
-          <thead>
-            <tr style={{ backgroundColor: "#04032aff" }}>
-              <th style={{ padding: "8px", textAlign:"center" }}>شماره</th>
-              <th style={{ padding: "8px", textAlign:"center" }}>نوع دوا</th>
-              <th style={{ padding: "8px", textAlign:"center" }}>تعداد</th>
-              <th style={{ padding: "8px", textAlign:"center" }}>قیمت واحد</th>
-              <th style={{ padding: "8px", textAlign:"center" }}>قیمت مجموعی</th>
-              <th style={{ padding: "8px", textAlign:"center" }}>تاریخ انقضا</th>
-              <th style={{ padding: "8px", textAlign:"center" }}>عملیات</th>
-            </tr>
-          </thead>
-          <tbody>
-            {saleItems.map((item, idx) => (
-              <tr key={item.id}>
-                <td style={{ padding: "8px", textAlign: "center" }}>{idx + 1}</td>
-                <td style={{ padding: "8px", textAlign:"center"}}>{item.type}</td>
-                <td style={{ padding: "8px", textAlign:"center" }}>{item.quantity}</td>
-                <td style={{ padding: "8px", textAlign: "right" }}>{item.unit_sales}</td>
-                <td style={{ padding: "8px", textAlign: "right" }}>{item.total_sales}</td>
-                <td style={{ padding: "8px", textAlign:"center" }}>{item.exp_date}</td>
-                <td style={{ padding: "8px", textAlign: "center" }}>
-                  <button
-                    onClick={() => handleRemoveItem(item.id)}
-                    style={{
-                      backgroundColor: "#ef4444",
-                      color: "white",
-                      padding: "6px 12px",
-                      fontSize: "14px",
-                      border: "none",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      transition: "background-color 0.3s",
-                    }}
-                    onMouseOver={e => (e.currentTarget.style.backgroundColor = "#b91c1c")}
-                    onMouseOut={e => (e.currentTarget.style.backgroundColor = "#ef4444")}
-                  >
-                    حذف
-                  </button>
-                </td>
+      <div className="table-container">
+        {saleItems.length > 0 && (
+          <table>
+            <thead>
+              <tr>
+                <th>شماره</th>
+                <th>نوع دوا</th>
+                <th>تعداد</th>
+                <th>قیمت واحد</th>
+                <th>قیمت مجموعی</th>
+                <th>تاریخ انقضا</th>
+                <th>عملیات</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-
-      {/* ================= دکمه ثبت فروش ================= */}
-      <div style={{ display: "flex", justifyContent: "center", marginTop: "40px" }}>
-        <button
-          onClick={handleSaveSale}
-          style={{
-            backgroundColor: "#3b82f6",
-            color: "white",
-            padding: "12px 30px",
-            fontSize: "18px",
-            border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
-            textAlign: "center",
-            boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-            transition: "background-color 0.3s",
-          }}
-          onMouseOver={e => (e.currentTarget.style.backgroundColor = "#2563eb")}
-          onMouseOut={e => (e.currentTarget.style.backgroundColor = "#3b82f6")}
-        >
-          ثبت فروش
-        </button>
+            </thead>
+            <tbody>
+              {saleItems.map((item, idx) => (
+                <tr key={item.id}>
+                  <td>{idx + 1}</td>
+                  <td>{item.type}</td>
+                  <td>{item.quantity}</td>
+                  <td>{item.unit_sales}</td>
+                  <td>{item.total_sales}</td>
+                  <td>{item.exp_date}</td>
+                  <td>
+                    <button
+                      className="delete"
+                      onClick={() => handleRemoveItem(item.id)}
+                    >
+                      حذف
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
+
+      <button className="edit" onClick={handleSaveSale}>
+        ثبت فروش
+      </button>
     </MainLayoutpur>
   );
 }

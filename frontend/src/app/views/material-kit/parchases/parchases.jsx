@@ -29,7 +29,6 @@ export default function ParchaseForm() {
 
   const [purchasedItems, setPurchasedItems] = useState([]);
 
-  // ================= محاسبه مجموع خرید =================
   useEffect(() => {
     const sum = purchasedItems.reduce(
       (t, i) => t + Number(i.total_price || 0),
@@ -38,13 +37,11 @@ export default function ParchaseForm() {
     setTotalPurchase(sum);
   }, [purchasedItems]);
 
-  // ================= محاسبه باقی‌مانده =================
   useEffect(() => {
     const due = Number(totalPurchase) - Number(par_paid || 0);
     setDuePar(due >= 0 ? due : 0);
   }, [totalPurchase, par_paid]);
 
-  // ================= لود داده‌ها =================
   useEffect(() => {
     api.get("/categories").then(res => setCategories(res.data.data ?? res.data));
     api.get("/medications").then(res => setMedications(res.data.data ?? res.data));
@@ -54,7 +51,6 @@ export default function ParchaseForm() {
     });
   }, [api]);
 
-  // ================= فیلترها =================
   const filteredMedications = medications.filter(
     m => Number(m.category_id) === Number(formItem.category_id)
   );
@@ -63,10 +59,8 @@ export default function ParchaseForm() {
     m => Number(m.med_id) === Number(formItem.med_id)
   );
 
-  // ======= فیلتر سپلایرها بر اساس دوا =======
   const filteredSuppliers = selectedMedication
     ? suppliers.filter(s => {
-        // فرض می‌کنیم هر دوا یک لیست supplier_id دارد
         if (Array.isArray(selectedMedication.supplier_id)) {
           return selectedMedication.supplier_id.includes(s.reg_id);
         }
@@ -74,7 +68,6 @@ export default function ParchaseForm() {
       })
     : [];
 
-  // ================= تغییر فیلد =================
   const handleChange = (field, value) => {
     let updated = { ...formItem, [field]: value };
 
@@ -98,7 +91,6 @@ export default function ParchaseForm() {
     setFormItem(updated);
   };
 
-  // ================= Enter =================
   const handleKeyDown = (e) => {
     if (e.key !== "Enter") return;
     e.preventDefault();
@@ -129,12 +121,10 @@ export default function ParchaseForm() {
     });
   };
 
-  // ================= حذف آیتم =================
   const handleRemoveItem = (index) => {
     setPurchasedItems(purchasedItems.filter((_, i) => i !== index));
   };
 
-  // ================= ثبت خرید =================
   const handleSavePurchase = async () => {
     if (purchasedItems.length === 0) {
       toast.error("❌ حداقل یک آیتم اضافه کنید");
@@ -166,7 +156,7 @@ export default function ParchaseForm() {
     <MainLayoutpur>
       <ToastContainer />
 
-      {/* ================= اطلاعات اصلی ================= */}
+      {/* ===== فرم اصلی ===== */}
       <div className="form-container">
         <h2 style={{ textAlign: "center", marginBottom: "20px" }}>ثبت خرید دوا</h2>
 
@@ -183,12 +173,8 @@ export default function ParchaseForm() {
         <input type="number" value={due_par} readOnly />
       </div>
 
-      {/* ================= فرم آیتم‌ها ================= */}
-      <form
-        className="medication-page"
-        style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginTop: "20px" }}
-        onKeyDown={handleKeyDown}
-      >
+      {/* ===== فرم آیتم‌ها ===== */}
+      <form className="form-grid" onKeyDown={handleKeyDown}>
         <div>
           <label>کتگوری</label>
           <select value={formItem.category_id} onChange={e => handleChange("category_id", e.target.value)}>
@@ -245,76 +231,42 @@ export default function ParchaseForm() {
         </div>
       </form>
 
-      {/* ================= جدول آیتم‌ها ================= */}
-      <h4 style={{ marginTop: "30px" }}>موارد اضافه شده</h4>
+      {/* ===== جدول آیتم‌ها ===== */}
       {purchasedItems.length > 0 && (
-        <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "10px" }}>
-          <thead>
-            <tr style={{ backgroundColor: "#04032aff", color: "#ffffff" }}>
-              <th style={{ padding: "8px", textAlign: "center" }}>شماره</th>
-              <th style={{ padding: "8px", textAlign: "center" }}>نوع دوا</th>
-              <th style={{ padding: "8px", textAlign: "center" }}>تعداد</th>
-              <th style={{ padding: "8px", textAlign: "right" }}>قیمت واحد</th>
-              <th style={{ padding: "8px", textAlign: "right" }}>قیمت مجموعی</th>
-              <th style={{ padding: "8px", textAlign: "center" }}>تاریخ انقضا</th>
-              <th style={{ padding: "8px", textAlign: "center" }}>عملیات</th>
-            </tr>
-          </thead>
-          <tbody>
-            {purchasedItems.map((item, idx) => (
-              <tr key={idx} style={{ backgroundColor: "#210733", color: "#ffffff" }}>
-                <td style={{ padding: "8px", textAlign: "center" }}>{idx + 1}</td>
-                <td style={{ padding: "8px", textAlign: "center" }}>{item.type}</td>
-                <td style={{ padding: "8px", textAlign: "center" }}>{item.quantity}</td>
-                <td style={{ padding: "8px", textAlign: "right" }}>{item.unit_price}</td>
-                <td style={{ padding: "8px", textAlign: "right" }}>{item.total_price}</td>
-                <td style={{ padding: "8px", textAlign: "center" }}>{item.exp_date}</td>
-                <td style={{ padding: "8px", textAlign: "center" }}>
-                  <button
-                    onClick={() => handleRemoveItem(idx)}
-                    style={{
-                      backgroundColor: "#ef4444",
-                      color: "white",
-                      padding: "6px 12px",
-                      fontSize: "14px",
-                      border: "none",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      transition: "background-color 0.3s",
-                    }}
-                    onMouseOver={e => (e.currentTarget.style.backgroundColor = "#b91c1c")}
-                    onMouseOut={e => (e.currentTarget.style.backgroundColor = "#ef4444")}
-                  >
-                    حذف
-                  </button>
-                </td>
+        <div className="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>شماره</th>
+                <th>نوع دوا</th>
+                <th>تعداد</th>
+                <th>قیمت واحد</th>
+                <th>قیمت مجموعی</th>
+                <th>تاریخ انقضا</th>
+                <th>عملیات</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {purchasedItems.map((item, idx) => (
+                <tr key={idx}>
+                  <td>{idx + 1}</td>
+                  <td>{item.type}</td>
+                  <td>{item.quantity}</td>
+                  <td>{item.unit_price}</td>
+                  <td>{item.total_price}</td>
+                  <td>{item.exp_date}</td>
+                  <td>
+                    <button className="delete" onClick={() => handleRemoveItem(idx)}>حذف</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
-      <div style={{ display: "flex", justifyContent: "center", marginTop: "40px" }}>
-        <button
-          onClick={handleSavePurchase}
-          style={{
-            backgroundColor: "#3b82f6",
-            color: "white",
-            padding: "12px 30px",
-            fontSize: "18px",
-            border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
-            textAlign: "center",
-            boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-            transition: "background-color 0.3s",
-          }}
-          onMouseOver={e => (e.currentTarget.style.backgroundColor = "#2563eb")}
-          onMouseOut={e => (e.currentTarget.style.backgroundColor = "#3b82f6")}
-        >
-          ثبت خرید
-        </button>
-      </div>
+      {/* ===== دکمه ثبت خرید ===== */}
+      <button className="edit" onClick={handleSavePurchase}>ثبت خرید</button>
     </MainLayoutpur>
   );
 }

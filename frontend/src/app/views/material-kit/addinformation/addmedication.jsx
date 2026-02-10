@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import api from "../../../../api";
-import MainLayoutpm from "../../../../components/MainLayoutpm";
+import MainLayoutpur from "../../../../components/MainLayoutpur";
 
 const MedicationForm = () => {
   const [categories, setCategories] = useState([]);
@@ -26,7 +26,7 @@ const MedicationForm = () => {
       })
       .catch(() => toast.error("❌ خطا در دریافت کتگوری‌ها"));
 
-    // suppliers from registrations
+    // suppliers
     api.get("/registrations")
       .then(res => {
         const data = res.data.data ?? res.data ?? [];
@@ -75,85 +75,90 @@ const MedicationForm = () => {
   };
 
   return (
-    <MainLayoutpm>
-      <div className="medication-page">
-        <div className="form-wrapper">
-          <div className="form-container">
-            <h2 style={{ textAlign: "center" }}>فرم ثبت دوا</h2>
+    <MainLayoutpur>
+      <div className="form-container">
+        <h2 style={{ textAlign: "center" }}>فرم ثبت دوا</h2>
 
-            <form onSubmit={handleSubmit}>
-              {/* category */}
-              <label>انتخاب کتگوری</label>
-              <select
-                name="category_id"
-                value={formData.category_id}
-                onChange={handleChange}
-                required
-              >
-                <option value="">انتخاب کتگوری</option>
-                {categories.map(cat => (
-                  <option
-                    key={cat.category_id}
-                    value={cat.category_id}
-                  >
-                    {cat.category_name}
-                  </option>
-                ))}
-              </select>
-
-              {/* supplier */}
-              <label>انتخاب حمایت‌کننده</label>
-              <select
-                name="supplier_id"
-                value={formData.supplier_id}
-                onChange={handleChange}
-                required
-              >
-                <option value="">انتخاب حمایت‌کننده</option>
-                {suppliers.map(s => (
-                  <option
-                    key={s.reg_id}
-                    value={s.reg_id}
-                  >
-                    {s.full_name || s.name}
-                  </option>
-                ))}
-              </select>
-
-              <label>نوعیت</label>
-              <input
-                type="text"
-                name="type"
-                value={formData.type}
-                onChange={handleChange}
-                required
-              />
-
-              <label>نام عمومی دوا</label>
-              <input
-                type="text"
-                name="gen_name"
-                value={formData.gen_name}
-                onChange={handleChange}
-                required
-              />
-
-              <label>مقدار مصرف</label>
-              <input
-                type="text"
-                name="dosage"
-                value={formData.dosage}
-                onChange={handleChange}
-                required
-              />
-
-              <button type="submit">ثبت</button>
-            </form>
-
+        <form onSubmit={handleSubmit} className="form-grid">
+          {/* category */}
+          <div>
+            <label>انتخاب کتگوری</label>
+            <select
+              name="category_id"
+              value={formData.category_id}
+              onChange={handleChange}
+              required
+            >
+              <option value="">انتخاب کتگوری</option>
+              {categories.map(cat => (
+                <option key={cat.category_id} value={cat.category_id}>
+                  {cat.category_name}
+                </option>
+              ))}
+            </select>
           </div>
-        </div>
+
+          {/* supplier */}
+          <div>
+            <label>انتخاب حمایت‌کننده</label>
+            <select
+              name="supplier_id"
+              value={formData.supplier_id}
+              onChange={handleChange}
+              required
+            >
+              <option value="">انتخاب حمایت‌کننده</option>
+              {suppliers.map(s => (
+                <option key={s.reg_id} value={s.reg_id}>
+                  {s.full_name || s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* type */}
+          <div>
+            <label>نوعیت</label>
+            <input
+              type="text"
+              name="type"
+              value={formData.type}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          {/* general name */}
+          <div>
+            <label>نام عمومی دوا</label>
+            <input
+              type="text"
+              name="gen_name"
+              value={formData.gen_name}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          {/* dosage */}
+          <div>
+            <label>مقدار مصرف</label>
+            <input
+              type="text"
+              name="dosage"
+              value={formData.dosage}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          {/* submit button */}
+          <div style={{ gridColumn: "1 / span 2", textAlign: "center" }}>
+            <button type="submit" className="edit">ثبت دوا</button>
+          </div>
+        </form>
       </div>
-    </MainLayoutpm>
+    </MainLayoutpur>
   );
 };
 

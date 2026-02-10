@@ -5,9 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Prescription;
 use App\Models\PrescriptionItem;
 use App\Models\Registrations;
-use App\Models\Journal; // ⬅️ مدل ژورنال
+use App\Models\Journal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class PrescriptionController extends Controller
 {
@@ -30,20 +31,20 @@ class PrescriptionController extends Controller
 
             // ===== ثبت نسخه =====
             $prescription = Prescription::create([
-                'patient_id'           => $request->patient_id,
-                'patient_name'         => $patient->full_name ?? $patient->name ?? null,
-                'patient_age'          => $patient->age ?? null,
-                'patient_phone'        => $patient->phone ?? null,
-                'patient_blood_group'  => $patient->blood_group ?? null,
+                'patient_id'          => $request->patient_id,
+                'patient_name'        => $patient->full_name ?? $patient->name ?? null,
+                'patient_age'         => $patient->age ?? null,
+                'patient_phone'       => $patient->phone ?? null,
+                'patient_blood_group' => $patient->blood_group ?? null,
 
-                'doc_id'               => $request->doc_id,
-                'doc_name'             => $doc->full_name ?? $doc->name ?? null,
+                'doc_id'   => $request->doc_id,
+                'doc_name' => $doc->full_name ?? $doc->name ?? null,
 
-                'pres_num'             => $request->pres_num,
-                'pres_date'            => $request->pres_date,
-                'total_amount'         => $request->total_amount,
-                'discount'             => $request->discount ?? 0,
-                'net_amount'           => $request->net_amount,
+                'pres_num'     => $request->pres_num,
+                'pres_date'    => $request->pres_date,
+                'total_amount' => $request->total_amount,
+                'discount'     => $request->discount ?? 0,
+                'net_amount'   => $request->net_amount,
             ]);
 
             // ===== آیتم‌های نسخه =====
@@ -62,25 +63,30 @@ class PrescriptionController extends Controller
                 ]);
             }
 
-            // ===== ثبت ژورنال =====
-            // بدهکار: مریض
+            // =========================
+            // ثبت ژورنال (ساختار جدید)
+            // =========================
+
+            // 🔴 بدهکار: مریض
             Journal::create([
                 'journal_date' => $request->pres_date,
+                'entry_type'   => 'debit',
+                'amount'       => $request->net_amount,
+                'description'  => 'بدهکاری مریض بابت نسخه شماره ' . $request->pres_num,
                 'ref_type'     => 'prescription',
                 'ref_id'       => $prescription->pres_id,
-                'description'  => 'ثبت نسخه شماره ' . $request->pres_num,
-                'debit'        => $request->net_amount,
-                'credit'       => 0,
+                'user_id'      => Auth::id(),
             ]);
 
-            // بستانکار: فروش دوا
+            // 🟢 بستانکار: فروش دوا
             Journal::create([
                 'journal_date' => $request->pres_date,
+                'entry_type'   => 'credit',
+                'amount'       => $request->net_amount,
+                'description'  => 'فروش دوا بابت نسخه شماره ' . $request->pres_num,
                 'ref_type'     => 'prescription',
                 'ref_id'       => $prescription->pres_id,
-                'description'  => 'فروش دوا بابت نسخه ' . $request->pres_num,
-                'debit'        => 0,
-                'credit'       => $request->net_amount,
+                'user_id'      => Auth::id(),
             ]);
         });
 

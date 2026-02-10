@@ -1,5 +1,5 @@
  import React, { useEffect, useState } from "react";
-import "./MainLayoutpur.css";
+import "./MainLayoutpres.css";
 
 const backgrounds = [
   "/backgrounds/bg1.jpg",
@@ -7,7 +7,7 @@ const backgrounds = [
   "/backgrounds/bg3.jpg",
 ];
 
-export default function MainLayout({ children, title }) {
+export default function MainLayoutpres({ children, title }) {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {

@@ -1,202 +1,165 @@
- /* ===================== */
-/* Global Styles (Prescription / Purchase Form) */
-/* ===================== */
+/* ===== ریست فاصله پیش‌فرض صفحه ===== */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
 
-/* ریشه صفحه */
+/* ===== لایه اصلی با عکس پس‌زمینه ===== */
 .main-layout {
   min-height: 100vh;
   width: 100%;
-
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-
-  padding: 20px;
-  box-sizing: border-box;
-
-  overflow-y: auto;            /* اسکرول عمودی امن */
-
-  color: rgb(253, 253, 253);
-  font-family: "Arial", sans-serif;
-
+  position: relative;           
   background-size: cover;
   background-position: center;
-  background-repeat: no-repeat;
 }
 
-/* ===================== */
-/* عنوان کلی صفحه */
-/* ===================== */
-.layout-title {
+/* ===== لایه آبی روی عکس ===== */
+.background-overlay {
+  position: absolute;
+  inset: 0;                     
   width: 100%;
-  text-align: center;
-
-  font-size: 2.2rem;
-  font-weight: bold;
-  margin-bottom: 15px;
-
-  color: rgb(246, 247, 249);
-  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
+  height: 100%;
+  background: rgba(5, 15, 40, 0.85);
 }
 
-/* ===================== */
-/* کانتینر فرم اصلی */
-/* ===================== */
+/* ===== محتوای صفحه ===== */
+.layout-content {
+  position: relative;
+  z-index: 2;
+  max-width: 1300px;   /* عرض فرم بیشتر شود */
+  margin: auto;
+}
+
+/* ===== فرم ===== */
 .form-container {
-  width: 100%;
-  max-width: 1100px;
-  margin: 0 auto 20px auto;
-
-  background-color: #0b061e;
-  padding: 12px;
-  border-radius: 8px;
-
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  background: #0b1d3a;
+  padding: 12px 25px;      /* padding افقی بیشتر */
+  border-radius: 8px;           
+  margin-bottom: 20px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.4);  
 }
 
-/* لیبل‌ها */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);  /* ⬅️ 5 ستون در یک ردیف */
+  gap: 12px;                              /* فاصله ستون‌ها */
+}
+
 .form-container label {
-  width: 100%;
-  margin-bottom: 4px;
-  font-weight: normal;
-  font-size: 13px;
+  color: #cfe3ff;
+  font-size: 12px;          
 }
 
-/* اینپوت‌ها و سلکت‌ها */
-.form-container input[type="text"],
-.form-container input[type="number"],
-.form-container input[type="date"],
+.form-container input,
 .form-container select {
   width: 100%;
-  padding: 6px 8px;
-  margin-bottom: 6px;
-
-  border: 1px solid #0a041d;
-  border-radius: 6px;
-
-  font-size: 13px;
-  box-sizing: border-box;
+  padding: 3px 6px;       /* ارتفاع کمتر */
+  background: #122b55;
+  border: 1px solid #1e3a8a;
+  color: #000000;
+  border-radius: 5px;           
+  font-size: 12px;
 }
 
-/* دکمه‌های فرم */
-.form-container button {
-  padding: 10px 15px;
-  background-color: #4caf50;
-  color: #fff;
+/* placeholder سیاه */
+.form-container ::placeholder {
+  color: #000000;
+  opacity: 0.7;
+}
 
+/* ===== جدول ===== */
+.table-container {
+  background: #0b1d3a;
+  border-radius: 8px;           
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+  width: 90%;                   /* عرض بیشتر برای هماهنگی */
+  margin: 0 auto 20px auto;
+}
+
+.table-container table {
+  width: 100%;
+  color: white;
+  font-size: 11px;             
+}
+
+.table-container th {
+  background: #122b55;
+  padding: 6px;                 
+}
+
+.table-container td {
+  padding: 4px 6px;              /* ارتفاع کمتر */
+  border-top: 1px solid #1e3a8a;
+}
+
+.table-container tr:hover {
+  background: #122b55;
+}
+
+/* جدول اطلاعات ژورنال */
+.table-container {
+  max-width: 1100px;            
+  overflow-x: auto;
+  padding: 6px;                 
+}
+
+.table-container thead {
+  background-color: #1e3a8a;
+  text-align: center;
+}
+
+.table-container th,
+.table-container td {
+  padding: 5px 4px;             
+  border-bottom: 1px solid #2c3e8c;
+}
+
+.table-container tr:hover {
+  background-color: #0f1c3d;
+  transition: background-color 0.2s;
+}
+
+.table-container td button {
+  padding: 3px 5px;             
+  border-radius: 4px;
+  font-size: 10px;              
   font-weight: bold;
-  border: none;
-  border-radius: 8px;
-
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.form-container button:hover {
-  background-color: #45a049;
+.table-container td button.edit {
+  background-color: #fbbf24;
+  color: #000;
 }
 
-/* ===================== */
-/* فرم آیتم‌ها */
-/* ===================== */
-.medication-page {
-  width: 100%;
-  max-width: 1100px;
-  margin: 0 auto 20px auto;
-
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+.table-container td button.edit:hover {
+  background-color: #f59e0b;
 }
 
-/* ===================== */
-/* جدول آیتم‌ها (اسکرول افقی امن) */
-/* ===================== */
-.items-table-wrapper {
-  width: 100%;
-  max-width: 1100px;
-  margin: 0 auto 20px auto;
-
-  overflow-x: auto;
+.table-container td button.delete {
+  background-color: #ef4444;
+  color: #fff;
 }
 
-/* ===================== */
-/* کارت آیتم‌ها */
-/* ===================== */
-.purchase-card {
-  border: 1px solid #2a2a40;
-  padding: 12px 18px;
-  margin-bottom: 12px;
-
-  border-radius: 8px;
-  background-color: #1a1a2e;
-
-  font-size: 18px;
-  font-weight: bold;
-  color: #f0f0f0;
-  line-height: 1.5;
+.table-container td button.delete:hover {
+  background-color: #b91c1c;
 }
 
-/* عنوان‌ها داخل کارت */
-.purchase-card strong {
-  color: #e0e0ff;
-  font-size: 15px;
-  font-weight: bold;
+/* ===== سفید شدن تمام متن‌ها ===== */
+.main-layout,
+.main-layout * {
+  
 }
 
-/* لیست آیتم‌ها */
-.purchase-card ul {
-  padding-left: 15px;
-  margin-top: 5px;
-  list-style-type: none;
-}
-
-/* هر آیتم */
-.purchase-card ul li {
-  margin-bottom: 6px;
-  padding: 3px 0;
-  border-bottom: 1px dashed #333;
-  background-color: #0a041d;
-
-  font-size: 16px;
-  font-weight: bold;
-}
-
-/* حذف خط آخر */
-.purchase-card ul li:last-child {
-  border-bottom: none;
-}
-
-/* ===================== */
-/* واکنش‌گرایی و زوم */
-/* ===================== */
-@media (max-width: 1024px) {
-  .form-container,
-  .medication-page,
-  .items-table-wrapper {
-    max-width: 100%;
-  }
-}
-
-@media (max-width: 768px) {
-  .form-container {
-    padding: 10px;
-  }
-
-  .purchase-card {
-    font-size: 15px;
-    padding: 10px 12px;
-  }
-
-  .purchase-card ul li {
-    font-size: 14px;
-  }
-
-  .form-container button {
-    width: 100%;
-  }
+/* ===== دکمه ثبت نسخه وسط صفحه ===== */
+button.edit {
+  display: block;
+  margin: 25px auto;  
+  background-color: #000;  
+  height: 28px;          /* ارتفاع کمتر */
+  width: 150px;          /* عرض بیشتر */
 }

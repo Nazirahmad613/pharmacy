@@ -6,7 +6,7 @@
 .main-layout {
  
  
-  color: rgb(253, 253, 253);
+  color: rgb(10, 18, 92);
   font-family: "Arial", sans-serif;
   width: 100%;
 
@@ -94,7 +94,7 @@
 
 /* عنوان‌ها داخل کارت */
 .purchase-card strong {
-  color: #e0e0ff;
+  color: #030350;
   font-size: 15px;             /* کمی بزرگتر */
   font-weight: bold;
 }
