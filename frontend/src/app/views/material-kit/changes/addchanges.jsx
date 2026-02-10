@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useAuth } from "app/contexts/AuthContext";
@@ -23,6 +23,7 @@ export default function JournalPage() {
 
   const [journals, setJournals] = useState([]);
   const [registrations, setRegistrations] = useState([]);
+
   const [form, setForm] = useState({
     id: null,
     journal_date: "",
@@ -32,32 +33,32 @@ export default function JournalPage() {
     ref_type: "",
     ref_id: "",
   });
+
   const [editing, setEditing] = useState(false);
 
+  /* ===== فیلترها ===== */
   const [filterType, setFilterType] = useState("");
   const [filterFrom, setFilterFrom] = useState("");
   const [filterTo, setFilterTo] = useState("");
+  const [searchTerm, setSearchTerm] = useState(""); // 🔥 جستجو
 
   const ENTRY_TYPES = ["debit", "credit"];
 
-  // ===== پجینیشن داخلی =====
+  /* ===== پجینیشن ===== */
   const ROWS_PER_PAGE = 4;
   const [currentPage, setCurrentPage] = useState(1);
 
-  const fetchJournals = async (url = "/journals") => {
+  const fetchJournals = async () => {
     try {
-      const res = await api.get(url, {
+      const res = await api.get("/journals", {
         params: {
           type: filterType || undefined,
           from: filterFrom || undefined,
           to: filterTo || undefined,
-          ref_type: form.ref_type || undefined,
-          ref_id: form.ref_id || undefined,
         },
       });
-      const data = res.data.data ?? res.data ?? [];
-      setJournals(data.slice().reverse());
-      setCurrentPage(1); // بعد از دریافت داده، صفحه اول را نمایش بده
+      setJournals((res.data.data ?? res.data ?? []).reverse());
+      setCurrentPage(1);
     } catch {
       toast.error("خطا در دریافت ژورنال‌ها");
     }
@@ -77,6 +78,32 @@ export default function JournalPage() {
     fetchRegistrations();
   }, [filterType, filterFrom, filterTo]);
 
+  /* ===== جستجوی هوشمند ===== */
+  const filteredJournals = useMemo(() => {
+    if (!searchTerm.trim()) return journals;
+
+    const term = searchTerm.toLowerCase();
+
+    return journals.filter((j) => {
+      const ref = registrations.find(
+        (r) => r.reg_type === j.ref_type && r.reg_id === j.ref_id
+      );
+
+      return (
+        (REF_TYPE_FA[j.ref_type] ?? j.ref_type)
+          .toLowerCase()
+          .includes(term) ||
+        ref?.full_name?.toLowerCase().includes(term)
+      );
+    });
+  }, [searchTerm, journals, registrations]);
+
+  const totalPages = Math.ceil(filteredJournals.length / ROWS_PER_PAGE);
+  const currentRows = filteredJournals.slice(
+    (currentPage - 1) * ROWS_PER_PAGE,
+    currentPage * ROWS_PER_PAGE
+  );
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((p) => ({ ...p, [name]: value }));
@@ -88,14 +115,14 @@ export default function JournalPage() {
       toast.error("مبلغ باید بزرگتر از صفر باشد");
       return;
     }
+
     try {
-      if (editing) {
-        await api.put(`/journals/${form.id}`, form);
-        toast.success("بروزرسانی شد");
-      } else {
-        await api.post("/journals", form);
-        toast.success("ذخیره شد");
-      }
+      editing
+        ? await api.put(`/journals/${form.id}`, form)
+        : await api.post("/journals", form);
+
+      toast.success(editing ? "بروزرسانی شد" : "ذخیره شد");
+      setEditing(false);
       setForm({
         id: null,
         journal_date: "",
@@ -105,7 +132,6 @@ export default function JournalPage() {
         ref_type: "",
         ref_id: "",
       });
-      setEditing(false);
       fetchJournals();
     } catch (err) {
       toast.error(err.response?.data?.message || "خطا در ذخیره");
@@ -113,52 +139,27 @@ export default function JournalPage() {
   };
 
   const handleEdit = (j) => {
-    setForm({
-      id: j.id,
-      journal_date: j.journal_date,
-      description: j.description,
-      entry_type: j.entry_type,
-      amount: j.amount,
-      ref_type: j.ref_type,
-      ref_id: j.ref_id,
-    });
+    setForm(j);
     setEditing(true);
   };
 
   const handleDelete = async (id) => {
     if (!confirm("حذف شود؟")) return;
-    try {
-      await api.delete(`/journals/${id}`);
-      toast.success("حذف شد");
-      fetchJournals("/journals?page=1");
-    } catch {
-      toast.error("خطا در حذف");
-    }
+    await api.delete(`/journals/${id}`);
+    fetchJournals();
   };
 
-  const filteredRegistrations = registrations.filter(
-    (r) => r.reg_type === form.ref_type
-  );
-
   const inputClass =
-    "w-full rounded-xl px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-[#122b55] text-white border border-[#1e3a8a]";
-
-  // ===== داده‌های صفحه جاری برای پجینیشن =====
-  const totalPages = Math.ceil(journals.length / ROWS_PER_PAGE);
-  const currentRows = journals.slice(
-    (currentPage - 1) * ROWS_PER_PAGE,
-    currentPage * ROWS_PER_PAGE
-  );
+    "w-full rounded-xl px-3 py-1 text-sm bg-[#122b55] text-white border border-[#1e3a8a]";
 
   return (
     <MainLayoutjur>
-  <h1 style={{ textAlign: "center", marginBottom: "20px", color: "#fff" }}>
-    مدیریت ژورنال‌ها
-  </h1>
       <ToastContainer />
 
-      {/* Filter */}
-      <div className="form-container mb-8">
+      <h1 className="text-center text-white mb-5">مدیریت ژورنال‌ها</h1>
+
+      {/* ===== فیلتر + جستجو ===== */}
+      <div className="form-container mb-6">
         <div className="form-grid">
           <select
             value={filterType}
@@ -173,137 +174,24 @@ export default function JournalPage() {
             ))}
           </select>
 
+          <input type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} className={inputClass} />
+          <input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} className={inputClass} />
+
+          {/* 🔍 جستجو */}
           <input
-            type="date"
-            value={filterFrom}
-            onChange={(e) => setFilterFrom(e.target.value)}
+            type="text"
+            placeholder="جستجو: نام مشتری، داکتر، مریض..."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
             className={inputClass}
           />
-          <input
-            type="date"
-            value={filterTo}
-            onChange={(e) => setFilterTo(e.target.value)}
-            className={inputClass}
-          />
-          <button
-            onClick={() => fetchJournals("/journals?page=1")}
-            className="px-4 py-1 bg-blue-700 rounded-xl text-white font-medium hover:bg-blue-800 transition"
-          >
-            اعمال فیلتر
-          </button>
         </div>
       </div>
 
-      {/* Form */}
-      <div className="form-container">
-        <h2
-  style={{
-    textAlign: "center",
-    fontSize: "1.25rem",
-    fontWeight: "600",
-    marginBottom: "1.5rem",
-    color: "#fff",
-  }}
->
-  {editing ? "ویرایش ژورنال" : "ثبت ژورنال جدید"}
-</h2>
-
-        <form onSubmit={handleSubmit}>
-          <div className="form-grid">
-            <div>
-              <label>تاریخ ثبت</label>
-              <input
-                type="date"
-                name="journal_date"
-                value={form.journal_date}
-                onChange={handleChange}
-                className={inputClass}
-              />
-            </div>
-
-            <div>
-              <label>نوع ثبت</label>
-              <select
-                name="entry_type"
-                value={form.entry_type}
-                onChange={handleChange}
-                className={inputClass}
-              >
-                {ENTRY_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {ENTRY_TYPE_FA[t]}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label>توضیحات</label>
-              <input
-                type="text"
-                name="description"
-                value={form.description}
-                onChange={handleChange}
-                className={inputClass}
-              />
-            </div>
-
-            <div>
-              <label>مبلغ</label>
-              <input
-                type="number"
-                name="amount"
-                value={form.amount}
-                onChange={handleChange}
-                className={inputClass}
-              />
-            </div>
-
-            <div>
-              <label>نوع رویداد</label>
-              <select
-                name="ref_type"
-                value={form.ref_type}
-                onChange={handleChange}
-                className={inputClass}
-              >
-                <option value="">انتخاب کنید</option>
-                {[...new Set(registrations.map((r) => r.reg_type))].map((t) => (
-                  <option key={t} value={t}>
-                    {REF_TYPE_FA[t] ?? t}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label>نام منبع</label>
-              <select
-                name="ref_id"
-                value={form.ref_id}
-                onChange={handleChange}
-                disabled={!form.ref_type}
-                className={inputClass}
-              >
-                <option value="">انتخاب کنید</option>
-                {filteredRegistrations.map((r) => (
-                  <option key={r.reg_id} value={r.reg_id}>
-                    {r.full_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="text-center mt-6">
-            <button className="px-10 py-2 bg-blue-700 rounded-xl text-white font-semibold hover:bg-blue-800 transition">
-              {editing ? "بروزرسانی" : "ذخیره"}
-            </button>
-          </div>
-        </form>
-      </div>
-
-      {/* Table */}
+      {/* ===== جدول ===== */}
       <div className="table-container">
         <table>
           <thead>
@@ -318,69 +206,43 @@ export default function JournalPage() {
             </tr>
           </thead>
           <tbody>
-            {currentRows.length
-              ? currentRows.map((j) => {
-                  const refObj = registrations.find(
-                    (r) => r.reg_type === j.ref_type && r.reg_id === j.ref_id
-                  );
-                  return (
-                    <tr key={j.id}>
-                      <td>{j.journal_date}</td>
-                      <td>{ENTRY_TYPE_FA[j.entry_type]}</td>
-                      <td>{j.description || "-"}</td>
-                      <td>{j.amount}</td>
-                      <td>{REF_TYPE_FA[j.ref_type] ?? j.ref_type}</td>
-                      <td>{refObj ? refObj.full_name : j.ref_id}</td>
-                      <td className="space-x-2 space-x-reverse">
-                        <button
-                          onClick={() => handleEdit(j)}
-                          className="edit"
-                        >
-                          ویرایش
-                        </button>
-                        <button
-                          onClick={() => handleDelete(j.id)}
-                          className="delete"
-                        >
-                          حذف
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              : (
-                <tr>
-                  <td colSpan="7" className="text-center text-gray-300 p-6">
-                    رکوردی یافت نشد
-                  </td>
-                </tr>
-              )}
+            {currentRows.length ? (
+              currentRows.map((j) => {
+                const ref = registrations.find(
+                  (r) => r.reg_type === j.ref_type && r.reg_id === j.ref_id
+                );
+                return (
+                  <tr key={j.id}>
+                    <td>{j.journal_date}</td>
+                    <td>{ENTRY_TYPE_FA[j.entry_type]}</td>
+                    <td>{j.description || "-"}</td>
+                    <td>{j.amount}</td>
+                    <td>{REF_TYPE_FA[j.ref_type]}</td>
+                    <td>{ref?.full_name || "-"}</td>
+                    <td>
+                      <button className="edit" onClick={() => handleEdit(j)}>ویرایش</button>
+                      <button className="delete" onClick={() => handleDelete(j.id)}>حذف</button>
+                    </td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan="7" className="text-center p-4">
+                  نتیجه‌ای یافت نشد
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* Pagination داخلی */}
-      {journals.length > ROWS_PER_PAGE && (
+      {/* ===== Pagination ===== */}
+      {totalPages > 1 && (
         <div className="flex justify-center gap-2 mt-4">
-          <button
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage((p) => p - 1)}
-            className="px-3 py-1 bg-blue-700 rounded text-white disabled:opacity-50"
-          >
-            قبلی
-          </button>
-
-          <span className="px-3 py-1 bg-[#122b55] rounded text-white">
-            {currentPage} / {totalPages}
-          </span>
-
-          <button
-            disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage((p) => p + 1)}
-            className="px-3 py-1 bg-blue-700 rounded text-white disabled:opacity-50"
-          >
-            بعدی
-          </button>
+          <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>قبلی</button>
+          <span>{currentPage} / {totalPages}</span>
+          <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>بعدی</button>
         </div>
       )}
     </MainLayoutjur>
