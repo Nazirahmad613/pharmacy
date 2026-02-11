@@ -26,53 +26,39 @@ class MedicationController extends Controller
     /**
      * 💾 ثبت دوا جدید
      */
-    public function store(Request $request)
-    {
-        $categoryTable = (new Category())->getTable();        // categories
-        $registrationTable = (new Registrations())->getTable(); // registrations
+ 
+ public function store(Request $request)
+{
+    $categoryTable = (new Category())->getTable();
+    $registrationTable = (new Registrations())->getTable();
 
-        $validated = $request->validate([
-            'category_id' => [
-                'required',
-                'integer',
-                Rule::exists($categoryTable, 'category_id')
-            ],
+    $validated = $request->validate([
+        'category_id' => ['required','integer', Rule::exists($categoryTable,'category_id')],
+        'supplier_id' => ['required','integer', Rule::exists($registrationTable,'reg_id')->where('reg_type','supplier')],
+        'gen_name' => 'required|string|max:255',
+        'dosage'   => 'required|string|max:255',
+        'type'     => 'required|string|max:255',
+    ]);
 
-            // ✅ supplier از registrations با reg_type = supporter
-            'supplier_id' => [
-                'required',
-                'integer',
-                Rule::exists($registrationTable, 'reg_id')
-                    ->where('reg_type', 'supplier')
-            ],
+    try {
+        // فقط ثبت دوا، بدون تراکنش و ژورنال
+        $medication = Medication::create($validated);
 
-            'gen_name' => 'required|string|max:255',
-            'dosage'   => 'required|string|max:255',
-            'type'     => 'required|string|max:255',
-        ]);
+        return response()->json([
+            'message' => '✅ دوا با موفقیت ثبت شد',
+            'medication' => Medication::with('category','supplier')->find($medication->med_id)
+        ], 201);
 
-        try {
-            $medication = Medication::create($validated);
-
-            $medication = Medication::with(['category', 'supplier'])
-                ->find($medication->med_id);
-
-            return response()->json([
-                'message' => '✅ دوا با موفقیت ثبت شد',
-                'medication' => $medication
-            ], 201);
-
-        } catch (Exception $e) {
-            return response()->json([
-                'error' => '❌ خطا در ثبت دوا',
-                'message' => $e->getMessage()
-            ], 500);
-        }
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => '❌ خطا در ثبت دوا',
+            'message' => $e->getMessage()
+        ], 500);
     }
+}
 
-    /**
-     * 🧾 نمایش یک دوا
-     */
+
+
     public function show($med_id)
     {
         $medication = Medication::with(['category', 'supplier'])->find($med_id);
