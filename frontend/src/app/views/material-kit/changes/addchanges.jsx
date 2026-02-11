@@ -25,7 +25,6 @@ export default function JournalPage() {
   const [registrations, setRegistrations] = useState([]);
 
   const [form, setForm] = useState({
-    id: null,
     journal_date: "",
     description: "",
     entry_type: "debit",
@@ -34,15 +33,13 @@ export default function JournalPage() {
     ref_id: "",
   });
 
-  const [editing, setEditing] = useState(false);
-
   const [filterType, setFilterType] = useState("");
   const [filterFrom, setFilterFrom] = useState("");
   const [filterTo, setFilterTo] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
   const ENTRY_TYPES = ["debit", "credit"];
-  const ROWS_PER_PAGE = 4;
+  const ROWS_PER_PAGE = 10;
   const [currentPage, setCurrentPage] = useState(1);
 
   /* ===== دریافت ژورنال‌ها و منابع ===== */
@@ -108,22 +105,7 @@ export default function JournalPage() {
     }));
   };
 
-  /* ===== ویرایش ژورنال ===== */
-  const handleEdit = (journal) => {
-    setForm({
-      id: journal.id,
-      journal_date: journal.journal_date,
-      description: journal.description ?? "",
-      entry_type: journal.entry_type,
-      amount: journal.amount,
-      ref_type: journal.ref_type,
-      ref_id: String(journal.ref_id), // ✅ اصلاح حیاتی
-    });
-    setEditing(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  /* ===== ثبت / ویرایش ===== */
+  /* ===== ثبت ژورنال ===== */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -143,20 +125,14 @@ export default function JournalPage() {
       entry_type: form.entry_type,
       amount: Number(form.amount),
       ref_type: form.ref_type,
-      ref_id: Number(form.ref_id), // مثل قبل
+      ref_id: Number(form.ref_id),
     };
 
     try {
-      if (editing) {
-        await api.put(`/journals/${form.id}`, payload);
-      } else {
-        await api.post("/journals", payload);
-      }
-
-      toast.success(editing ? "ویرایش شد" : "ذخیره شد");
+      await api.post("/journals", payload);
+      toast.success("ذخیره شد");
 
       setForm({
-        id: null,
         journal_date: "",
         description: "",
         entry_type: "debit",
@@ -164,18 +140,11 @@ export default function JournalPage() {
         ref_type: "",
         ref_id: "",
       });
-      setEditing(false);
+
       fetchJournals();
     } catch (err) {
       toast.error(err.response?.data?.message || "خطا در ذخیره");
     }
-  };
-
-  /* ===== حذف ===== */
-  const handleDelete = async (id) => {
-    if (!confirm("حذف شود؟")) return;
-    await api.delete(`/journals/${id}`);
-    fetchJournals();
   };
 
   const filteredRegistrations = registrations.filter(
@@ -189,7 +158,7 @@ export default function JournalPage() {
     <MainLayoutjur>
       <ToastContainer />
 
-      <h1 className="text-center text-white mb-6">مدیریت ژورنال‌ها</h1>
+      <h2 style={{ textAlign: "center" }}> ثبت و مدیریت محاسبات</h2>
 
       {/* ===== فیلتر + جستجو ===== */}
       <div className="form-container mb-6">
@@ -217,11 +186,9 @@ export default function JournalPage() {
         </div>
       </div>
 
-      {/* ===== فرم ثبت / ویرایش ===== */}
+      {/* ===== فرم ثبت ===== */}
       <div className="form-container mb-10">
-        <h2 className="text-center text-white mb-4">
-          {editing ? "ویرایش ژورنال" : "ثبت ژورنال جدید"}
-        </h2>
+        <h2 style={{ textAlign: "center" }}> ثبت محاسبات جدید</h2>
 
         <form onSubmit={handleSubmit}>
           <div className="form-grid">
@@ -254,7 +221,7 @@ export default function JournalPage() {
 
           <div className="text-center mt-6">
             <button className="px-10 py-2 bg-blue-700 rounded-xl text-white">
-              {editing ? "بروزرسانی" : "ذخیره"}
+              ثبت
             </button>
           </div>
         </form>
@@ -271,7 +238,6 @@ export default function JournalPage() {
               <th>مبلغ</th>
               <th>منبع</th>
               <th>نام منبع</th>
-              <th>عملیات</th>
             </tr>
           </thead>
           <tbody>
@@ -285,15 +251,11 @@ export default function JournalPage() {
                   <td>{j.amount}</td>
                   <td>{REF_TYPE_FA[j.ref_type]}</td>
                   <td>{ref?.full_name || "-"}</td>
-                  <td>
-                    <button className="edit" onClick={() => handleEdit(j)}>ویرایش</button>
-                    <button className="delete" onClick={() => handleDelete(j.id)}>حذف</button>
-                  </td>
                 </tr>
               );
             }) : (
               <tr>
-                <td colSpan="7" className="text-center p-4">نتیجه‌ای یافت نشد</td>
+                <td colSpan="6" className="text-center p-4">نتیجه‌ای یافت نشد</td>
               </tr>
             )}
           </tbody>

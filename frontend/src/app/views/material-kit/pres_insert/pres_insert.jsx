@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import MainLayoutpres from "../../../../components/MainLayoutpres";
+import MainLayoutjur from "../../../../components/MainLayoutjur";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useAuth } from "app/contexts/AuthContext";
@@ -274,218 +274,273 @@ const handleKeyDown = e => {
       toast.error("❌ خطا در ثبت نسخه");
     }
   };
+ return (
+  <MainLayoutjur>
+    <ToastContainer />
 
-  return (
-    <MainLayoutpres>
-      <ToastContainer />
+    <div className="main-layout">
+      <div className="background-overlay"></div>
 
-      {/* ===== معلومات نسخه ===== */}
-      <div className="form-container">
-       <h1 style={{ textAlign: "center", marginBottom: "20px", color: "#fff" }}>
-          ثبت نسخه جدید
-  </h1>
-        <div className="form-grid">
-          <div>
-            <label>شماره نسخه</label>
-            <input value={patientInfo.pres_num} onChange={(e) => setPatientInfo({ ...patientInfo, pres_num: e.target.value })} />
-          </div>
+      <div className="layout-content">
 
-          <div>
-            <label>مریض</label>
-            <select value={selectedPatientId} onChange={(e) => setSelectedPatientId(e.target.value)}>
-              <option value="">انتخاب مریض</option>
-              {patients.map(p => <option key={p.reg_id} value={p.reg_id}>{p.full_name ?? p.name}</option>)}
-            </select>
-          </div>
+        {/* ===== معلومات نسخه ===== */}
+        <div className="form-container">
+          <h1>ثبت نسخه جدید</h1>
 
-          <div>
-            <label>سن</label>
-            <input value={patientInfo.age} readOnly />
-          </div>
+          <div className="form-grid">
+            <div>
+              <label>شماره نسخه</label>
+              <input
+                value={patientInfo.pres_num}
+                onChange={e =>
+                  setPatientInfo({ ...patientInfo, pres_num: e.target.value })
+                }
+              />
+            </div>
 
-          <div>
-            <label>شماره تماس</label>
-            <input value={patientInfo.phone} readOnly />
-          </div>
+            <div>
+              <label>مریض</label>
+              <select
+                value={selectedPatientId}
+                onChange={e => setSelectedPatientId(e.target.value)}
+              >
+                <option value="">انتخاب مریض</option>
+                {patients.map(p => (
+                  <option key={p.reg_id} value={p.reg_id}>
+                    {p.full_name ?? p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div>
-            <label>آی‌دی مریض</label>
-            <input value={patientInfo.reg_id} readOnly />
-          </div>
+            <div>
+              <label>سن</label>
+              <input value={patientInfo.age} readOnly />
+            </div>
 
-          <div>
-            <label>گروه خون</label>
-            <input value={patientInfo.blood_group} readOnly />
-          </div>
+            <div>
+              <label>شماره تماس</label>
+              <input value={patientInfo.phone} readOnly />
+            </div>
 
-          <div>
-            <label>داکتر</label>
-            <select value={selectedDoctorId} onChange={(e) => setSelectedDoctorId(e.target.value)}>
-              <option value="">انتخاب داکتر</option>
-              {doctors.map(d => <option key={d.reg_id} value={d.reg_id}>{d.full_name ?? d.name}</option>)}
-            </select>
-          </div>
+            <div>
+              <label>آی‌دی مریض</label>
+              <input value={patientInfo.reg_id} readOnly />
+            </div>
 
-          <div>
-            <label>تاریخ نسخه</label>
-            <input type="date" value={prescriptionDate} onChange={(e) => setPrescriptionDate(e.target.value)} />
-          </div>
+            <div>
+              <label>گروه خون</label>
+              <input value={patientInfo.blood_group} readOnly />
+            </div>
 
-          <div>
-            <label>مجموع</label>
-            <input value={totalAmount} readOnly />
-          </div>
+            <div>
+              <label>داکتر</label>
+              <select
+                value={selectedDoctorId}
+                onChange={e => setSelectedDoctorId(e.target.value)}
+              >
+                <option value="">انتخاب داکتر</option>
+                {doctors.map(d => (
+                  <option key={d.reg_id} value={d.reg_id}>
+                    {d.full_name ?? d.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div>
-            <label>تخفیف</label>
-            <input value={discount} onChange={(e) => setDiscount(+e.target.value)} />
-          </div>
+            <div>
+              <label>تاریخ نسخه</label>
+              <input
+                type="date"
+                value={prescriptionDate}
+                onChange={e => setPrescriptionDate(e.target.value)}
+              />
+            </div>
 
-          <div>
-            <label>خالص</label>
-            <input value={netAmount} readOnly />
+            <div>
+              <label>مجموع</label>
+              <input value={totalAmount} readOnly />
+            </div>
+
+            <div>
+              <label>تخفیف</label>
+              <input
+                value={discount}
+                onChange={e => setDiscount(+e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label>خالص</label>
+              <input value={netAmount} readOnly />
+            </div>
           </div>
         </div>
+
+        {/* ===== فرم آیتم ===== */}
+        <div className="form-container">
+          <h3>افزودن آیتم</h3>
+
+          <div className="form-grid">
+            <div>
+              <label>کتگوری</label>
+              <select
+                value={formItem.category_id}
+                onChange={e => handleChange("category_id", e.target.value)}
+                onKeyDown={handleKeyDown}
+              >
+                <option value="">انتخاب</option>
+                {categories.map(c => (
+                  <option key={c.category_id} value={c.category_id}>
+                    {c.category_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label>دوا</label>
+              <select
+                value={formItem.med_id}
+                onChange={e => handleChange("med_id", e.target.value)}
+                onKeyDown={handleKeyDown}
+              >
+                <option value="">انتخاب</option>
+                {filteredMedications.map(m => (
+                  <option key={m.med_id} value={m.med_id}>
+                    {m.gen_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label>حمایت‌کننده</label>
+              <select
+                value={formItem.supplier_id}
+                onChange={e => handleChange("supplier_id", e.target.value)}
+                onKeyDown={handleKeyDown}
+              >
+                <option value="">انتخاب</option>
+                {filteredSuppliers.map(s => (
+                  <option key={s.reg_id} value={s.reg_id}>
+                    {s.full_name ?? s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label>نوع دوا</label>
+              <input value={formItem.type} readOnly />
+            </div>
+
+            <div>
+              <label>مقدار مصرف</label>
+              <input
+                value={formItem.dosage}
+                onChange={e => handleChange("dosage", e.target.value)}
+                onKeyDown={handleKeyDown}
+              />
+            </div>
+
+            <div>
+              <label>تعداد</label>
+              <input
+                type="number"
+                value={formItem.quantity}
+                onChange={e => handleChange("quantity", e.target.value)}
+                onKeyDown={handleKeyDown}
+              />
+            </div>
+
+            <div>
+              <label>قیمت واحد</label>
+              <input
+                type="number"
+                value={formItem.unit_price}
+                onChange={e => handleChange("unit_price", e.target.value)}
+                onKeyDown={handleKeyDown}
+              />
+            </div>
+
+            <div>
+              <label>قیمت مجموعی</label>
+              <input value={formItem.total_price} readOnly />
+            </div>
+
+            <div>
+              <label>ملاحظات</label>
+              <input
+                value={formItem.remarks}
+                onChange={e => handleChange("remarks", e.target.value)}
+                onKeyDown={handleKeyDown}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* ===== جدول آیتم‌ها ===== */}
+        {prescriptionItems.length > 0 && (
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>ردیف</th>
+                  <th>کتگوری</th>
+                  <th>دوا</th>
+                  <th>حمایت‌کننده</th>
+                  <th>نوع دوا</th>
+                  <th>مقدار مصرف</th>
+                  <th>تعداد</th>
+                  <th>قیمت واحد</th>
+                  <th>قیمت مجموعی</th>
+                  <th>ملاحظات</th>
+                  <th>عملیات</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {prescriptionItems.map((item, idx) => {
+                  const med = medications.find(m => m.med_id == item.med_id);
+                  const cat = categories.find(c => c.category_id == item.category_id);
+                  const sup = suppliers.find(s => s.reg_id == item.supplier_id);
+
+                  return (
+                    <tr key={idx}>
+                      <td>{idx + 1}</td>
+                      <td>{cat?.category_name}</td>
+                      <td>{med?.gen_name}</td>
+                      <td>{sup?.full_name ?? sup?.name}</td>
+                      <td>{item.type}</td>
+                      <td>{item.dosage}</td>
+                      <td>{item.quantity}</td>
+                      <td>{item.unit_price}</td>
+                      <td>{item.total_price}</td>
+                      <td>{item.remarks}</td>
+                      <td>
+                        <button
+                          className="delete"
+                          onClick={() => handleRemoveItem(idx)}
+                        >
+                          حذف
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <button className="edit" onClick={handleSavePrescription}>
+          ثبت نسخه
+        </button>
+
       </div>
-
-   {/* ===== فرم آیتم ===== */}
-<div className="form-container">
-  <h3>افزودن آیتم</h3>
-  <div className="form-grid">
-    <div>
-      <label>کتگوری</label>
-      <select
-        value={formItem.category_id}
-        onChange={e => handleChange("category_id", e.target.value)}
-        onKeyDown={handleKeyDown}
-      >
-        <option value="">انتخاب</option>
-        {categories.map(c => <option key={c.category_id} value={c.category_id}>{c.category_name}</option>)}
-      </select>
     </div>
+  </MainLayoutjur>
+);
 
-    <div>
-      <label>دوا</label>
-      <select
-        value={formItem.med_id}
-        onChange={e => handleChange("med_id", e.target.value)}
-        onKeyDown={handleKeyDown}
-      >
-        <option value="">انتخاب</option>
-        {filteredMedications.map(m => <option key={m.med_id} value={m.med_id}>{m.gen_name}</option>)}
-      </select>
-    </div>
-
-    <div>
-      <label>حمایت‌کننده</label>
-      <select
-        value={formItem.supplier_id}
-        onChange={e => handleChange("supplier_id", e.target.value)}
-        onKeyDown={handleKeyDown}
-      >
-        <option value="">انتخاب</option>
-        {filteredSuppliers.map(s => <option key={s.reg_id} value={s.reg_id}>{s.full_name ?? s.name}</option>)}
-      </select>
-    </div>
-
-    <div>
-      <label>نوع دوا</label>
-      <input value={formItem.type} readOnly />
-    </div>
-
-    <div>
-      <label>مقدار مصرف</label>
-      <input
-        value={formItem.dosage}
-        onChange={e => handleChange("dosage", e.target.value)}
-        onKeyDown={handleKeyDown}
-      />
-    </div>
-
-    <div>
-      <label>تعداد</label>
-      <input
-        type="number"
-        value={formItem.quantity}
-        onChange={e => handleChange("quantity", e.target.value)}
-        onKeyDown={handleKeyDown}
-      />
-    </div>
-
-    <div>
-      <label>قیمت واحد</label>
-      <input
-        type="number"
-        value={formItem.unit_price}
-        onChange={e => handleChange("unit_price", e.target.value)}
-        onKeyDown={handleKeyDown}
-      />
-    </div>
-
-    <div>
-      <label>قیمت مجموعی</label>
-      <input value={formItem.total_price} readOnly />
-    </div>
-
-    <div>
-      <label>ملاحظات</label>
-      <input
-        value={formItem.remarks}
-        onChange={e => handleChange("remarks", e.target.value)}
-        onKeyDown={handleKeyDown}
-      />
-    </div>
-  </div>
-</div>
-
-{/* ===== جدول آیتم‌ها ===== */}
-{prescriptionItems.length > 0 && (
-  <div className="table-container">
-    <table>
-      <thead>
-        <tr>
-          <th>ردیف</th>
-          <th>کتگوری</th>
-          <th>دوا</th>
-          <th>حمایت‌کننده</th>
-          <th>نوع دوا</th>
-          <th>مقدار مصرف</th>
-          <th>تعداد</th>
-          <th>قیمت واحد</th>
-          <th>قیمت مجموعی</th>
-          <th>ملاحظات</th>
-          <th>عملیات</th>
-        </tr>
-      </thead>
-      <tbody>
-        {prescriptionItems.map((item, idx) => {
-          const med = medications.find(m => m.med_id == item.med_id);
-          const cat = categories.find(c => c.category_id == item.category_id);
-          const sup = suppliers.find(s => s.reg_id == item.supplier_id);
-          return (
-            <tr key={idx}>
-              <td>{idx + 1}</td>
-              <td>{cat?.category_name ?? "-"}</td>
-              <td>{med?.gen_name ?? "-"}</td>
-              <td>{sup?.full_name ?? sup?.name ?? "-"}</td>
-              <td>{item.type}</td>
-              <td>{item.dosage}</td>
-              <td>{item.quantity}</td>
-              <td>{item.unit_price}</td>
-              <td>{item.total_price}</td>
-              <td>{item.remarks}</td>
-              <td>
-                <button className="delete" onClick={() => handleRemoveItem(idx)}>حذف</button>
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
-  </div>
-)}
-
-      <button className="edit" onClick={handleSavePrescription} style={{ marginTop: "20px" }}>ثبت نسخه</button>
-    </MainLayoutpres>
-  );
 }

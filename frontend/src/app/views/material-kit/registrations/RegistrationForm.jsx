@@ -62,7 +62,7 @@ export default function RegistrationForm() {
     <MainLayoutpur>
       <ToastContainer />
  <div className="form-container">
-  <h2 style={{ textAlign: "center" }}>📋 راجستریشن عمومی شفاخانه</h2>
+  <h2 style={{ textAlign: "center" }}> راجستریشن عمومی شفاخانه</h2>
 
   <form onSubmit={handleSubmit} className="form-grid">
     {/* نوع */}

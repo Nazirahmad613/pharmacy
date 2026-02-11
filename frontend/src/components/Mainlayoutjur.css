@@ -1,4 +1,4 @@
-/* ===== ریست فاصله پیش‌فرض صفحه ===== */
+/* ===== ریست صفحه ===== */
 html, body {
   margin: 0;
   padding: 0;
@@ -6,73 +6,62 @@ html, body {
   height: 100%;
 }
 
-/* ===== لایه اصلی با عکس پس‌زمینه ===== */
+/* ===== لایه اصلی ===== */
 .main-layout {
   min-height: 100vh;
   width: 100%;
-  position: relative;           
+  position: relative;
   background-size: cover;
   background-position: center;
+  color: #ffffff;
 }
 
-/* ===== لایه آبی روی عکس ===== */
+/* ===== لایه آبی ===== */
 .background-overlay {
   position: absolute;
-  inset: 0;                     
-  width: 100%;
-  height: 100%;
+  inset: 0;
   background: rgba(5, 15, 40, 0.85);
 }
 
-/* ===== محتوای صفحه ===== */
+/* ===== محتوا ===== */
 .layout-content {
   position: relative;
   z-index: 2;
-  max-width: 1300px;   
+  max-width: 1300px;
   margin: auto;
 }
 
-/* ===== فرم ===== */
+/* ================= فرم ================= */
 .form-container {
   background: #0b1d3a;
-  padding: 12px 25px;      
-  border-radius: 8px;           
+  padding: 12px 25px;
+  border-radius: 8px;
   margin-bottom: 20px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.4);  
+  box-shadow: 0 5px 15px rgba(0,0,0,0.4);
 }
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);  
-  gap: 12px;  
-  text-align: center;                             
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  text-align: center;
 }
 
 .form-container label {
   color: #cfe3ff;
-  font-size: 12px; 
-  text-align: center;         
+  font-size: 12px;
 }
 
-/* ===== input / select / textarea ===== */
 .form-container input,
 .form-container select,
 .form-container textarea {
   width: 100%;
-  padding: 3px 6px;       
+  padding: 4px 6px;
   background: #122b55;
   border: 1px solid #1e3a8a;
   color: #ffffff;
-  border-radius: 5px;           
+  border-radius: 5px;
   font-size: 12px;
-  outline: none;
-}
-
-.form-container input:focus,
-.form-container select:focus,
-.form-container textarea:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 5px rgba(59,130,246,0.5);
 }
 
 .form-container ::placeholder {
@@ -80,89 +69,77 @@ html, body {
   opacity: 0.7;
 }
 
-.form-container textarea {
-  resize: vertical;
-  min-height: 80px;
+/* ================= جدول‌ها (عمومی و آیتم‌ها) ================= */
+
+/* 🔥 این بخش مشکل تو را حل می‌کند */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  color: #ffffff;
 }
 
-/* ===== جدول ===== */
+table thead th {
+  background-color: #1e3a8a !important;
+  color: #ffffff !important;
+}
+
+table td,
+table th {
+  padding: 8px 6px;
+  text-align: center;
+  font-weight: 600;
+  border-bottom: 1px solid #2c3e8c;
+}
+
+/* 🔥 آیتم‌هایی که سفید بودند */
+table tbody td {
+  background-color: #0f2a55 !important;
+  color: #ffffff !important;
+}
+
+/* hover */
+table tbody tr:hover td {
+  background-color: #123b75 !important;
+}
+
+/* ================= کانتینر جدول ================= */
 .table-container {
   background: #0b1d3a;
-  border-radius: 8px;           
+  border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 8px 15px rgba(0,0,0,0.4);
-  width: 90%;                   
+  width: 90%;
   margin: 0 auto 20px auto;
 }
 
-.table-container table {
-  width: 100%;
-  color: white;
-  font-size: 11px;             
-  border-collapse: collapse;
-}
-
-.table-container thead {
-  background-color: #1e3a8a;
-  text-align: center;
-}
-
-.table-container th,
-.table-container td {
-  padding: 5px 4px;             
-  border-bottom: 1px solid #2c3e8c;
-  text-align: center;
-}
-
-.table-container tr:hover {
-  background-color: #0f1c3d;
-}
-
-/* ===== دکمه‌های جدول ===== */
-.table-container td button {
+/* ================= دکمه‌های جدول ================= */
+table td button {
   padding: 3px 6px;
   border-radius: 4px;
   font-size: 10px;
   font-weight: bold;
   cursor: pointer;
-  transition: all 0.2s;
   border: none;
 }
 
-.table-container td button.edit {
+table td button.edit {
   background-color: #fbbf24;
   color: #000 !important;
 }
 
-.table-container td button.edit:hover {
-  background-color: #f59e0b;
-}
-
-.table-container td button.delete {
+table td button.delete {
   background-color: #ef4444;
   color: #ffffff !important;
 }
 
-.table-container td button.delete:hover {
-  background-color: #b91c1c;
-}
-
-/* ===== سفید شدن متن‌ها (به‌جز دکمه‌ها) ===== */
-.main-layout {
-  color: #ffffff;
-}
-
-.main-layout *:not(button) {
-  color: #ffffff;
-}
-
-/* ===== دکمه ثبت ===== */
+/* ================= دکمه ثبت ================= */
 button.edit {
   display: block;
-  margin: 25px auto;  
-  background-color: #2563eb;   /* آبی واضح */
+  margin: 25px auto;
+  background-color: #2563eb;
   color: #ffffff !important;
-  height: 32px;         
+  height: 32px;
   width: 160px;
   border-radius: 6px;
   font-weight: bold;
@@ -172,4 +149,33 @@ button.edit {
 
 button.edit:hover {
   background-color: #1e40af;
+}
+
+.dark-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #ffffff;
+  font-size: 11px;
+}
+
+.dark-table thead th {
+  background-color: #1e3a8a !important;
+  color: #ffffff !important;
+}
+
+.dark-table td,
+.dark-table th {
+  padding: 8px 6px;
+  text-align: center;
+  font-weight: 600;
+  border-bottom: 1px solid #2c3e8c;
+}
+
+.dark-table tbody td {
+  background-color: #0f2a55 !important;
+  color: #ffffff !important;
+}
+
+.dark-table tbody tr:hover td {
+  background-color: #123b75 !important;
 }
