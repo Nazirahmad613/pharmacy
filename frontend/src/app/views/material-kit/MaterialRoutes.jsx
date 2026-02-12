@@ -24,8 +24,8 @@ const AppAddparchases = Loadable(lazy(() => import("./parchases/parchases")));
 const AppRegistrationForm = Loadable(lazy(() => import("./registrations/RegistrationForm")));
 
 // ===== Reports =====
-const AppStock_report = Loadable(lazy(() => import("./reports/stock_report")));
-
+ 
+const AppHospital_report = Loadable(lazy(() => import("./reports/Hospital_Report"))); // ✅ اصلاح شد
 
 // ===== Routes =====
 const materialRoutes = [
@@ -48,8 +48,8 @@ const materialRoutes = [
   { path: "/material/parchases", element: <AppAddparchases /> },
   { path: "/material/addcatagory", element: <AppAddcatagory /> },
   { path: "/material/registrations", element: <AppRegistrationForm /> },
-
-  { path: "/material/reports", element: <AppStock_report /> },
+ 
+  { path: "/material/hospital-report", element: <AppHospital_report /> },
 ];
 
 export default materialRoutes;

@@ -30,6 +30,7 @@ use App\Http\Controllers\ParchasesController;
 use App\Http\Controllers\SalesFullDetailsController;
 use App\Http\Controllers\RegistrationsController;
 use App\Http\Controllers\JournalController;
+use App\Http\Controllers\HospitalReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -141,4 +142,6 @@ Route::middleware('auth:sanctum')->group(function () {
    
     Route::get('/view-profit-loss', [ViewProfitLossController::class, 'index']);
     Route::get('/view-supplier-purchases', [ViewSupplierPurchasesController::class, 'index']);
+    Route::get('/hospital-reports', [HospitalReportController::class, 'index']);
+
 });

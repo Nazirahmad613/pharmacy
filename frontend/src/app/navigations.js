@@ -1,4 +1,4 @@
- const navigations = [
+const navigations = [
   { name: "dashboard", path: "/dashboard/default", icon: "dashboard", iconText: "D" },
 
   { label: "pages", type: "label" },
@@ -33,10 +33,9 @@
     name: "گزارش ها",
     iconText: "G",
     children: [
-  
-     
-      {name: "sales_full_details",path:"/material/reports/sales",iconText:"ST"},
-      {name: "stock_report",path:"/material/reports",iconText:"ST"},
+ 
+      
+      { name: "hospital_report", path: "/material/hospital-report", iconText: "HR" },
     ],
   },
 
