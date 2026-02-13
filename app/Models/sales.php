@@ -31,7 +31,7 @@ class Sales extends Model
     // 🔗 رابطه مشتری (از جدول registration)
     public function customer()
     {
-        return $this->belongsTo(\App\Models\Registration::class, 'cust_id', 'id');
+        return $this->belongsTo(\App\Models\Registrations::class, 'cust_id', 'reg_id');
     }
 
     // 🔗 آیتم‌های فروش

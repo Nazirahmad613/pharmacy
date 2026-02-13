@@ -46,7 +46,7 @@ class SalesItem extends Model
      */
     public function supplier(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Registration::class, 'supplier_id', 'reg_id');
+        return $this->belongsTo(\App\Models\Registrations::class, 'supplier_id', 'reg_id');
     }
 
     /**

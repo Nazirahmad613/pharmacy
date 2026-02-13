@@ -55,7 +55,7 @@ class ParchaseItem extends Model
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(
-            \App\Models\Registration::class,  // جدول registrations
+            \App\Models\Registrations::class,  // جدول registrations
             'supplier_id',                     // کلید خارجی در parchaseitems
             'reg_id'                           // کلید اصلی در registrations
         );

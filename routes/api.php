@@ -138,7 +138,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // ===== Reports / Views =====
     Route::get('/view-inventory', [ViewInventoryController::class, 'index']);
     Route::get('/view-medications', [ViewMedicationsController::class, 'index']);
-    Route::get('/view-doctor-prescriptions', [ViewDoctorPrescriptionsController::class, 'index']);
+ 
    
     Route::get('/view-profit-loss', [ViewProfitLossController::class, 'index']);
     Route::get('/view-supplier-purchases', [ViewSupplierPurchasesController::class, 'index']);

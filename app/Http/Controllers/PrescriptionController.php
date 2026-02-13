@@ -64,8 +64,13 @@ class PrescriptionController extends Controller
             }
 
             // =========================
-            // ثبت ژورنال (ساختار جدید)
+            // ثبت ژورنال (نسخه) با نام مریض و داکتر
             // =========================
+
+            $refInfo = [
+                'patient_name' => $prescription->patient_name,
+                'doc_name'     => $prescription->doc_name,
+            ];
 
             // 🔴 بدهکار: مریض
             Journal::create([
@@ -75,6 +80,7 @@ class PrescriptionController extends Controller
                 'description'  => 'بدهکاری مریض بابت نسخه شماره ' . $request->pres_num,
                 'ref_type'     => 'prescription',
                 'ref_id'       => $prescription->pres_id,
+                'ref_info'     => json_encode($refInfo), // ذخیره نام‌ها در یک فیلد JSON
                 'user_id'      => Auth::id(),
             ]);
 
@@ -86,6 +92,7 @@ class PrescriptionController extends Controller
                 'description'  => 'فروش دوا بابت نسخه شماره ' . $request->pres_num,
                 'ref_type'     => 'prescription',
                 'ref_id'       => $prescription->pres_id,
+                'ref_info'     => json_encode($refInfo),
                 'user_id'      => Auth::id(),
             ]);
         });
