@@ -34,19 +34,19 @@ export default function SaleForm() {
 
   const [saleItems, setSaleItems] = useState([]);
 
-  // ================= محاسبه مجموع آیتم‌ها =================
+  // ===== محاسبه مجموع فروش =====
   useEffect(() => {
     const sum = saleItems.reduce((t, i) => t + Number(i.total_sales || 0), 0);
     setTotalSale(sum);
   }, [saleItems]);
 
-  // ================= محاسبه فروش خالص =================
+  // ===== محاسبه فروش خالص =====
   useEffect(() => {
     const net = Number(totalSale) - Number(discount || 0);
     setNetSales(net >= 0 ? net : 0);
   }, [totalSale, discount]);
 
-  // ================= محاسبه باقی‌مانده و وضعیت پرداخت =================
+  // ===== محاسبه باقی‌مانده و وضعیت پرداخت =====
   useEffect(() => {
     const rem = Number(netSales) - Number(totalPaid || 0);
     setRemaining(rem >= 0 ? rem : 0);
@@ -56,7 +56,7 @@ export default function SaleForm() {
     else setPaymentStatus("پرداخت کامل شده");
   }, [netSales, totalPaid]);
 
-  // ================= لود داده‌ها =================
+  // ===== لود داده‌ها =====
   useEffect(() => {
     api.get("/categories").then(res => setCategories(res.data.data ?? res.data));
     api.get("/medications").then(res => setMedications(res.data.data ?? res.data));
@@ -74,6 +74,7 @@ export default function SaleForm() {
       });
   }, [api]);
 
+  // ===== فیلتر دواها و حمایت‌کننده‌ها =====
   const filteredMedications = medications.filter(
     m => Number(m.category_id) === Number(formItem.category_id)
   );
@@ -130,9 +131,24 @@ export default function SaleForm() {
       return;
     }
 
-    setSaleItems([...saleItems, { ...formItem, id: Date.now() }]);
+    // گرفتن نام‌ها برای نمایش در جدول
+    const med = medications.find(m => Number(m.med_id) === Number(formItem.med_id));
+    const cat = categories.find(c => Number(c.category_id) === Number(formItem.category_id));
+    const sup = suppliers.find(s => Number(s.reg_id) === Number(formItem.supplier_id));
+
+    setSaleItems([
+      ...saleItems,
+      {
+        ...formItem,
+        id: Date.now(),
+        med_name: med?.gen_name ?? "-",
+        category_name: cat?.category_name ?? "-",
+        supplier_name: sup?.full_name ?? sup?.name ?? "-",
+      }
+    ]);
+
     setFormItem({
-      cust_id: formItem.cust_id,
+      ...formItem,
       category_id: "",
       med_id: "",
       supplier_id: "",
@@ -294,7 +310,7 @@ export default function SaleForm() {
                   <option value="">-- انتخاب حمایت‌کننده --</option>
                   {filteredSuppliers.map((s, index) => (
                     <option key={s.reg_id ?? `sup-${index}`} value={s.reg_id}>
-                      {s.full_name ?? s.name ?? s.supplier_name}
+                      {s.full_name ?? s.name}
                     </option>
                   ))}
                 </select>
@@ -335,6 +351,9 @@ export default function SaleForm() {
                 <thead>
                   <tr>
                     <th>شماره</th>
+                    <th>کتگوری</th>
+                    <th>نام دوا</th>
+                    <th>حمایت‌کننده</th>
                     <th>نوع دوا</th>
                     <th>تعداد</th>
                     <th>قیمت واحد</th>
@@ -347,10 +366,13 @@ export default function SaleForm() {
                   {saleItems.map((item, idx) => (
                     <tr key={item.id}>
                       <td>{idx + 1}</td>
+                      <td>{item.category_name}</td>
+                      <td>{item.med_name}</td>
+                      <td>{item.supplier_name}</td>
                       <td>{item.type}</td>
                       <td>{item.quantity}</td>
-                      <td>{item.unit_sales}</td>
-                      <td>{item.total_sales}</td>
+                      <td>{item.unit_sales?.toLocaleString()}</td>
+                      <td>{item.total_sales?.toLocaleString()}</td>
                       <td>{item.exp_date}</td>
                       <td>
                         <button className="delete" onClick={() => handleRemoveItem(item.id)}>حذف</button>
@@ -365,6 +387,7 @@ export default function SaleForm() {
           <button className="edit" onClick={handleSaveSale}>
             ثبت فروش
           </button>
+
         </div>
       </div>
     </MainLayoutjur>

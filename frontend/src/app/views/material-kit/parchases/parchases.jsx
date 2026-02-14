@@ -112,7 +112,20 @@ export default function ParchaseForm() {
       return;
     }
 
-    setPurchasedItems([...purchasedItems, { ...formItem }]);
+    // دریافت نام‌ها برای نمایش در جدول
+    const med = medications.find(m => Number(m.med_id) === Number(formItem.med_id));
+    const cat = categories.find(c => Number(c.category_id) === Number(formItem.category_id));
+    const sup = suppliers.find(s => Number(s.reg_id) === Number(formItem.supplier_id));
+
+    setPurchasedItems([
+      ...purchasedItems,
+      {
+        ...formItem,
+        med_name: med?.gen_name ?? "-",
+        category_name: cat?.category_name ?? "-",
+        supplier_name: sup?.full_name ?? sup?.name ?? "-",
+      }
+    ]);
 
     setFormItem({
       category_id: "",
@@ -258,36 +271,42 @@ export default function ParchaseForm() {
 
           {/* ===== جدول آیتم‌ها ===== */}
           {purchasedItems.length > 0 && (
-            <div className="table-container">
-              <table className="dark-table">
-                <thead>
-                  <tr>
-                    <th>شماره</th>
-                    <th>نوع دوا</th>
-                    <th>تعداد</th>
-                    <th>قیمت واحد</th>
-                    <th>قیمت مجموعی</th>
-                    <th>تاریخ انقضا</th>
-                    <th>عملیات</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {purchasedItems.map((item, idx) => (
-                    <tr key={idx}>
-                      <td>{idx + 1}</td>
-                      <td>{item.type}</td>
-                      <td>{item.quantity}</td>
-                      <td>{item.unit_price}</td>
-                      <td>{item.total_price}</td>
-                      <td>{item.exp_date}</td>
-                      <td>
-                        <button className="delete" onClick={() => handleRemoveItem(idx)}>حذف</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+           <div className="table-container">
+             <table className="dark-table">
+               <thead>
+                 <tr>
+                   <th>شماره</th>
+                   <th>کتگوری</th>
+                   <th>دوا</th>
+                   <th>حمایت‌کننده</th>
+                   <th>نوع دوا</th>
+                   <th>تعداد</th>
+                   <th>قیمت واحد</th>
+                   <th>قیمت مجموعی</th>
+                   <th>تاریخ انقضا</th>
+                   <th>عملیات</th>
+                 </tr>
+               </thead>
+               <tbody>
+                 {purchasedItems.map((item, idx) => (
+                   <tr key={idx}>
+                     <td>{idx + 1}</td>
+                     <td>{item.category_name}</td>
+                     <td>{item.med_name}</td>
+                     <td>{item.supplier_name}</td>
+                     <td>{item.type}</td>
+                     <td>{item.quantity}</td>
+                     <td>{item.unit_price?.toLocaleString()}</td>
+                     <td>{item.total_price?.toLocaleString()}</td>
+                     <td>{item.exp_date}</td>
+                     <td>
+                       <button className="delete" onClick={() => handleRemoveItem(idx)}>حذف</button>
+                     </td>
+                   </tr>
+                 ))}
+               </tbody>
+             </table>
+           </div>
           )}
 
           <button className="edit" onClick={handleSavePurchase}>ثبت خرید</button>

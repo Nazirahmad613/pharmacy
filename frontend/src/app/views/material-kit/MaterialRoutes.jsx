@@ -26,7 +26,7 @@ const AppRegistrationForm = Loadable(lazy(() => import("./registrations/Registra
 // ===== Reports =====
  
 const AppHospital_report = Loadable(lazy(() => import("./reports/Hospital_Report"))); // ✅ اصلاح شد
-
+const AppAccountSummaryPage = Loadable(lazy(() => import("./reports/AccountSummaryPage.jsx")));  
 // ===== Routes =====
 const materialRoutes = [
   { path: "/material/form", element: <AppForm /> },
@@ -50,6 +50,7 @@ const materialRoutes = [
   { path: "/material/registrations", element: <AppRegistrationForm /> },
  
   { path: "/material/hospital-report", element: <AppHospital_report /> },
+  { path: "/material/AcountSummaryPage", element: < AppAccountSummaryPage/> },
 ];
 
 export default materialRoutes;

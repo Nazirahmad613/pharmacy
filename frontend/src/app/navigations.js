@@ -36,6 +36,7 @@ const navigations = [
  
       
       { name: "hospital_report", path: "/material/hospital-report", iconText: "HR" },
+      { name: "AccountSummaryPage", path: "/material/AcountSummaryPage", iconText: "AS" },
     ],
   },
 
