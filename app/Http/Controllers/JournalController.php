@@ -10,12 +10,9 @@ use Illuminate\Validation\Rule;
 
 class JournalController extends Controller
 {
-    /* =========================
-       لیست ژورنال‌ها
-    ========================= */
     public function index(Request $request)
     {
-        $query = Journal::with('registration', 'user');
+        $query = Journal::query();
 
         if ($request->filled('type')) {
             $query->where('entry_type', $request->type);
@@ -37,24 +34,33 @@ class JournalController extends Controller
             $query->where('ref_id', $request->ref_id);
         }
 
-        return response()->json(
-            $query->orderBy('journal_date', 'desc')->get()
-        );
+        $journals = $query->orderBy('journal_date', 'desc')->get();
+
+        // Attach registration info if applicable
+        $journals->transform(function ($j) {
+            if (in_array($j->ref_type, ['doctor', 'patient', 'customer', 'supplier'])) {
+                $reg = Registrations::where('reg_type', $j->ref_type)
+                    ->where('reg_id', $j->ref_id)
+                    ->first();
+                $j->full_name = $reg->full_name ?? null;
+            }
+            return $j;
+        });
+
+        return response()->json($journals);
     }
 
-    /* =========================
-       نمایش یک ژورنال
-    ========================= */
-    public function show(Journal $journal)
+    public function registrations(Request $request)
     {
+        $query = Registrations::query();
+        if ($request->filled('type')) {
+            $query->where('reg_type', $request->type);
+        }
         return response()->json(
-            $journal->load('user', 'registration')
+            $query->select('reg_id', 'full_name', 'reg_type')->get()
         );
     }
 
-    /* =========================
-       ثبت ژورنال جدید
-    ========================= */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -70,10 +76,8 @@ class JournalController extends Controller
             ->where('reg_id', $validated['ref_id'])
             ->exists();
 
-        if (! $exists) {
-            return response()->json([
-                'message' => 'رویداد انتخاب‌شده معتبر نیست.'
-            ], 422);
+        if (! $exists && !in_array($validated['ref_type'], ['sale', 'parchase'])) {
+            return response()->json(['message' => 'رویداد انتخاب‌شده معتبر نیست.'], 422);
         }
 
         $journal = Journal::create([
@@ -83,86 +87,7 @@ class JournalController extends Controller
 
         return response()->json([
             'message' => 'ژورنال با موفقیت ذخیره شد.',
-            'journal' => $journal->load('registration')
+            'journal' => $journal
         ], 201);
-    }
-
-    /* =========================
-       ویرایش ژورنال
-    ========================= */
-    public function update(Request $request, Journal $journal)
-    {
-        $validated = $request->validate([
-            'journal_date' => 'required|date',
-            'description'  => 'nullable|string|max:1000',
-            'entry_type'   => ['required', Rule::in(['debit', 'credit'])],
-            'amount'       => 'required|numeric|min:0.01',
-            'ref_type'     => 'required|string',
-            'ref_id'       => 'required|integer',
-        ]);
-
-        $exists = Registrations::where('reg_type', $validated['ref_type'])
-            ->where('reg_id', $validated['ref_id'])
-            ->exists();
-
-        if (! $exists) {
-            return response()->json([
-                'message' => 'رویداد انتخاب‌شده معتبر نیست.'
-            ], 422);
-        }
-
-        $journal->update($validated);
-
-        return response()->json([
-            'message' => 'ژورنال با موفقیت بروزرسانی شد.',
-            'journal' => $journal->load('registration')
-        ]);
-    }
-
-    /* =========================
-       حذف
-    ========================= */
-    public function destroy(Journal $journal)
-    {
-        $journal->delete();
-
-        return response()->json([
-            'message' => 'ژورنال با موفقیت حذف شد.'
-        ]);
-    }
-
-    /* =========================
-       مانده کل
-    ========================= */
-    public function balance()
-    {
-        $balance = Journal::selectRaw("
-            SUM(
-                CASE
-                    WHEN entry_type = 'credit' THEN amount
-                    ELSE -amount
-                END
-            ) as balance
-        ")->value('balance');
-
-        return response()->json([
-            'balance' => $balance ?? 0
-        ]);
-    }
-
-    /* =========================
-       لیست registrations
-    ========================= */
-    public function registrations(Request $request)
-    {
-        $query = Registrations::query();
-
-        if ($request->filled('type')) {
-            $query->where('reg_type', $request->type);
-        }
-
-        return response()->json(
-            $query->select('reg_id', 'full_name', 'reg_type')->get()
-        );
     }
 }

@@ -4,13 +4,14 @@ import "react-toastify/dist/ReactToastify.css";
 import { useAuth } from "app/contexts/AuthContext";
 import MainLayoutjur from "../../../../components/MainLayoutjur";
 
-const ENTRY_TYPE_FA = { debit: "اخذ پول", credit: "پرداخت پول" };
+const ENTRY_TYPE_FA = {
+  debit: "اخذ پول",
+  credit: "پرداخت پول",
+};
+
 const REF_TYPE_FA = {
   sale: "فروش",
   parchase: "خرید",
-  payment_in: "دریافت وجه",
-  payment_out: "پرداخت وجه",
-  parchase_due: "پرداخت قرض خرید",
   doctor: "داکتر",
   patient: "مریض",
   supplier: "حمایت‌کننده",
@@ -22,7 +23,10 @@ export default function JournalPage() {
 
   const [journals, setJournals] = useState([]);
   const [registrations, setRegistrations] = useState([]);
-  const [transactions, setTransactions] = useState({ sale: [], parchase: [] });
+  const [transactions, setTransactions] = useState({
+    sale: [],
+    parchase: [],
+  });
 
   const [form, setForm] = useState({
     journal_date: "",
@@ -34,109 +38,89 @@ export default function JournalPage() {
   });
 
   const [filterType, setFilterType] = useState("");
-  const [filterFrom, setFilterFrom] = useState("");
-  const [filterTo, setFilterTo] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
-  const ENTRY_TYPES = ["debit", "credit"];
   const ROWS_PER_PAGE = 10;
   const [currentPage, setCurrentPage] = useState(1);
 
-   const fetchData = async () => {
-  try {
-    const [journalsRes, registrationsRes, salesRes, purchasesRes] =
-      await Promise.allSettled([
-        api.get("/journals", {
-          params: {
-            type: filterType || undefined,
-            from: filterFrom || undefined,
-            to: filterTo || undefined,
-          },
-        }),
-        api.get("/registrations"),
-        api.get("/sales"),
-        api.get("/purchases"),
-      ]);
+  /* ================= Fetch Data ================= */
+  const fetchData = async () => {
+    try {
+      const [journalsRes, registrationsRes, salesRes, purchasesRes] =
+        await Promise.allSettled([
+          api.get("/journals", {
+            params: { type: filterType || undefined },
+          }),
+          api.get("/registrations"),
+          api.get("/sales"),
+          api.get("/purchases"),
+        ]);
 
-    // ===== journals =====
-    if (journalsRes.status === "fulfilled") {
-      const data = Array.isArray(journalsRes.value.data?.data)
-        ? journalsRes.value.data.data
-        : Array.isArray(journalsRes.value.data)
-        ? journalsRes.value.data
-        : [];
-      setJournals([...data].reverse());
-    } else {
-      console.error("journals fetch error:", journalsRes.reason);
-      toast.error("خطا در دریافت ژورنال‌ها");
-    }
+      if (journalsRes.status === "fulfilled") {
+        const data = Array.isArray(journalsRes.value.data?.data)
+          ? journalsRes.value.data.data
+          : Array.isArray(journalsRes.value.data)
+          ? journalsRes.value.data
+          : [];
+        setJournals([...data].reverse());
+      }
 
-    // ===== registrations =====
-    if (registrationsRes.status === "fulfilled") {
-      const data = Array.isArray(registrationsRes.value.data?.data)
-        ? registrationsRes.value.data.data
-        : Array.isArray(registrationsRes.value.data)
-        ? registrationsRes.value.data
-        : [];
-      setRegistrations(data);
-    } else {
-      console.error("registrations fetch error:", registrationsRes.reason);
-      toast.error("خطا در دریافت منابع");
-    }
+      if (registrationsRes.status === "fulfilled") {
+        const data = Array.isArray(registrationsRes.value.data?.data)
+          ? registrationsRes.value.data.data
+          : Array.isArray(registrationsRes.value.data)
+          ? registrationsRes.value.data
+          : [];
+        setRegistrations(data);
+      }
 
-    // ===== transactions =====
-    const sales = [];
-    const purchases = [];
-
-    // --- sales ---
-    if (salesRes.status === "fulfilled") {
-      const salesData = Array.isArray(salesRes.value.data?.data)
-        ? salesRes.value.data.data
-        : Array.isArray(salesRes.value.data)
-        ? salesRes.value.data
-        : [];
-      sales.push(
-        ...salesData.map((s) => ({
+      let sales = [];
+      if (salesRes.status === "fulfilled") {
+        const data = Array.isArray(salesRes.value.data?.data)
+          ? salesRes.value.data.data
+          : Array.isArray(salesRes.value.data)
+          ? salesRes.value.data
+          : [];
+        sales = data.map((s) => ({
           ...s,
-          customer_name: s.customer_name ?? s.customer?.full_name ?? "-",
-          supplier_name: s.items?.[0]?.supplier_name ?? s.items?.[0]?.supplier?.full_name ?? "-",
-        }))
-      );
-    } else {
-      console.error("sales fetch error:", salesRes.reason);
-    }
+          display_name:
+            s.customer_name ??
+            s.customer?.full_name ??
+            `فروش شماره ${s.id}`,
+          type_name: "customer",
+        }));
+      }
 
-    // --- purchases ---
-    if (purchasesRes.status === "fulfilled") {
-      const purchaseData = Array.isArray(purchasesRes.value.data?.data)
-        ? purchasesRes.value.data.data
-        : Array.isArray(purchasesRes.value.data)
-        ? purchasesRes.value.data
-        : [];
-      purchases.push(
-        ...purchaseData.map((p) => ({
+      let purchases = [];
+      if (purchasesRes.status === "fulfilled") {
+        const data = Array.isArray(purchasesRes.value.data?.data)
+          ? purchasesRes.value.data.data
+          : Array.isArray(purchasesRes.value.data)
+          ? purchasesRes.value.data
+          : [];
+        purchases = data.map((p) => ({
           ...p,
-          supplier_name: p.supplier_name ?? p.supplier?.full_name ?? "-",
-        }))
-      );
-    } else {
-      console.error("purchases fetch error:", purchasesRes.reason);
+          display_name:
+            p.supplier_name ??
+            p.supplier?.full_name ??
+            `خرید شماره ${p.id}`,
+          type_name: "supplier",
+        }));
+      }
+
+      setTransactions({ sale: sales, parchase: purchases });
+      setCurrentPage(1);
+    } catch (err) {
+      console.error(err);
+      toast.error("خطا در دریافت داده‌ها");
     }
-
-    setTransactions({ sale: sales, parchase: purchases });
-    setCurrentPage(1);
-  } catch (err) {
-    console.error("fetchData error:", err);
-    toast.error("خطا در دریافت داده‌ها");
-  }
-};
-
+  };
 
   useEffect(() => {
     fetchData();
-  }, [filterType, filterFrom, filterTo]);
+  }, [filterType]);
 
-  /* ===== map منابع ===== */
+  /* ================= Helpers ================= */
   const registrationMap = useMemo(() => {
     const map = {};
     registrations.forEach((r) => {
@@ -145,71 +129,157 @@ export default function JournalPage() {
     return map;
   }, [registrations]);
 
-  const getRef = (ref_type, ref_id) => {
-    if (["doctor", "patient", "customer", "supplier"].includes(ref_type)) {
-      return registrationMap[`${ref_type}_${Number(ref_id)}`] ?? null;
-    } else if (["sale", "parchase"].includes(ref_type)) {
-      return transactions[ref_type]?.find((t) => Number(t.id) === Number(ref_id)) ?? null;
+  const getRef = (type, id) => {
+    if (["doctor", "patient", "customer", "supplier"].includes(type)) {
+      return registrationMap[`${type}_${Number(id)}`] ?? null;
+    }
+    if (["sale", "parchase"].includes(type)) {
+      return (
+        transactions[type]?.find((t) => Number(t.id) === Number(id)) ?? null
+      );
     }
     return null;
   };
 
+  const refTypes = useMemo(() => {
+    return [
+      ...new Set([
+        ...registrations.map((r) => r.reg_type),
+        "sale",
+        "parchase",
+      ]),
+    ];
+  }, [registrations]);
+
+  const filteredRefs = useMemo(() => {
+    if (!form.ref_type) return [];
+
+    if (["doctor", "patient", "customer", "supplier"].includes(form.ref_type)) {
+      return registrations.filter((r) => r.reg_type === form.ref_type);
+    }
+
+    return transactions[form.ref_type] || [];
+  }, [form.ref_type, registrations, transactions]);
+
   const filteredJournals = useMemo(() => {
     if (!searchTerm.trim()) return journals;
+
     const term = searchTerm.toLowerCase();
+
     return journals.filter((j) => {
       const ref = getRef(j.ref_type, j.ref_id);
       const name =
-        ref?.full_name ?? ref?.customer_name ?? ref?.supplier_name ?? ref?.doctor_name ?? ref?.patient_name ?? "";
-      return (REF_TYPE_FA[j.ref_type] ?? "").toLowerCase().includes(term) || name.toLowerCase().includes(term);
+        ref?.full_name ??
+        ref?.display_name ??
+        ref?.customer_name ??
+        ref?.supplier_name ??
+        "";
+      return (
+        (REF_TYPE_FA[j.ref_type] ?? "").toLowerCase().includes(term) ||
+        name.toLowerCase().includes(term)
+      );
     });
-  }, [searchTerm, journals, registrationMap, transactions]);
+  }, [journals, searchTerm, registrationMap, transactions]);
 
   const totalPages = Math.ceil(filteredJournals.length / ROWS_PER_PAGE);
-  const currentRows = filteredJournals.slice((currentPage - 1) * ROWS_PER_PAGE, currentPage * ROWS_PER_PAGE);
 
-  /* ===== فرم ===== */
+  const currentRows = filteredJournals.slice(
+    (currentPage - 1) * ROWS_PER_PAGE,
+    currentPage * ROWS_PER_PAGE
+  );
+
+  /* ================= Form ================= */
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((p) => ({ ...p, [name]: value, ...(name === "ref_type" ? { ref_id: "" } : {}) }));
+    setForm((p) => ({
+      ...p,
+      [name]: value,
+      ...(name === "ref_type" ? { ref_id: "" } : {}),
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.amount || form.amount <= 0) return toast.error("مبلغ باید بزرگتر از صفر باشد");
-    if (!form.ref_type || !form.ref_id) return toast.error("نوع منبع و نام منبع الزامی است");
+
+    if (!form.amount || Number(form.amount) <= 0)
+      return toast.error("مبلغ باید بزرگتر از صفر باشد");
+
+    if (!form.ref_type || !form.ref_id)
+      return toast.error("نوع منبع و نام منبع الزامی است");
 
     try {
-      await api.post("/journals", { ...form, amount: Number(form.amount), ref_id: Number(form.ref_id) });
+      await api.post("/journals", {
+        ...form,
+        amount: Number(form.amount),
+        ref_id: Number(form.ref_id),
+      });
+
       toast.success("ذخیره شد");
-      setForm({ journal_date: "", description: "", entry_type: "debit", amount: "", ref_type: "", ref_id: "" });
+
+      setForm({
+        journal_date: "",
+        description: "",
+        entry_type: "debit",
+        amount: "",
+        ref_type: "",
+        ref_id: "",
+      });
+
       fetchData();
     } catch (err) {
-      console.error("handleSubmit error:", err);
       toast.error(err.response?.data?.message || "خطا در ذخیره");
     }
   };
 
-  const filteredRegistrations = registrations.filter((r) => r.reg_type === form.ref_type);
+  const inputClass =
+    "w-full rounded-xl px-3 py-1 text-sm bg-[#122b55] text-white border border-[#1e3a8a]";
 
-  const inputClass = "w-full rounded-xl px-3 py-1 text-sm bg-[#122b55] text-white border border-[#1e3a8a]";
-
-  /* ===== Render ===== */
+  /* ================= Render ================= */
   return (
     <MainLayoutjur>
       <ToastContainer />
       <h2 style={{ textAlign: "center" }}>ثبت و مدیریت محاسبات</h2>
 
-      {/* ===== فیلتر + جستجو ===== */}
-      <div className="form-container mb-6">
-        <div className="form-grid">
+      <div className="form-container mb-6 flex gap-3">
+        <select
+          value={filterType}
+          onChange={(e) => setFilterType(e.target.value)}
+          className={inputClass}
+        >
+          <option value="">همه نوع‌ها</option>
+          {Object.keys(ENTRY_TYPE_FA).map((t) => (
+            <option key={t} value={t}>
+              {ENTRY_TYPE_FA[t]}
+            </option>
+          ))}
+        </select>
+
+        <input
+          type="text"
+          placeholder="جستجو..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className={inputClass}
+        />
+      </div>
+
+      <div className="form-container mb-10">
+        <form onSubmit={handleSubmit} className="form-grid gap-3">
+          <input
+            type="date"
+            name="journal_date"
+            value={form.journal_date}
+            onChange={handleChange}
+            className={inputClass}
+          />
+
           <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
+            name="entry_type"
+            value={form.entry_type}
+            onChange={handleChange}
             className={inputClass}
           >
-            <option value="">همه نوع‌ها</option>
-            {ENTRY_TYPES.map((t) => (
+            {Object.keys(ENTRY_TYPE_FA).map((t) => (
               <option key={t} value={t}>
                 {ENTRY_TYPE_FA[t]}
               </option>
@@ -217,117 +287,58 @@ export default function JournalPage() {
           </select>
 
           <input
-            type="date"
-            value={filterFrom}
-            onChange={(e) => setFilterFrom(e.target.value)}
-            className={inputClass}
-          />
-
-          <input
-            type="date"
-            value={filterTo}
-            onChange={(e) => setFilterTo(e.target.value)}
+            type="number"
+            name="amount"
+            value={form.amount}
+            onChange={handleChange}
+            placeholder="مبلغ"
             className={inputClass}
           />
 
           <input
             type="text"
-            placeholder="جستجو: مشتری، داکتر، مریض..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
+            name="description"
+            value={form.description}
+            onChange={handleChange}
+            placeholder="توضیحات"
             className={inputClass}
           />
-        </div>
-      </div>
 
-      {/* ===== فرم ثبت ===== */}
-      <div className="form-container mb-10">
-        <h2 style={{ textAlign: "center" }}>ثبت محاسبات جدید</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="form-grid">
-            <input
-              type="date"
-              name="journal_date"
-              value={form.journal_date}
-              onChange={handleChange}
-              className={inputClass}
-            />
+          <select
+            name="ref_type"
+            value={form.ref_type}
+            onChange={handleChange}
+            className={inputClass}
+          >
+            <option value="">نوع منبع</option>
+            {refTypes.map((t) => (
+              <option key={t} value={t}>
+                {REF_TYPE_FA[t] ?? t}
+              </option>
+            ))}
+          </select>
 
-            <select
-              name="entry_type"
-              value={form.entry_type}
-              onChange={handleChange}
-              className={inputClass}
-            >
-              {ENTRY_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {ENTRY_TYPE_FA[t]}
-                </option>
-              ))}
-            </select>
+          <select
+            name="ref_id"
+            value={form.ref_id}
+            onChange={handleChange}
+            disabled={!form.ref_type}
+            className={inputClass}
+          >
+            <option value="">نام منبع</option>
+            {filteredRefs.map((r) => (
+              <option key={r.id ?? r.reg_id} value={r.id ?? r.reg_id}>
+                {r.full_name ?? r.display_name ?? `شماره ${r.id ?? r.reg_id}`}
+              </option>
+            ))}
+          </select>
 
-            <input
-              type="number"
-              name="amount"
-              value={form.amount}
-              onChange={handleChange}
-              placeholder="مبلغ"
-              className={inputClass}
-            />
-
-            <input
-              type="text"
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-              placeholder="توضیحات"
-              className={inputClass}
-            />
-
-            <select
-              name="ref_type"
-              value={form.ref_type}
-              onChange={handleChange}
-              className={inputClass}
-            >
-              <option value="">نوع منبع</option>
-              {[...new Set(registrations.map((r) => r.reg_type))].map(
-                (t) => (
-                  <option key={t} value={t}>
-                    {REF_TYPE_FA[t] ?? t}
-                  </option>
-                )
-              )}
-            </select>
-
-            <select
-              name="ref_id"
-              value={form.ref_id}
-              onChange={handleChange}
-              disabled={!form.ref_type}
-              className={inputClass}
-            >
-              <option value="">نام منبع</option>
-              {filteredRegistrations.map((r) => (
-                <option key={r.reg_id} value={String(r.reg_id)}>
-                  {r.full_name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="text-center mt-6">
-            <button className="px-10 py-2 bg-blue-700 rounded-xl text-white">
-              ثبت
-            </button>
-          </div>
+          <button className="bg-blue-700 text-white rounded-xl py-2">
+            ثبت
+          </button>
         </form>
       </div>
 
-      {/* ===== جدول ژورنال‌ها ===== */}
       <div className="table-container">
         <table>
           <thead>
@@ -340,32 +351,55 @@ export default function JournalPage() {
               <th>نام منبع</th>
             </tr>
           </thead>
+
           <tbody>
             {currentRows.length ? (
-              currentRows.map((j) => {
-                const ref = getRef(j.ref_type, j.ref_id);
-                const name =
-                  ref?.full_name ??
-                  ref?.customer_name ??
-                  ref?.supplier_name ??
-                  ref?.doctor_name ??
-                  ref?.patient_name ??
-                  "-";
+              (() => {
+                let lastKey = null;
+                let groupIndex = -1;
 
-                return (
-                  <tr key={j.id}>
-                    <td>{j.journal_date}</td>
-                    <td>{ENTRY_TYPE_FA[j.entry_type]}</td>
-                    <td>{j.description || "-"}</td>
-                    <td>{j.amount}</td>
-                    <td>{REF_TYPE_FA[j.ref_type]}</td>
-                    <td>{name}</td>
-                  </tr>
-                );
-              })
+                return currentRows.map((j) => {
+                  const currentKey = `${j.ref_type}_${j.ref_id}`;
+
+                  if (currentKey !== lastKey) {
+                    groupIndex++;
+                    lastKey = currentKey;
+                  }
+
+                  const ref = getRef(j.ref_type, j.ref_id);
+
+                  let name =
+                    ref?.full_name ??
+                    ref?.display_name ??
+                    ref?.customer_name ??
+                    ref?.supplier_name ??
+                    "-";
+
+                  let backgroundColor = "#123a70";
+
+                  if (
+                    ["doctor", "patient", "supplier"].includes(j.ref_type)
+                  ) {
+                    backgroundColor = groupIndex % 2 === 0 ? "#1b3a70" : "#0f2f55";
+                  } else {
+                    backgroundColor = groupIndex % 2 === 0 ? "#123a70" : "#0f2f66";
+                  }
+
+                  return (
+                    <tr key={j.id} style={{ backgroundColor, transition: "0.2s" }}>
+                      <td>{j.journal_date}</td>
+                      <td>{ENTRY_TYPE_FA[j.entry_type]}</td>
+                      <td>{j.description || "-"}</td>
+                      <td>{j.amount}</td>
+                      <td>{REF_TYPE_FA[j.ref_type]}</td>
+                      <td>{name}</td>
+                    </tr>
+                  );
+                });
+              })()
             ) : (
               <tr>
-                <td colSpan="6" className="text-center p-4">
+                <td colSpan="6" style={{ textAlign: "center" }}>
                   نتیجه‌ای یافت نشد
                 </td>
               </tr>
@@ -375,7 +409,7 @@ export default function JournalPage() {
       </div>
 
       {totalPages > 1 && (
-        <div className="flex justify-center gap-2 mt-4">
+        <div className="flex justify-center gap-3 mt-4">
           <button
             disabled={currentPage === 1}
             onClick={() => setCurrentPage((p) => p - 1)}
