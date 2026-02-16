@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Journal;
 use App\Models\Registrations;
+use App\Models\Sales;
+use App\Models\Parchase; // فرض می‌کنیم مدل خرید هم هست
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -14,36 +16,34 @@ class JournalController extends Controller
     {
         $query = Journal::query();
 
-        if ($request->filled('type')) {
-            $query->where('entry_type', $request->type);
-        }
-
-        if ($request->filled('from')) {
-            $query->whereDate('journal_date', '>=', $request->from);
-        }
-
-        if ($request->filled('to')) {
-            $query->whereDate('journal_date', '<=', $request->to);
-        }
-
-        if ($request->filled('ref_type')) {
-            $query->where('ref_type', $request->ref_type);
-        }
-
-        if ($request->filled('ref_id')) {
-            $query->where('ref_id', $request->ref_id);
-        }
+        if ($request->filled('type')) $query->where('entry_type', $request->type);
+        if ($request->filled('from')) $query->whereDate('journal_date', '>=', $request->from);
+        if ($request->filled('to')) $query->whereDate('journal_date', '<=', $request->to);
+        if ($request->filled('ref_type')) $query->where('ref_type', $request->ref_type);
+        if ($request->filled('ref_id')) $query->where('ref_id', $request->ref_id);
 
         $journals = $query->orderBy('journal_date', 'desc')->get();
 
-        // Attach registration info if applicable
         $journals->transform(function ($j) {
+            $j->full_name = null;
+            $j->display_name = null;
+
             if (in_array($j->ref_type, ['doctor', 'patient', 'customer', 'supplier'])) {
                 $reg = Registrations::where('reg_type', $j->ref_type)
-                    ->where('reg_id', $j->ref_id)
-                    ->first();
+                    ->where('reg_id', $j->ref_id)->first();
                 $j->full_name = $reg->full_name ?? null;
             }
+
+            if ($j->ref_type === 'sale') {
+                $sale = Sales::find($j->ref_id);
+                $j->display_name = $sale->customer->full_name ?? "فروش شماره {$j->ref_id}";
+            }
+
+            if ($j->ref_type === 'parchase') {
+                $parchase = Parchase::find($j->ref_id);
+                $j->display_name = $parchase->supplier->full_name ?? "خرید شماره {$j->ref_id}";
+            }
+
             return $j;
         });
 
@@ -53,12 +53,8 @@ class JournalController extends Controller
     public function registrations(Request $request)
     {
         $query = Registrations::query();
-        if ($request->filled('type')) {
-            $query->where('reg_type', $request->type);
-        }
-        return response()->json(
-            $query->select('reg_id', 'full_name', 'reg_type')->get()
-        );
+        if ($request->filled('type')) $query->where('reg_type', $request->type);
+        return response()->json($query->select('reg_id', 'full_name', 'reg_type')->get());
     }
 
     public function store(Request $request)
@@ -66,17 +62,16 @@ class JournalController extends Controller
         $validated = $request->validate([
             'journal_date' => 'required|date',
             'description'  => 'nullable|string|max:1000',
-            'entry_type'   => ['required', Rule::in(['debit', 'credit'])],
+            'entry_type'   => ['required', Rule::in(['debit','credit'])],
             'amount'       => 'required|numeric|min:0.01',
             'ref_type'     => 'required|string',
             'ref_id'       => 'required|integer',
         ]);
 
         $exists = Registrations::where('reg_type', $validated['ref_type'])
-            ->where('reg_id', $validated['ref_id'])
-            ->exists();
+            ->where('reg_id', $validated['ref_id'])->exists();
 
-        if (! $exists && !in_array($validated['ref_type'], ['sale', 'parchase'])) {
+        if (! $exists && !in_array($validated['ref_type'], ['sale','parchase'])) {
             return response()->json(['message' => 'رویداد انتخاب‌شده معتبر نیست.'], 422);
         }
 

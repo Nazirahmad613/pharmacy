@@ -13,16 +13,14 @@ class SalesController extends Controller
 {
     public function index()
     {
-        // لود فروش‌ها همراه با مشتری و آیتم‌ها و تأمین‌کنندگان
         $sales = Sales::with([
-            'customer', // مشتری
-            'items.supplier', // تامین‌کننده
+            'customer',
+            'items.supplier',
             'items.medication',
             'items.category',
-        ])->get()
-        ->map(function ($sale) {
+        ])->get()->map(function ($sale) {
             return [
-                'id'            => $sale->sales_id,
+                'id'            => $sale->sales_id, // مهم: id با ref_id در Journal هماهنگ است
                 'sales_date'    => $sale->sales_date,
                 'customer_name' => $sale->customer->full_name ?? '-',
                 'total_sales'   => $sale->total_sales,
@@ -33,15 +31,15 @@ class SalesController extends Controller
                 'payment_status'=> $sale->payment_status,
                 'items'         => $sale->items->map(function($item) {
                     return [
-                        'med_id'       => $item->med_id,
-                        'med_name'     => $item->medication->med_name ?? '-',
-                        'category_name'=> $item->category->category_name ?? '-',
-                        'supplier_name'=> $item->supplier->full_name ?? '-',
-                        'type'         => $item->type,
-                        'quantity'     => $item->quantity,
-                        'unit_sales'   => $item->unit_sales,
-                        'total_sales'  => $item->total_sales,
-                        'exp_date'     => $item->exp_date,
+                        'med_id'        => $item->med_id,
+                        'med_name'      => $item->medication->med_name ?? '-',
+                        'category_name' => $item->category->category_name ?? '-',
+                        'supplier_name' => $item->supplier->full_name ?? '-',
+                        'type'          => $item->type,
+                        'quantity'      => $item->quantity,
+                        'unit_sales'    => $item->unit_sales,
+                        'total_sales'   => $item->total_sales,
+                        'exp_date'      => $item->exp_date,
                     ];
                 }),
             ];
@@ -57,7 +55,6 @@ class SalesController extends Controller
             'cust_id' => 'required|exists:registrations,reg_id',
             'discount' => 'nullable|numeric|min:0',
             'total_paid' => 'nullable|numeric|min:0',
-
             'items' => 'required|array|min:1',
             'items.*.med_id' => 'required|exists:medications,med_id',
             'items.*.supplier_id' => 'required|exists:registrations,reg_id',
@@ -71,21 +68,12 @@ class SalesController extends Controller
         DB::beginTransaction();
 
         try {
-            $totalSales = collect($validated['items'])->sum(function($item) {
-                return $item['quantity'] * $item['unit_sales'];
-            });
-
+            $totalSales = collect($validated['items'])->sum(fn($item) => $item['quantity'] * $item['unit_sales']);
             $discount = $validated['discount'] ?? 0;
             $netSales = $totalSales - $discount;
+            if ($netSales < 0) throw new \Exception('Net sales cannot be negative');
 
-            if ($netSales < 0) {
-                throw new \Exception('Net sales cannot be negative');
-            }
-
-            $totalPaid = $validated['total_paid'] ?? 0;
-            if ($totalPaid > $netSales) {
-                $totalPaid = $netSales;
-            }
+            $totalPaid = min($validated['total_paid'] ?? 0, $netSales);
 
             $sale = Sales::create([
                 'sales_date'  => $validated['sales_date'],
@@ -110,7 +98,7 @@ class SalesController extends Controller
                 ]);
             }
 
-            // ثبت ژورنال فروش (درآمد) همراه با ref_type و ref_id
+            // ثبت ژورنال فروش و دریافت وجه با یک ref_type (sale) تا در React نمایش داده شود
             Journal::create([
                 'journal_date' => $sale->sales_date,
                 'description'  => 'ثبت فروش',
@@ -121,14 +109,13 @@ class SalesController extends Controller
                 'user_id'      => Auth::id(),
             ]);
 
-            // ثبت دریافت وجه (در صورت وجود پرداخت)
             if ($totalPaid > 0) {
                 Journal::create([
                     'journal_date' => $sale->sales_date,
                     'description'  => 'دریافت وجه فروش',
                     'entry_type'   => Journal::ENTRY_DEBIT,
                     'amount'       => $totalPaid,
-                    'ref_type'     => 'payment_in',
+                    'ref_type'     => 'sale', // ⚠ اصلاح شد
                     'ref_id'       => $sale->sales_id,
                     'user_id'      => Auth::id(),
                 ]);
@@ -149,17 +136,12 @@ class SalesController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-
             Log::error('Sale store error', [
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
                 'request' => $request->all(),
                 'user_id' => Auth::id()
             ]);
-
-            return response()->json([
-                'message' => 'Server Error',
-                'error'   => $e->getMessage(),
-            ], 500);
+            return response()->json(['message'=>'Server Error','error'=>$e->getMessage()], 500);
         }
     }
 }

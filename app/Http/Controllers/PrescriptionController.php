@@ -71,30 +71,29 @@ class PrescriptionController extends Controller
                 'patient_name' => $prescription->patient_name,
                 'doc_name'     => $prescription->doc_name,
             ];
+// 🔴 بدهکار: مریض
+Journal::create([
+    'journal_date' => $request->pres_date,
+    'entry_type'   => 'debit',
+    'amount'       => $request->net_amount,
+    'description'  => 'بدهکاری مریض بابت نسخه شماره ' . $request->pres_num,
+    'ref_type'     => 'patient',              // 👈 تغییر مهم
+    'ref_id'       => $request->patient_id,   // 👈 reg_id مریض
+    'user_id'      => Auth::id(),
+]);
 
-            // 🔴 بدهکار: مریض
-            Journal::create([
-                'journal_date' => $request->pres_date,
-                'entry_type'   => 'debit',
-                'amount'       => $request->net_amount,
-                'description'  => 'بدهکاری مریض بابت نسخه شماره ' . $request->pres_num,
-                'ref_type'     => 'prescription',
-                'ref_id'       => $prescription->pres_id,
-                'ref_info'     => json_encode($refInfo), // ذخیره نام‌ها در یک فیلد JSON
-                'user_id'      => Auth::id(),
-            ]);
+// 🟢 بستانکار: فروش دوا
+Journal::create([
+    'journal_date' => $request->pres_date,
+    'entry_type'   => 'credit',
+    'amount'       => $request->net_amount,
+    'description'  => 'فروش دوا بابت نسخه شماره ' . $request->pres_num,
+    'ref_type'     => 'patient',              // 👈 تغییر
+    'ref_id'       => $request->patient_id,
+    'user_id'      => Auth::id(),
+]);
 
-            // 🟢 بستانکار: فروش دوا
-            Journal::create([
-                'journal_date' => $request->pres_date,
-                'entry_type'   => 'credit',
-                'amount'       => $request->net_amount,
-                'description'  => 'فروش دوا بابت نسخه شماره ' . $request->pres_num,
-                'ref_type'     => 'prescription',
-                'ref_id'       => $prescription->pres_id,
-                'ref_info'     => json_encode($refInfo),
-                'user_id'      => Auth::id(),
-            ]);
+         
         });
 
         return response()->json([

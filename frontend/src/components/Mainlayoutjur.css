@@ -70,8 +70,6 @@ html, body {
 }
 
 /* ================= جدول‌ها (عمومی و آیتم‌ها) ================= */
-
-/* 🔥 این بخش مشکل تو را حل می‌کند */
 table {
   width: 100%;
   border-collapse: collapse;
@@ -80,8 +78,8 @@ table {
 }
 
 table thead th {
-  background-color: #1e3a8a !important;
-  color: #ffffff !important;
+  background-color: #1e3a8a;
+  color: #ffffff;
 }
 
 table td,
@@ -92,15 +90,14 @@ table th {
   border-bottom: 1px solid #2c3e8c;
 }
 
-/* 🔥 آیتم‌هایی که سفید بودند */
+/* حذف background-color ثابت برای tbody td */
 table tbody td {
-  background-color: #0f2a55 !important;
-  color: #ffffff !important;
+  color: #ffffff;
 }
 
 /* hover */
 table tbody tr:hover td {
-  background-color: #123b75 !important;
+  background-color: #123b75;
 }
 
 /* ================= کانتینر جدول ================= */
@@ -125,12 +122,12 @@ table td button {
 
 table td button.edit {
   background-color: #fbbf24;
-  color: #000 !important;
+  color: #000;
 }
 
 table td button.delete {
   background-color: #ef4444;
-  color: #ffffff !important;
+  color: #ffffff;
 }
 
 /* ================= دکمه ثبت ================= */
@@ -138,7 +135,7 @@ button.edit {
   display: block;
   margin: 25px auto;
   background-color: #2563eb;
-  color: #ffffff !important;
+  color: #ffffff;
   height: 32px;
   width: 160px;
   border-radius: 6px;
@@ -151,6 +148,7 @@ button.edit:hover {
   background-color: #1e40af;
 }
 
+/* ================= dark-table ================= */
 .dark-table {
   width: 100%;
   border-collapse: collapse;
@@ -159,8 +157,8 @@ button.edit:hover {
 }
 
 .dark-table thead th {
-  background-color: #1e3a8a !important;
-  color: #ffffff !important;
+  background-color: #1e3a8a;
+  color: #ffffff;
 }
 
 .dark-table td,
@@ -171,11 +169,11 @@ button.edit:hover {
   border-bottom: 1px solid #2c3e8c;
 }
 
+/* حذف background-color ثابت در tbody */
 .dark-table tbody td {
-  background-color: #0f2a55 !important;
-  color: #ffffff !important;
+  color: #ffffff;
 }
 
 .dark-table tbody tr:hover td {
-  background-color: #123b75 !important;
+  background-color: #123b75;
 }

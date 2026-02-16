@@ -97,42 +97,49 @@ class ParchasesController extends Controller
 // 🔗 ثبت خودکار ژورنال
 // ===============================
 
-// 1️⃣ بدهکار - موجودی دارو (Inventory)
+ // ===============================
+// 🔗 ثبت ژورنال اصلاح‌شده خرید
+// ===============================
+
+$supplierId = $validated['items'][0]['supplier_id']; // فرض: همه آیتم‌ها یک supplier دارند
+
+// 1️⃣ بدهکار - موجودی
 Journal::create([
     'journal_date' => $parchase->parchase_date,
-    'description'  => "خرید دارو - شماره {$parchase->parchase_id}",
-    'entry_type'   => Journal::ENTRY_DEBIT,   // موجودی افزایش → بدهکار
+    'description'  => "خرید دارو",
+    'entry_type'   => Journal::ENTRY_DEBIT,
     'amount'       => $total_parchase,
-    'ref_type'     => 'parchase',
-    'ref_id'       => $parchase->parchase_id,
+    'ref_type'     => 'supplier',   // 👈 تغییر مهم
+    'ref_id'       => $supplierId,  // 👈 reg_id حمایت‌کننده
     'user_id'      => Auth::id(),
 ]);
 
-// 2️⃣ بستانکار - پرداخت نقد (Cash)
+// 2️⃣ پرداخت نقد
 if($validated['par_paid'] > 0){
     Journal::create([
         'journal_date' => $parchase->parchase_date,
-        'description'  => "پرداخت نقد - خرید دارو شماره {$parchase->parchase_id}",
-        'entry_type'   => Journal::ENTRY_CREDIT,  // پول نقد خارج شده → بستانکار
+        'description'  => "پرداخت به حمایت‌کننده",
+        'entry_type'   => Journal::ENTRY_CREDIT,
         'amount'       => $validated['par_paid'],
-        'ref_type'     => 'payment_out',
-        'ref_id'       => $parchase->parchase_id,
+        'ref_type'     => 'supplier',  // 👈 تغییر
+        'ref_id'       => $supplierId,
         'user_id'      => Auth::id(),
     ]);
 }
 
-// 3️⃣ بستانکار - بدهی مانده (Accounts Payable)
+// 3️⃣ بدهی باقی‌مانده
 if($due_par > 0){
     Journal::create([
         'journal_date' => $parchase->parchase_date,
-        'description'  => "بدهی خرید دارو شماره {$parchase->parchase_id}",
-        'entry_type'   => Journal::ENTRY_CREDIT,  // بدهی → بستانکار
+        'description'  => "بدهی حمایت‌کننده",
+        'entry_type'   => Journal::ENTRY_CREDIT,
         'amount'       => $due_par,
-        'ref_type'     => 'parchase_due',
-        'ref_id'       => $parchase->parchase_id,
+        'ref_type'     => 'supplier',  // 👈 تغییر
+        'ref_id'       => $supplierId,
         'user_id'      => Auth::id(),
     ]);
 }
+
 
 
             DB::commit();
