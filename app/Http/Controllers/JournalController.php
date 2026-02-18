@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Journal;
 use App\Models\Registrations;
 use App\Models\Sales;
-use App\Models\Parchase; // فرض می‌کنیم مدل خرید هم هست
+use App\Models\Parchase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;

@@ -36,76 +36,34 @@ export default function JournalPage() {
 
   const [filterType, setFilterType] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-
-  const ROWS_PER_PAGE = 10;
   const [currentPage, setCurrentPage] = useState(1);
+  const ROWS_PER_PAGE = 10;
 
+  // ================= FETCH DATA =================
   const fetchData = async () => {
     try {
-      const [journalsRes, registrationsRes, salesRes, purchasesRes] =
+      const [journalsRes, registrationsRes, salesRes, parchaseRes] =
         await Promise.allSettled([
           api.get("/journals", { params: { type: filterType || undefined } }),
           api.get("/registrations"),
           api.get("/sales"),
-          api.get("/purchases"),
+          api.get("/parchses"),
         ]);
 
-      let journalsData = [];
-      if (journalsRes.status === "fulfilled") {
-        const data = Array.isArray(journalsRes.value.data?.data)
-          ? journalsRes.value.data.data
-          : Array.isArray(journalsRes.value.data)
-          ? journalsRes.value.data
-          : [];
-        journalsData = [...data].reverse();
-      }
-      setJournals(journalsData);
+      const journalsData = journalsRes.status === "fulfilled" ? journalsRes.value.data ?? [] : [];
+      const regs = registrationsRes.status === "fulfilled" ? registrationsRes.value.data ?? [] : [];
+      const sales = salesRes.status === "fulfilled" ? salesRes.value.data ?? [] : [];
+      const parchases = parchaseRes.status === "fulfilled" ? parchaseRes.value.data ?? [] : [];
 
-      let regs = [];
-      if (registrationsRes.status === "fulfilled") {
-        const data = Array.isArray(registrationsRes.value.data?.data)
-          ? registrationsRes.value.data.data
-          : Array.isArray(registrationsRes.value.data)
-          ? registrationsRes.value.data
-          : [];
-        regs = data;
-      }
-      setRegistrations(regs);
+      setJournals(Array.isArray(journalsData) ? journalsData.reverse() : []);
+      setRegistrations(Array.isArray(regs) ? regs : []);
+      setTransactions({
+        sale: Array.isArray(sales) ? sales : [],
+        parchase: Array.isArray(parchases) ? parchases : [],
+      });
 
-      let sales = [];
-      if (salesRes.status === "fulfilled") {
-        const data = Array.isArray(salesRes.value.data?.data)
-          ? salesRes.value.data.data
-          : Array.isArray(salesRes.value.data)
-          ? salesRes.value.data
-          : [];
-        sales = data.map((s) => ({
-          ...s,
-          display_name: s.customer_name ?? `فروش شماره ${s.id}`,
-          remaining: s.remaining ?? s.net_sales - s.total_paid ?? 0,
-          ref_type: "sale",
-        }));
-      }
-
-      let purchases = [];
-      if (purchasesRes.status === "fulfilled") {
-        const data = Array.isArray(purchasesRes.value.data?.data)
-          ? purchasesRes.value.data.data
-          : Array.isArray(purchasesRes.value.data)
-          ? purchasesRes.value.data
-          : [];
-        purchases = data.map((p) => ({
-          ...p,
-          display_name: p.supplier_name ?? `خرید شماره ${p.id}`,
-          remaining: p.remaining ?? p.total_amount - p.total_paid ?? 0,
-          ref_type: "parchase",
-        }));
-      }
-
-      setTransactions({ sale: sales, parchase: purchases });
       setCurrentPage(1);
     } catch (err) {
-      console.error(err);
       toast.error("خطا در دریافت داده‌ها");
     }
   };
@@ -114,6 +72,7 @@ export default function JournalPage() {
     fetchData();
   }, [filterType]);
 
+  // ================= REGISTRATION MAP =================
   const registrationMap = useMemo(() => {
     const map = {};
     registrations.forEach((r) => {
@@ -122,100 +81,132 @@ export default function JournalPage() {
     return map;
   }, [registrations]);
 
-  const getRef = (type, id) => {
-    if (["doctor", "patient", "customer", "supplier"].includes(type)) {
-      return registrationMap[`${type}_${id}`] ?? null;
-    }
-    if (["sale", "parchase"].includes(type)) {
-      return transactions[type]?.find((t) => t.id === id) ?? null;
-    }
-    return null;
-  };
+  const getRef = (type, id) => registrationMap[`${type}_${id}`] ?? null;
 
+  // ================= REF TYPES =================
   const refTypes = useMemo(() => {
-    return [...new Set([...registrations.map((r) => r.reg_type), "sale", "parchase"])];
+    const regTypes = Array.isArray(registrations) ? registrations.map((r) => r.reg_type) : [];
+    return [...new Set([...regTypes, "sale", "parchase"])];
   }, [registrations]);
 
   const filteredRefs = useMemo(() => {
     if (!form.ref_type) return [];
+
     if (["doctor", "patient", "customer", "supplier"].includes(form.ref_type)) {
       return registrations.filter((r) => r.reg_type === form.ref_type);
     }
-    return transactions[form.ref_type] || [];
+
+    return Array.isArray(transactions[form.ref_type]) ? transactions[form.ref_type] : [];
   }, [form.ref_type, registrations, transactions]);
 
   const combinedRows = useMemo(() => {
-    const rows = [];
+  const rows = [];
 
-    // فروش
-    transactions.sale.forEach((s) => {
-      rows.push({
-        id: `sale_${s.id}`,
-        date: s.sales_date,
-        entry_type: s.entry_type ?? "debit",
-        description: `فروش کالا یا خدمت شماره ${s.id}`,
-        amount: s.net_sales,
-        paid: s.total_paid ?? 0,
-        remaining: s.remaining ?? 0,
-        source_type: "sale",
-        source_name: s.display_name,
-      });
+  // فروش
+  transactions.sale.forEach((s) => {
+    const total = Number(s.net_sales ?? 0);
+    const paid = Number(s.total_paid ?? 0);
+
+    rows.push({
+      id: `sale_${s.sales_id ?? s.id}`,
+      date: s.sales_date ?? "",
+      entry_type: "debit",
+      description: `فروش شماره ${s.sales_id ?? s.id}`,
+      amount: total,
+      paid: paid,
+      remaining: total - paid,
+      source_type: "sale",
+      source_name: s.customer_name ?? "مشتری",
     });
+  });
 
-    // خرید — اصلاح شده برای نمایش بلافاصله
-    transactions.parchase.forEach((p) => {
+  // خرید
+  transactions.parchase.forEach((p) => {
+    const total = Number(p.total_parchase ?? 0);
+    const paid = Number(p.par_paid ?? 0);
+
+    // نام حمایت‌کننده
+    const supplierName =
+      p.items?.[0]?.supplier?.full_name ??
+      p.items?.[0]?.supplier?.name ??
+      getRef("supplier", p.supplier_id)?.full_name ??
+      "حمایت‌کننده";
+
+    rows.push({
+      id: `parchase_${p.parchase_id}`,
+      date: p.parchase_date ?? "",
+      entry_type: "debit",
+      description: `خرید شماره ${p.parchase_id}`,
+      amount: total,
+      paid: paid,
+      remaining: total - paid,
+      source_type: "parchase",
+      source_name: supplierName,
+    });
+  });
+
+  // ژورنال‌های دیگر (نسخه مریض و خریدهای ثبت شده در ژورنال)
+  journals.forEach((j) => {
+    if (j.ref_type === "patient") {
       rows.push({
-        id: `parchase_${p.id}`,
-        date: p.purchase_date,
-        entry_type: p.entry_type ?? "credit",
-        description: `خرید کالا یا خدمت شماره ${p.id}`,
-        amount: p.total_amount,
-        paid: p.total_paid ?? 0,
-        remaining: p.remaining ?? 0,
+        id: `patient_${j.id}`,
+        date: j.journal_date,
+        entry_type: j.entry_type,
+        description: j.description ?? "نسخه مریض",
+        amount: Number(j.amount ?? 0),
+        paid: j.entry_type === "credit" ? Number(j.amount ?? 0) : Number(j.amount ?? 0),
+        remaining: j.entry_type === "debit" ? Number(j.amount ?? 0) : 0,
+        source_type: "patient",
+        source_name: getRef("patient", j.ref_id)?.full_name ?? "مریض",
+      });
+    }
+
+    if (j.ref_type === "parchase") {
+      rows.push({
+        id: `parchase_journal_${j.id}`,
+        date: j.journal_date,
+        entry_type: j.entry_type,
+        description: j.description ?? `خرید شماره ${j.ref_id}`,
+        amount: Number(j.amount ?? 0),
+        paid: j.entry_type === "credit" ? Number(j.amount ?? 0) : 0,
+        remaining: j.entry_type === "debit" ? Number(j.amount ?? 0) : 0,
         source_type: "parchase",
-        source_name: p.display_name,
+        source_name:
+          getRef("supplier", j.ref_id)?.full_name ?? `خرید شماره ${j.ref_id}`,
       });
-    });
+    }
+  });
 
-    // نسخه‌ها
-    journals.forEach((v) => {
-      if (v.ref_type === "patient") {
-        const ref = getRef(v.ref_type, v.ref_id);
-        rows.push({
-          id: `patient_${v.id}`,
-          date: v.journal_date,
-          entry_type: v.entry_type,
-          description: v.description ?? `نسخه شماره ${v.id}`,
-          amount: v.amount,
-          paid: 0,
-          remaining: v.amount,
-          source_type: "patient",
-          source_name: ref?.full_name ?? "-",
-        });
-      }
-    });
+  return rows.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+}, [transactions, journals, registrationMap]);
 
-    return rows.sort((a, b) => new Date(b.date) - new Date(a.date));
-  }, [transactions, journals]);
-
+  // ================= SEARCH =================
   const filteredRows = useMemo(() => {
     if (!searchTerm.trim()) return combinedRows;
     const term = searchTerm.toLowerCase();
-    return combinedRows.filter((row) => {
-      return (
-        (row.source_name ?? "").toLowerCase().includes(term) ||
-        (row.description ?? "").toLowerCase().includes(term) ||
-        (REF_TYPE_FA[row.source_type] ?? "").toLowerCase().includes(term)
-      );
-    });
+    return combinedRows.filter(
+      (row) =>
+        row.source_name?.toLowerCase().includes(term) ||
+        row.description?.toLowerCase().includes(term)
+    );
   }, [combinedRows, searchTerm]);
 
   const totalPages = Math.ceil(filteredRows.length / ROWS_PER_PAGE);
-  const currentRows = filteredRows.slice((currentPage - 1) * ROWS_PER_PAGE, currentPage * ROWS_PER_PAGE);
+  const currentRows = filteredRows.slice(
+    (currentPage - 1) * ROWS_PER_PAGE,
+    currentPage * ROWS_PER_PAGE
+  );
+
+  const inputClass =
+    "bg-[#111] text-white border border-gray-600 rounded-xl px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-600";
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((p) => ({ ...p, [name]: value, ...(name === "ref_type" ? { ref_id: "" } : {}) }));
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+      ...(name === "ref_type" ? { ref_id: "" } : {}),
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -227,13 +218,11 @@ export default function JournalPage() {
       await api.post("/journals", { ...form, amount: Number(form.amount), ref_id: Number(form.ref_id) });
       toast.success("ذخیره شد");
       setForm({ journal_date: "", description: "", entry_type: "debit", amount: "", ref_type: "", ref_id: "" });
-      fetchData(); // ⚡ اطمینان از نمایش فوری خرید جدید
+      fetchData();
     } catch (err) {
       toast.error(err.response?.data?.message || "خطا در ذخیره");
     }
   };
-
-  const inputClass = "w-full rounded-xl px-3 py-1 text-sm bg-[#122b55] text-white border border-[#1e3a8a]";
 
   return (
     <MainLayoutjur>
@@ -247,26 +236,37 @@ export default function JournalPage() {
             <option key={t} value={t}>{ENTRY_TYPE_FA[t]}</option>
           ))}
         </select>
-        <input type="text" placeholder="جستجو..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className={inputClass} />
+
+        <input
+          type="text"
+          placeholder="جستجو..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className={inputClass}
+        />
       </div>
 
       <div className="form-container mb-10">
         <form onSubmit={handleSubmit} className="form-grid gap-3">
-          <input type="date" name="journal_date" value={form.journal_date} onChange={handleChange} className={inputClass} />
-          <select name="entry_type" value={form.entry_type} onChange={handleChange} className={inputClass}>
+          <input type="date" name="journal_date" value={form.journal_date} onChange={handleChange} className={inputClass} required />
+          <select name="entry_type" value={form.entry_type} onChange={handleChange} className={inputClass} required>
             {Object.keys(ENTRY_TYPE_FA).map((t) => <option key={t} value={t}>{ENTRY_TYPE_FA[t]}</option>)}
           </select>
-          <input type="number" name="amount" value={form.amount} onChange={handleChange} placeholder="مبلغ" className={inputClass} />
+          <input type="number" name="amount" value={form.amount} onChange={handleChange} placeholder="مبلغ" className={inputClass} required />
           <input type="text" name="description" value={form.description} onChange={handleChange} placeholder="توضیحات" className={inputClass} />
-          <select name="ref_type" value={form.ref_type} onChange={handleChange} className={inputClass}>
+          <select name="ref_type" value={form.ref_type} onChange={handleChange} className={inputClass} required>
             <option value="">نوع منبع</option>
             {refTypes.map((t) => <option key={t} value={t}>{REF_TYPE_FA[t] ?? t}</option>)}
           </select>
-          <select name="ref_id" value={form.ref_id} onChange={handleChange} disabled={!form.ref_type} className={inputClass}>
+          <select name="ref_id" value={form.ref_id} onChange={handleChange} disabled={!form.ref_type} className={inputClass} required>
             <option value="">نام منبع</option>
-            {filteredRefs.map((r) => <option key={r.id ?? r.reg_id} value={r.id ?? r.reg_id}>{r.full_name ?? r.display_name ?? `شماره ${r.id ?? r.reg_id}`}</option>)}
+            {filteredRefs.map((r) => {
+              const id = r.sales_id || r.parchase_id || r.id || r.reg_id;
+              const name = r.full_name || r.customer_name || r.supplier_name || r.name || `شماره ${id}`;
+              return <option key={id} value={id}>{name}</option>;
+            })}
           </select>
-          <button className="bg-blue-700 text-white rounded-xl py-2">ثبت</button>
+          <button type="submit" className="bg-blue-700 text-white rounded-xl py-2 hover:bg-blue-800">ثبت</button>
         </form>
       </div>
 
@@ -285,26 +285,30 @@ export default function JournalPage() {
             </tr>
           </thead>
           <tbody>
-            {currentRows.length ? currentRows.map((row) => {
-              let bgColor = "#1a1a1a";
-              if (row.source_type === "sale") bgColor = "#1a4a70";
-              else if (row.source_type === "parchase") bgColor = "#701a1a";
-              else if (row.source_type === "patient") bgColor = "#1a701a";
+            {currentRows.length ? (
+              currentRows.map((row) => {
+                let bgColor = "#1a1a1a";
+                if (row.source_type === "sale") bgColor = "#1a4a70";
+                else if (row.source_type === "parchase") bgColor = "#701a1a";
+                else if (row.source_type === "patient") bgColor = "#1a701a";
 
-              return (
-                <tr key={row.id} style={{ backgroundColor: bgColor, transition: "0.2s", color: "#fff" }}>
-                  <td>{row.date}</td>
-                  <td>{ENTRY_TYPE_FA[row.entry_type]}</td>
-                  <td>{row.description}</td>
-                  <td>{row.amount}</td>
-                  <td>{row.paid}</td>
-                  <td>{row.remaining}</td>
-                  <td>{REF_TYPE_FA[row.source_type]}</td>
-                  <td>{row.source_name}</td>
-                </tr>
-              );
-            }) : (
-              <tr><td colSpan="8" style={{ textAlign: "center" }}>نتیجه‌ای یافت نشد</td></tr>
+                return (
+                  <tr key={row.id} style={{ backgroundColor: bgColor, transition: "0.2s", color: "#fff" }}>
+                    <td>{row.date || "-"}</td>
+                    <td>{ENTRY_TYPE_FA[row.entry_type] || "-"}</td>
+                    <td>{row.description || "-"}</td>
+                    <td>{row.amount ?? 0}</td>
+                    <td>{row.paid ?? 0}</td>
+                    <td>{row.remaining ?? 0}</td>
+                    <td>{REF_TYPE_FA[row.source_type] || "-"}</td>
+                    <td>{row.source_name || "-"}</td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan="8" style={{ textAlign: "center" }}>نتیجه‌ای یافت نشد</td>
+              </tr>
             )}
           </tbody>
         </table>
@@ -312,9 +316,9 @@ export default function JournalPage() {
 
       {totalPages > 1 && (
         <div className="flex justify-center gap-3 mt-4">
-          <button disabled={currentPage === 1} onClick={() => setCurrentPage((p) => p - 1)}>قبلی</button>
-          <span>{currentPage} / {totalPages}</span>
-          <button disabled={currentPage === totalPages} onClick={() => setCurrentPage((p) => p + 1)}>بعدی</button>
+          <button disabled={currentPage === 1} onClick={() => setCurrentPage((p) => p - 1)} className="px-4 py-2 bg-gray-700 rounded disabled:opacity-50">قبلی</button>
+          <span className="px-4 py-2">{currentPage} / {totalPages}</span>
+          <button disabled={currentPage === totalPages} onClick={() => setCurrentPage((p) => p + 1)} className="px-4 py-2 bg-gray-700 rounded disabled:opacity-50">بعدی</button>
         </div>
       )}
     </MainLayoutjur>

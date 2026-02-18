@@ -6,7 +6,7 @@ use App\Models\Parchase;
 use App\Models\ParchaseItem;
 use App\Models\Medication;
 use App\Models\Category;
-use App\Models\Journal; // ژورنال برای ثبت تراکنش‌ها
+use App\Models\Journal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -49,7 +49,7 @@ class ParchasesController extends Controller
             'par_paid'      => 'required|numeric|min:0',
             'items'         => 'required|array|min:1',
             'items.*.med_id'      => 'required|exists:medications,med_id',
-            'items.*.supplier_id' => 'required|exists:registrations,reg_id', // توجه: از جدول registrations
+            'items.*.supplier_id' => 'required|exists:registrations,reg_id',
             'items.*.category_id' => 'required|exists:categories,category_id',
             'items.*.type'        => 'nullable|string',
             'items.*.quantity'    => 'required|integer|min:1',
@@ -80,7 +80,7 @@ class ParchasesController extends Controller
             foreach ($validated['items'] as $item) {
                 $parchase->items()->create([
                     'med_id'      => $item['med_id'],
-                    'supplier_id' => $item['supplier_id'], // از registrations
+                    'supplier_id' => $item['supplier_id'],
                     'category_id' => $item['category_id'],
                     'type'        => $item['type'] ?? null,
                     'quantity'    => $item['quantity'],
@@ -91,56 +91,47 @@ class ParchasesController extends Controller
             }
 
             // ===============================
-            // 🔗 ثبت خودکار ژورنال
+            // 🔗 ثبت ژورنال خرید با ref_type = 'parchase'
             // ===============================
-                    // ===============================
-// 🔗 ثبت خودکار ژورنال
-// ===============================
 
- // ===============================
-// 🔗 ثبت ژورنال اصلاح‌شده خرید
-// ===============================
+            $supplierId = $validated['items'][0]['supplier_id'];
 
-$supplierId = $validated['items'][0]['supplier_id']; // فرض: همه آیتم‌ها یک supplier دارند
+            // 1️⃣ بدهکار - ثبت خرید
+            Journal::create([
+                'journal_date' => $parchase->parchase_date,
+                'description'  => "خرید دارو شماره {$parchase->parchase_id}",
+                'entry_type'   => Journal::ENTRY_DEBIT,
+                'amount'       => $total_parchase,
+                'ref_type'     => 'parchase',   // 👈 تغییر از 'supplier' به 'parchase'
+                'ref_id'       => $parchase->parchase_id,  // 👈 تغییر از supplierId به parchase_id
+                'user_id'      => Auth::id(),
+            ]);
 
-// 1️⃣ بدهکار - موجودی
-Journal::create([
-    'journal_date' => $parchase->parchase_date,
-    'description'  => "خرید دارو",
-    'entry_type'   => Journal::ENTRY_DEBIT,
-    'amount'       => $total_parchase,
-    'ref_type'     => 'supplier',   // 👈 تغییر مهم
-    'ref_id'       => $supplierId,  // 👈 reg_id حمایت‌کننده
-    'user_id'      => Auth::id(),
-]);
+            // 2️⃣ پرداخت نقد
+            if($validated['par_paid'] > 0){
+                Journal::create([
+                    'journal_date' => $parchase->parchase_date,
+                    'description'  => "پرداخت به تأمین‌کننده برای خرید شماره {$parchase->parchase_id}",
+                    'entry_type'   => Journal::ENTRY_CREDIT,
+                    'amount'       => $validated['par_paid'],
+                    'ref_type'     => 'parchase',  // 👈 تغییر از 'supplier' به 'parchase'
+                    'ref_id'       => $parchase->parchase_id,  // 👈 تغییر از supplierId به parchase_id
+                    'user_id'      => Auth::id(),
+                ]);
+            }
 
-// 2️⃣ پرداخت نقد
-if($validated['par_paid'] > 0){
-    Journal::create([
-        'journal_date' => $parchase->parchase_date,
-        'description'  => "پرداخت به حمایت‌کننده",
-        'entry_type'   => Journal::ENTRY_CREDIT,
-        'amount'       => $validated['par_paid'],
-        'ref_type'     => 'supplier',  // 👈 تغییر
-        'ref_id'       => $supplierId,
-        'user_id'      => Auth::id(),
-    ]);
-}
-
-// 3️⃣ بدهی باقی‌مانده
-if($due_par > 0){
-    Journal::create([
-        'journal_date' => $parchase->parchase_date,
-        'description'  => "بدهی حمایت‌کننده",
-        'entry_type'   => Journal::ENTRY_CREDIT,
-        'amount'       => $due_par,
-        'ref_type'     => 'supplier',  // 👈 تغییر
-        'ref_id'       => $supplierId,
-        'user_id'      => Auth::id(),
-    ]);
-}
-
-
+            // 3️⃣ بدهی باقی‌مانده
+            if($due_par > 0){
+                Journal::create([
+                    'journal_date' => $parchase->parchase_date,
+                    'description'  => "بدهی خرید شماره {$parchase->parchase_id}",
+                    'entry_type'   => Journal::ENTRY_CREDIT,
+                    'amount'       => $due_par,
+                    'ref_type'     => 'parchase',  // 👈 تغییر از 'supplier' به 'parchase'
+                    'ref_id'       => $parchase->parchase_id,  // 👈 تغییر از supplierId به parchase_id
+                    'user_id'      => Auth::id(),
+                ]);
+            }
 
             DB::commit();
 
@@ -170,7 +161,6 @@ if($due_par > 0){
 
     /**
      * لود داده‌های انتخابی فرم خرید دارو
-     * واکشی حمایت‌کنندگان از registrations با reg_type='supplier'
      */
     public function loadOptions()
     {
