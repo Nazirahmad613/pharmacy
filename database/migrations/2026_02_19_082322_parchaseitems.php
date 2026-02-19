@@ -1,5 +1,5 @@
-  <?php
- use Illuminate\Database\Migrations\Migration;
+<?php
+use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
@@ -13,8 +13,9 @@ return new class extends Migration
             // ستون‌ها با نوع صحیح برای ارتباط با جدول اصلی
             $table->unsignedBigInteger('parchase_id');
             $table->unsignedBigInteger('med_id');
-            $table->unsignedBigInteger('supplier_id');
             $table->unsignedBigInteger('category_id');
+
+            $table->string('type')->nullable(); // ✅ ستون type اضافه شد
 
             $table->integer('quantity');
             $table->integer('unit_price');
@@ -25,7 +26,6 @@ return new class extends Migration
             // تعریف کلیدهای خارجی
             $table->foreign('parchase_id')->references('parchase_id')->on('parchases')->onDelete('cascade');
             $table->foreign('med_id')->references('med_id')->on('medications')->onDelete('cascade');
-            $table->foreign('supplier_id')->references('supplier_id')->on('suppliers')->onDelete('cascade');
             $table->foreign('category_id')->references('category_id')->on('categories')->onDelete('cascade');
         });
     }

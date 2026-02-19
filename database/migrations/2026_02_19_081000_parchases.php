@@ -14,16 +14,25 @@ return new class extends Migration
             $table->bigInteger('total_parchase')->default(0);
             $table->bigInteger('par_paid')->default(0);
             $table->bigInteger('due_par')->default(0);
-            
-            // حذف فیلد purpose چون دیگر لازم نیست
+
             $table->unsignedBigInteger('par_user')->nullable(); // کاربر ثبت‌کننده
-            
+
+            // ✅ اضافه کردن حمایت‌کننده مستقیم
+            $table->unsignedBigInteger('supplier_id')->nullable();
+            $table->foreign('supplier_id')
+                  ->references('reg_id')
+                  ->on('registrations')
+                  ->onDelete('set null');
+
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
+        Schema::table('parchases', function (Blueprint $table) {
+            $table->dropForeign(['supplier_id']);
+        });
         Schema::dropIfExists('parchases');
     }
 };

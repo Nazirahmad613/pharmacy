@@ -12,6 +12,9 @@ use Illuminate\Validation\Rule;
 
 class JournalController extends Controller
 {
+    /**
+     * نمایش لیست ژورنال‌ها
+     */
     public function index(Request $request)
     {
         $query = Journal::query();
@@ -25,23 +28,37 @@ class JournalController extends Controller
         $journals = $query->orderBy('journal_date', 'desc')->get();
 
         $journals->transform(function ($j) {
+
             $j->full_name = null;
             $j->display_name = null;
 
+            // برای ref_type های استاندارد ثبت شده در جدول Registrations
             if (in_array($j->ref_type, ['doctor', 'patient', 'customer', 'supplier'])) {
                 $reg = Registrations::where('reg_type', $j->ref_type)
-                    ->where('reg_id', $j->ref_id)->first();
+                    ->where('reg_id', $j->ref_id)
+                    ->first();
                 $j->full_name = $reg->full_name ?? null;
+                $j->display_name = $reg->full_name ?? null;
             }
 
+            // ref_type فروش
             if ($j->ref_type === 'sale') {
                 $sale = Sales::find($j->ref_id);
                 $j->display_name = $sale->customer->full_name ?? "فروش شماره {$j->ref_id}";
             }
 
+            // ref_type خرید
             if ($j->ref_type === 'parchase') {
-                $parchase = Parchase::find($j->ref_id);
-                $j->display_name = $parchase->supplier->full_name ?? "خرید شماره {$j->ref_id}";
+                // خرید همراه با supplier
+                $parchase = Parchase::with('supplier')->find($j->ref_id);
+
+                if ($parchase) {
+                    // اگر حمایت‌کننده تعریف شده باشد
+                    $j->full_name = $parchase->supplier->full_name ?? null;
+                    $j->display_name = $parchase->supplier->full_name ?? "خرید شماره {$j->ref_id}";
+                } else {
+                    $j->display_name = "خرید شماره {$j->ref_id}";
+                }
             }
 
             return $j;
@@ -50,13 +67,22 @@ class JournalController extends Controller
         return response()->json($journals);
     }
 
+    /**
+     * دریافت لیست ثبت‌نام‌ها
+     */
     public function registrations(Request $request)
     {
         $query = Registrations::query();
         if ($request->filled('type')) $query->where('reg_type', $request->type);
-        return response()->json($query->select('reg_id', 'full_name', 'reg_type')->get());
+
+        return response()->json(
+            $query->select('reg_id', 'full_name', 'reg_type')->get()
+        );
     }
 
+    /**
+     * ذخیره ژورنال جدید
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -68,8 +94,10 @@ class JournalController extends Controller
             'ref_id'       => 'required|integer',
         ]);
 
+        // بررسی وجود رفرنس
         $exists = Registrations::where('reg_type', $validated['ref_type'])
-            ->where('reg_id', $validated['ref_id'])->exists();
+            ->where('reg_id', $validated['ref_id'])
+            ->exists();
 
         if (! $exists && !in_array($validated['ref_type'], ['sale','parchase'])) {
             return response()->json(['message' => 'رویداد انتخاب‌شده معتبر نیست.'], 422);

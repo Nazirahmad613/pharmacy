@@ -16,7 +16,6 @@ class ParchaseItem extends Model
     protected $fillable = [
         'parchase_id',
         'med_id',
-        'supplier_id',   // اینجا reg_id از جدول registrations ذخیره می‌شود
         'type',
         'category_id',
         'quantity',

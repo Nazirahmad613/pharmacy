@@ -16,10 +16,11 @@ export default function ParchaseForm() {
   const [par_paid, setParPaid] = useState(0);
   const [due_par, setDuePar] = useState(0);
 
+  const [selectedSupplier, setSelectedSupplier] = useState(""); // ✅ انتخاب حمایت‌کننده کل خرید
+
   const [formItem, setFormItem] = useState({
     category_id: "",
     med_id: "",
-    supplier_id: "",
     type: "",
     quantity: "",
     unit_price: "",
@@ -53,7 +54,7 @@ export default function ParchaseForm() {
     });
   }, [api]);
 
-  // ===== فیلتر دواها و حمایت‌کننده‌ها =====
+  // ===== فیلتر دواها =====
   const filteredMedications = medications.filter(
     m => Number(m.category_id) === Number(formItem.category_id)
   );
@@ -62,22 +63,12 @@ export default function ParchaseForm() {
     m => Number(m.med_id) === Number(formItem.med_id)
   );
 
-  const filteredSuppliers = selectedMedication
-    ? suppliers.filter(s => {
-        if (Array.isArray(selectedMedication.supplier_id)) {
-          return selectedMedication.supplier_id.includes(s.reg_id);
-        }
-        return Number(selectedMedication.supplier_id) === Number(s.reg_id);
-      })
-    : [];
-
   // ===== تغییرات فرم آیتم =====
   const handleChange = (field, value) => {
     let updated = { ...formItem, [field]: value };
 
     if (field === "category_id") {
       updated.med_id = "";
-      updated.supplier_id = "";
       updated.type = "";
     }
 
@@ -85,7 +76,6 @@ export default function ParchaseForm() {
       const med = medications.find(m => Number(m.med_id) === Number(value));
       updated.type = med?.type ?? "";
       updated.unit_price = med?.unit_price ?? "";
-      updated.supplier_id = "";
     }
 
     const qty = Number(field === "quantity" ? value : updated.quantity || 0);
@@ -103,7 +93,6 @@ export default function ParchaseForm() {
     if (
       !formItem.category_id ||
       !formItem.med_id ||
-      !formItem.supplier_id ||
       !formItem.quantity ||
       !formItem.unit_price ||
       !formItem.exp_date
@@ -112,10 +101,8 @@ export default function ParchaseForm() {
       return;
     }
 
-    // دریافت نام‌ها برای نمایش در جدول
     const med = medications.find(m => Number(m.med_id) === Number(formItem.med_id));
     const cat = categories.find(c => Number(c.category_id) === Number(formItem.category_id));
-    const sup = suppliers.find(s => Number(s.reg_id) === Number(formItem.supplier_id));
 
     setPurchasedItems([
       ...purchasedItems,
@@ -123,14 +110,12 @@ export default function ParchaseForm() {
         ...formItem,
         med_name: med?.gen_name ?? "-",
         category_name: cat?.category_name ?? "-",
-        supplier_name: sup?.full_name ?? sup?.name ?? "-",
       }
     ]);
 
     setFormItem({
       category_id: "",
       med_id: "",
-      supplier_id: "",
       type: "",
       quantity: "",
       unit_price: "",
@@ -145,6 +130,11 @@ export default function ParchaseForm() {
 
   // ===== ذخیره خرید =====
   const handleSavePurchase = async () => {
+    if (!selectedSupplier) {
+      toast.error("❌ لطفاً حمایت‌کننده را انتخاب کنید");
+      return;
+    }
+
     if (purchasedItems.length === 0) {
       toast.error("❌ حداقل یک آیتم اضافه کنید");
       return;
@@ -153,6 +143,7 @@ export default function ParchaseForm() {
     const payload = {
       parchase_date: parchaseDate || new Date().toISOString().split("T")[0],
       par_paid,
+      supplier_id: selectedSupplier, // ✅ اضافه شد
       items: purchasedItems,
     };
 
@@ -165,6 +156,7 @@ export default function ParchaseForm() {
       setDuePar(0);
       setTotalPurchase(0);
       setParchaseDate("");
+      setSelectedSupplier("");
     } catch (err) {
       console.error(err);
       toast.error("❌ خطا در ثبت خرید");
@@ -203,6 +195,16 @@ export default function ParchaseForm() {
                 <label>مبلغ باقی‌مانده</label>
                 <input type="number" value={due_par} readOnly />
               </div>
+
+              <div>
+                <label>حمایت‌کننده</label>
+                <select value={selectedSupplier} onChange={e => setSelectedSupplier(e.target.value)}>
+                  <option value="">-- انتخاب --</option>
+                  {suppliers.map(s => (
+                    <option key={s.reg_id} value={s.reg_id}>{s.full_name ?? s.name}</option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
@@ -227,16 +229,6 @@ export default function ParchaseForm() {
                   <option value="">-- انتخاب --</option>
                   {filteredMedications.map(m => (
                     <option key={m.med_id} value={m.med_id}>{m.gen_name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label>حمایت‌کننده</label>
-                <select value={formItem.supplier_id} onChange={e => handleChange("supplier_id", e.target.value)}>
-                  <option value="">-- انتخاب --</option>
-                  {filteredSuppliers.map(s => (
-                    <option key={s.reg_id} value={s.reg_id}>{s.full_name ?? s.name}</option>
                   ))}
                 </select>
               </div>
@@ -278,7 +270,6 @@ export default function ParchaseForm() {
                    <th>شماره</th>
                    <th>کتگوری</th>
                    <th>دوا</th>
-                   <th>حمایت‌کننده</th>
                    <th>نوع دوا</th>
                    <th>تعداد</th>
                    <th>قیمت واحد</th>
@@ -293,7 +284,6 @@ export default function ParchaseForm() {
                      <td>{idx + 1}</td>
                      <td>{item.category_name}</td>
                      <td>{item.med_name}</td>
-                     <td>{item.supplier_name}</td>
                      <td>{item.type}</td>
                      <td>{item.quantity}</td>
                      <td>{item.unit_price?.toLocaleString()}</td>

@@ -54,7 +54,8 @@ export default function JournalPage() {
       const regs = registrationsRes.status === "fulfilled" ? registrationsRes.value.data ?? [] : [];
       const sales = salesRes.status === "fulfilled" ? salesRes.value.data ?? [] : [];
       const parchases = parchaseRes.status === "fulfilled" ? parchaseRes.value.data ?? [] : [];
-
+            console.log("PARCHASE API RESPONSE:", parchases);
+    console.log("SALES API RESPONSE:", sales);
       setJournals(Array.isArray(journalsData) ? journalsData.reverse() : []);
       setRegistrations(Array.isArray(regs) ? regs : []);
       setTransactions({
@@ -99,10 +100,10 @@ export default function JournalPage() {
     return Array.isArray(transactions[form.ref_type]) ? transactions[form.ref_type] : [];
   }, [form.ref_type, registrations, transactions]);
 
-  const combinedRows = useMemo(() => {
+const combinedRows = useMemo(() => {
   const rows = [];
 
-  // فروش
+  // ===== فروش =====
   transactions.sale.forEach((s) => {
     const total = Number(s.net_sales ?? 0);
     const paid = Number(s.total_paid ?? 0);
@@ -120,17 +121,13 @@ export default function JournalPage() {
     });
   });
 
-  // خرید
+  // ===== خرید =====
   transactions.parchase.forEach((p) => {
     const total = Number(p.total_parchase ?? 0);
     const paid = Number(p.par_paid ?? 0);
 
-    // نام حمایت‌کننده
-    const supplierName =
-      p.items?.[0]?.supplier?.full_name ??
-      p.items?.[0]?.supplier?.name ??
-      getRef("supplier", p.supplier_id)?.full_name ??
-      "حمایت‌کننده";
+    // نام حمایت‌کننده مستقیم از جدول parchases
+    const supplierName = p.supplier?.full_name ?? p.supplier?.name ?? "حمایت‌کننده";
 
     rows.push({
       id: `parchase_${p.parchase_id}`,
@@ -145,38 +142,24 @@ export default function JournalPage() {
     });
   });
 
-  // ژورنال‌های دیگر (نسخه مریض و خریدهای ثبت شده در ژورنال)
+  // ===== ژورنال‌های دیگر =====
   journals.forEach((j) => {
-    if (j.ref_type === "patient") {
+    if (["patient", "doctor", "customer", "supplier"].includes(j.ref_type)) {
       rows.push({
-        id: `patient_${j.id}`,
+        id: `${j.ref_type}_${j.id}`,
         date: j.journal_date,
         entry_type: j.entry_type,
-        description: j.description ?? "نسخه مریض",
-        amount: Number(j.amount ?? 0),
-        paid: j.entry_type === "credit" ? Number(j.amount ?? 0) : Number(j.amount ?? 0),
-        remaining: j.entry_type === "debit" ? Number(j.amount ?? 0) : 0,
-        source_type: "patient",
-        source_name: getRef("patient", j.ref_id)?.full_name ?? "مریض",
-      });
-    }
-
-    if (j.ref_type === "parchase") {
-      rows.push({
-        id: `parchase_journal_${j.id}`,
-        date: j.journal_date,
-        entry_type: j.entry_type,
-        description: j.description ?? `خرید شماره ${j.ref_id}`,
+        description: j.description ?? `ژورنال ${j.ref_type} شماره ${j.ref_id}`,
         amount: Number(j.amount ?? 0),
         paid: j.entry_type === "credit" ? Number(j.amount ?? 0) : 0,
         remaining: j.entry_type === "debit" ? Number(j.amount ?? 0) : 0,
-        source_type: "parchase",
-        source_name:
-          getRef("supplier", j.ref_id)?.full_name ?? `خرید شماره ${j.ref_id}`,
+        source_type: j.ref_type,
+        source_name: getRef(j.ref_type, j.ref_id)?.full_name ?? j.ref_type,
       });
     }
   });
 
+  // مرتب سازی بر اساس تاریخ
   return rows.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
 }, [transactions, journals, registrationMap]);
 

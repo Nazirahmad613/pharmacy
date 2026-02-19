@@ -22,8 +22,8 @@ class ParchasesController extends Controller
         try {
             $parchases = Parchase::with([
                 'items.medication',
-                'items.supplier',
-                'items.category'
+                'items.category',
+                'supplier' // ✅ مستقیم از جدول parchases
             ])->latest()->get();
 
             return response()->json($parchases);
@@ -47,9 +47,9 @@ class ParchasesController extends Controller
         $validated = $request->validate([
             'parchase_date' => 'required|date',
             'par_paid'      => 'required|numeric|min:0',
+            'supplier_id'   => 'required|exists:registrations,reg_id', // ✅ اضافه شد
             'items'         => 'required|array|min:1',
             'items.*.med_id'      => 'required|exists:medications,med_id',
-            'items.*.supplier_id' => 'required|exists:registrations,reg_id',
             'items.*.category_id' => 'required|exists:categories,category_id',
             'items.*.type'        => 'nullable|string',
             'items.*.quantity'    => 'required|integer|min:1',
@@ -74,13 +74,13 @@ class ParchasesController extends Controller
                 'par_paid'       => $validated['par_paid'],
                 'due_par'        => $due_par,
                 'par_user'       => Auth::id(),
+                'supplier_id'    => $validated['supplier_id'], // ✅ مستقیم در جدول parchases
             ]);
 
-            // ذخیره آیتم‌ها
+            // ذخیره آیتم‌ها (بدون supplier)
             foreach ($validated['items'] as $item) {
                 $parchase->items()->create([
                     'med_id'      => $item['med_id'],
-                    'supplier_id' => $item['supplier_id'],
                     'category_id' => $item['category_id'],
                     'type'        => $item['type'] ?? null,
                     'quantity'    => $item['quantity'],
@@ -94,41 +94,39 @@ class ParchasesController extends Controller
             // 🔗 ثبت ژورنال خرید با ref_type = 'parchase'
             // ===============================
 
-            $supplierId = $validated['items'][0]['supplier_id'];
-
             // 1️⃣ بدهکار - ثبت خرید
             Journal::create([
                 'journal_date' => $parchase->parchase_date,
                 'description'  => "خرید دارو شماره {$parchase->parchase_id}",
                 'entry_type'   => Journal::ENTRY_DEBIT,
                 'amount'       => $total_parchase,
-                'ref_type'     => 'parchase',   // 👈 تغییر از 'supplier' به 'parchase'
-                'ref_id'       => $parchase->parchase_id,  // 👈 تغییر از supplierId به parchase_id
+                'ref_type'     => 'parchase',
+                'ref_id'       => $parchase->parchase_id,
                 'user_id'      => Auth::id(),
             ]);
 
             // 2️⃣ پرداخت نقد
-            if($validated['par_paid'] > 0){
+            if ($validated['par_paid'] > 0) {
                 Journal::create([
                     'journal_date' => $parchase->parchase_date,
                     'description'  => "پرداخت به تأمین‌کننده برای خرید شماره {$parchase->parchase_id}",
                     'entry_type'   => Journal::ENTRY_CREDIT,
                     'amount'       => $validated['par_paid'],
-                    'ref_type'     => 'parchase',  // 👈 تغییر از 'supplier' به 'parchase'
-                    'ref_id'       => $parchase->parchase_id,  // 👈 تغییر از supplierId به parchase_id
+                    'ref_type'     => 'parchase',
+                    'ref_id'       => $parchase->parchase_id,
                     'user_id'      => Auth::id(),
                 ]);
             }
 
             // 3️⃣ بدهی باقی‌مانده
-            if($due_par > 0){
+            if ($due_par > 0) {
                 Journal::create([
                     'journal_date' => $parchase->parchase_date,
                     'description'  => "بدهی خرید شماره {$parchase->parchase_id}",
                     'entry_type'   => Journal::ENTRY_CREDIT,
                     'amount'       => $due_par,
-                    'ref_type'     => 'parchase',  // 👈 تغییر از 'supplier' به 'parchase'
-                    'ref_id'       => $parchase->parchase_id,  // 👈 تغییر از supplierId به parchase_id
+                    'ref_type'     => 'parchase',
+                    'ref_id'       => $parchase->parchase_id,
                     'user_id'      => Auth::id(),
                 ]);
             }
