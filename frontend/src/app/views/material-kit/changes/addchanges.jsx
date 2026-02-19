@@ -100,10 +100,10 @@ export default function JournalPage() {
     return Array.isArray(transactions[form.ref_type]) ? transactions[form.ref_type] : [];
   }, [form.ref_type, registrations, transactions]);
 
-const combinedRows = useMemo(() => {
+  const combinedRows = useMemo(() => {
   const rows = [];
 
-  // ===== فروش =====
+  // فروش
   transactions.sale.forEach((s) => {
     const total = Number(s.net_sales ?? 0);
     const paid = Number(s.total_paid ?? 0);
@@ -121,45 +121,75 @@ const combinedRows = useMemo(() => {
     });
   });
 
-  // ===== خرید =====
-  transactions.parchase.forEach((p) => {
-    const total = Number(p.total_parchase ?? 0);
-    const paid = Number(p.par_paid ?? 0);
+  // خرید
+ transactions.parchase.forEach((p) => {
+  const total = Number(p.total_parchase ?? 0);
+  const paid = Number(p.par_paid ?? 0);
+  const remaining = total - paid;
+  const supplierName = p.supplier?.full_name ?? "حمایت‌کننده";
 
-    // نام حمایت‌کننده مستقیم از جدول parchases
-    const supplierName = p.supplier?.full_name ?? p.supplier?.name ?? "حمایت‌کننده";
-
-    rows.push({
-      id: `parchase_${p.parchase_id}`,
-      date: p.parchase_date ?? "",
-      entry_type: "debit",
-      description: `خرید شماره ${p.parchase_id}`,
-      amount: total,
-      paid: paid,
-      remaining: total - paid,
-      source_type: "parchase",
-      source_name: supplierName,
-    });
+  rows.push({
+    id: `parchase_${p.parchase_id}`,
+    date: p.parchase_date ?? "",
+    entry_type: "debit",
+    description: `خرید شماره ${p.parchase_id}`,
+    amount: total,
+    paid: paid,
+    remaining: remaining,
+    source_type: "parchase",
+    source_name: supplierName,
   });
+});
 
-  // ===== ژورنال‌های دیگر =====
+
+  // ژورنال‌های دیگر (نسخه مریض و خریدهای ثبت شده در ژورنال)
   journals.forEach((j) => {
-    if (["patient", "doctor", "customer", "supplier"].includes(j.ref_type)) {
+    if (j.ref_type === "patient") {
       rows.push({
-        id: `${j.ref_type}_${j.id}`,
+        id: `patient_${j.id}`,
         date: j.journal_date,
         entry_type: j.entry_type,
-        description: j.description ?? `ژورنال ${j.ref_type} شماره ${j.ref_id}`,
+        description: j.description ?? "نسخه مریض",
         amount: Number(j.amount ?? 0),
-        paid: j.entry_type === "credit" ? Number(j.amount ?? 0) : 0,
+        paid: j.entry_type === "credit" ? Number(j.amount ?? 0) : Number(j.amount ?? 0),
         remaining: j.entry_type === "debit" ? Number(j.amount ?? 0) : 0,
-        source_type: j.ref_type,
-        source_name: getRef(j.ref_type, j.ref_id)?.full_name ?? j.ref_type,
+        source_type: "patient",
+        source_name: getRef("patient", j.ref_id)?.full_name ?? "مریض",
       });
     }
+ if (j.ref_type === "parchase") {
+
+  const purchase = transactions.parchase.find(
+    (p) => Number(p.parchase_id) === Number(j.ref_id)
+  );
+
+  const supplierName =
+    purchase?.supplier?.full_name ??
+    purchase?.items?.[0]?.supplier?.full_name ??
+    "";
+
+  rows.push({
+    id: `parchase_journal_${j.id}`,
+    date: j.journal_date,
+    entry_type: j.entry_type,
+
+    // ✅ شماره نسخه قطعی
+    description: `خرید شماره ${Number(j.ref_id)}`,
+
+    amount: Number(j.amount ?? 0),
+    paid: j.entry_type === "credit" ? Number(j.amount ?? 0) : 0,
+    remaining: j.entry_type === "debit" ? Number(j.amount ?? 0) : 0,
+    source_type: "parchase",
+
+    // ✅ نام حمایت‌کننده قطعی
+    source_name: supplierName,
+  });
+}
+
+
+    
   });
 
-  // مرتب سازی بر اساس تاریخ
   return rows.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
 }, [transactions, journals, registrationMap]);
 

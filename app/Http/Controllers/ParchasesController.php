@@ -1,11 +1,8 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\Parchase;
 use App\Models\ParchaseItem;
-use App\Models\Medication;
-use App\Models\Category;
 use App\Models\Journal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,40 +11,18 @@ use Illuminate\Support\Facades\Auth;
 
 class ParchasesController extends Controller
 {
-    /**
-     * لیست خرید داروها
-     */
     public function index()
     {
-        try {
-            $parchases = Parchase::with([
-                'items.medication',
-                'items.category',
-                'supplier' // ✅ مستقیم از جدول parchases
-            ])->latest()->get();
-
-            return response()->json($parchases);
-
-        } catch (\Exception $e) {
-            Log::error('Fetch Parchases Error', [
-                'error' => $e->getMessage()
-            ]);
-
-            return response()->json([
-                'message' => 'خطا در دریافت لیست خریدها'
-            ], 500);
-        }
+        $parchases = Parchase::with(['items.medication', 'items.category', 'supplier'])->latest()->get();
+        return response()->json($parchases);
     }
 
-    /**
-     * ثبت خرید دارو همراه با ژورنال
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
             'parchase_date' => 'required|date',
             'par_paid'      => 'required|numeric|min:0',
-            'supplier_id'   => 'required|exists:registrations,reg_id', // ✅ اضافه شد
+            'supplier_id'   => 'required|exists:registrations,reg_id',
             'items'         => 'required|array|min:1',
             'items.*.med_id'      => 'required|exists:medications,med_id',
             'items.*.category_id' => 'required|exists:categories,category_id',
@@ -58,26 +33,19 @@ class ParchasesController extends Controller
         ]);
 
         DB::beginTransaction();
-
         try {
-            // محاسبه مجموع خرید
-            $total_parchase = collect($validated['items'])->sum(function ($item) {
-                return $item['quantity'] * $item['unit_price'];
-            });
-
+            $total_parchase = collect($validated['items'])->sum(fn($item) => $item['quantity'] * $item['unit_price']);
             $due_par = $total_parchase - $validated['par_paid'];
 
-            // ایجاد خرید
             $parchase = Parchase::create([
                 'parchase_date'  => $validated['parchase_date'],
                 'total_parchase' => $total_parchase,
                 'par_paid'       => $validated['par_paid'],
                 'due_par'        => $due_par,
                 'par_user'       => Auth::id(),
-                'supplier_id'    => $validated['supplier_id'], // ✅ مستقیم در جدول parchases
+                'supplier_id'    => $validated['supplier_id'],
             ]);
 
-            // ذخیره آیتم‌ها (بدون supplier)
             foreach ($validated['items'] as $item) {
                 $parchase->items()->create([
                     'med_id'      => $item['med_id'],
@@ -90,11 +58,7 @@ class ParchasesController extends Controller
                 ]);
             }
 
-            // ===============================
-            // 🔗 ثبت ژورنال خرید با ref_type = 'parchase'
-            // ===============================
-
-            // 1️⃣ بدهکار - ثبت خرید
+            // ثبت ژورنال خرید
             Journal::create([
                 'journal_date' => $parchase->parchase_date,
                 'description'  => "خرید دارو شماره {$parchase->parchase_id}",
@@ -105,11 +69,10 @@ class ParchasesController extends Controller
                 'user_id'      => Auth::id(),
             ]);
 
-            // 2️⃣ پرداخت نقد
             if ($validated['par_paid'] > 0) {
                 Journal::create([
                     'journal_date' => $parchase->parchase_date,
-                    'description'  => "پرداخت به تأمین‌کننده برای خرید شماره {$parchase->parchase_id}",
+                    'description'  => "پرداخت خرید شماره {$parchase->parchase_id}",
                     'entry_type'   => Journal::ENTRY_CREDIT,
                     'amount'       => $validated['par_paid'],
                     'ref_type'     => 'parchase',
@@ -118,59 +81,13 @@ class ParchasesController extends Controller
                 ]);
             }
 
-            // 3️⃣ بدهی باقی‌مانده
-            if ($due_par > 0) {
-                Journal::create([
-                    'journal_date' => $parchase->parchase_date,
-                    'description'  => "بدهی خرید شماره {$parchase->parchase_id}",
-                    'entry_type'   => Journal::ENTRY_CREDIT,
-                    'amount'       => $due_par,
-                    'ref_type'     => 'parchase',
-                    'ref_id'       => $parchase->parchase_id,
-                    'user_id'      => Auth::id(),
-                ]);
-            }
-
             DB::commit();
-
-            return response()->json([
-                'message'       => 'خرید دارو با موفقیت ثبت شد',
-                'parchase_id'   => $parchase->parchase_id,
-                'total_parchase'=> $total_parchase,
-                'par_paid'      => $validated['par_paid'],
-                'due_par'       => $due_par,
-            ], 201);
+            return response()->json($parchase, 201);
 
         } catch (\Exception $e) {
             DB::rollBack();
-
-            Log::error('Parchase Store Error', [
-                'error' => $e->getMessage(),
-                'request' => $request->all(),
-                'user_id' => Auth::id()
-            ]);
-
-            return response()->json([
-                'message' => 'خطا در ثبت خرید دارو',
-                'error'   => $e->getMessage(),
-            ], 500);
+            Log::error('Parchase Store Error', ['error'=>$e->getMessage(),'request'=>$request->all()]);
+            return response()->json(['message'=>'خطا در ثبت خرید','error'=>$e->getMessage()],500);
         }
-    }
-
-    /**
-     * لود داده‌های انتخابی فرم خرید دارو
-     */
-    public function loadOptions()
-    {
-        $suppliers = DB::table('registrations')
-            ->select('reg_id', 'full_name', 'name')
-            ->where('reg_type', 'supplier')
-            ->get();
-
-        return response()->json([
-            'medications' => Medication::select('med_id', 'gen_name', 'supplier_id', 'type', 'unit_price', 'category_id')->get(),
-            'suppliers'   => $suppliers,
-            'categories'  => Category::select('category_id', 'category_name')->get(),
-        ]);
     }
 }
