@@ -13,7 +13,14 @@ class ParchasesController extends Controller
 {
     public function index()
     {
-        $parchases = Parchase::with(['items.medication', 'items.category', 'supplier'])->latest()->get();
+        // اضافه کردن supplier و items.supplier برای تضمین دریافت نام حمایت‌کننده
+        $parchases = Parchase::with([
+            'items.medication',
+            'items.category',
+            'items.supplier', // هر آیتم ممکن است حمایت‌کننده داشته باشد
+            'supplier'        // حمایت‌کننده مستقیم خرید
+        ])->latest()->get();
+
         return response()->json($parchases);
     }
 
@@ -55,6 +62,7 @@ class ParchasesController extends Controller
                     'unit_price'  => $item['unit_price'],
                     'total_price' => $item['quantity'] * $item['unit_price'],
                     'exp_date'    => $item['exp_date'],
+                    'supplier_id' => $validated['supplier_id'], // تضمین نام حمایت‌کننده در آیتم
                 ]);
             }
 
@@ -82,7 +90,7 @@ class ParchasesController extends Controller
             }
 
             DB::commit();
-            return response()->json($parchase, 201);
+            return response()->json($parchase->load(['items.medication','items.category','items.supplier','supplier']), 201);
 
         } catch (\Exception $e) {
             DB::rollBack();

@@ -9,17 +9,15 @@ use App\Http\Controllers\MedicationController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\CustomersController;
 use App\Http\Controllers\DoctorController;
-use App\Http\Controllers\CompanyController;
+ 
 use App\Http\Controllers\SalesController;
 use App\Http\Controllers\SalesDetailsController;
-use App\Http\Controllers\PrescriptionController;
-use App\Http\Controllers\OrdersController;
+ 
 use App\Http\Controllers\InventoryController;
-use App\Http\Controllers\DaySalesController;
-use App\Http\Controllers\ViewDoctorPrescriptionsController;
+ 
 use App\Http\Controllers\ViewInventoryController;
 use App\Http\Controllers\ViewMedicationsController;
-use App\Http\Controllers\ViewMounthlySales;
+ 
 use App\Http\Controllers\ViewProfitLossController;
 use App\Http\Controllers\ViewSupplierPurchasesController;
 use App\Http\Controllers\NotificationController;
@@ -31,7 +29,7 @@ use App\Http\Controllers\SalesFullDetailsController;
 use App\Http\Controllers\RegistrationsController;
 use App\Http\Controllers\JournalController;
 use App\Http\Controllers\HospitalReportController;
-use App\Http\Controllers\AccountSummaryController;
+use App\Http\Controllers\PrescriptionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -139,7 +137,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // ===== Reports / Views =====
     Route::get('/view-inventory', [ViewInventoryController::class, 'index']);
     Route::get('/view-medications', [ViewMedicationsController::class, 'index']);
-    Route::get('/account-summary', [AccountSummaryController::class, 'index']);
+ 
 
  
    
