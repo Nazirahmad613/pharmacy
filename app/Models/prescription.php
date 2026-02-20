@@ -21,6 +21,7 @@ class Prescription extends Model
         'doc_name',
         'pres_num',
         'pres_date',
+        'supplier_id',
         'total_amount',
         'discount',
         'net_amount',

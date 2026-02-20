@@ -29,6 +29,10 @@ class PrescriptionController extends Controller
             $patient = Registrations::find($request->patient_id);
             $doc     = Registrations::find($request->doc_id);
 
+        $lastPres = Prescription::orderBy('pres_num', 'desc')->lockForUpdate()->first();
+        $newPresNum = $lastPres ? $lastPres->pres_num + 1 : 1;
+
+
             // ===== ثبت نسخه =====
             $prescription = Prescription::create([
                 'patient_id'          => $request->patient_id,
@@ -40,7 +44,7 @@ class PrescriptionController extends Controller
                 'doc_id'   => $request->doc_id,
                 'doc_name' => $doc->full_name ?? $doc->name ?? null,
 
-                'pres_num'     => $request->pres_num,
+                 'pres_num'     => $newPresNum, 
                 'pres_date'    => $request->pres_date,
                 'total_amount' => $request->total_amount,
                 'discount'     => $request->discount ?? 0,

@@ -62,7 +62,7 @@ class ParchasesController extends Controller
                     'unit_price'  => $item['unit_price'],
                     'total_price' => $item['quantity'] * $item['unit_price'],
                     'exp_date'    => $item['exp_date'],
-                    'supplier_id' => $validated['supplier_id'], // تضمین نام حمایت‌کننده در آیتم
+                    // تضمین نام حمایت‌کننده در آیتم
                 ]);
             }
 
