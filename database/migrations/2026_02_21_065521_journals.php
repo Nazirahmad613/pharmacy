@@ -43,6 +43,7 @@ return new class extends Migration {
 
             // کاربر ثبت کننده
             $table->unsignedBigInteger('user_id')->nullable();
+            $table->unsignedBigInteger('pres_num')->nullable();
 
             $table->timestamps();
 
@@ -82,6 +83,11 @@ return new class extends Migration {
 
             $table->foreign('pres_id')
                   ->references('pres_id')
+                  ->on('prescriptions')
+                  ->nullOnDelete();
+
+            $table->foreign('pres_num')
+                  ->references('pres_num')
                   ->on('prescriptions')
                   ->nullOnDelete();
 

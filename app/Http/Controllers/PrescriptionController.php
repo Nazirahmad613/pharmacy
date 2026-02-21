@@ -29,9 +29,8 @@ class PrescriptionController extends Controller
             $patient = Registrations::find($request->patient_id);
             $doc     = Registrations::find($request->doc_id);
 
-        $lastPres = Prescription::orderBy('pres_num', 'desc')->lockForUpdate()->first();
-        $newPresNum = $lastPres ? $lastPres->pres_num + 1 : 1;
-
+            $lastPres = Prescription::orderBy('pres_num', 'desc')->lockForUpdate()->first();
+            $newPresNum = $lastPres ? $lastPres->pres_num + 1 : 1;
 
             // ===== ثبت نسخه =====
             $prescription = Prescription::create([
@@ -44,7 +43,7 @@ class PrescriptionController extends Controller
                 'doc_id'   => $request->doc_id,
                 'doc_name' => $doc->full_name ?? $doc->name ?? null,
 
-                 'pres_num'     => $newPresNum, 
+                'pres_num'     => $newPresNum,
                 'pres_date'    => $request->pres_date,
                 'total_amount' => $request->total_amount,
                 'discount'     => $request->discount ?? 0,
@@ -68,36 +67,35 @@ class PrescriptionController extends Controller
             }
 
             // =========================
-            // ثبت ژورنال (نسخه) با نام مریض و داکتر
+            // ثبت ژورنال (نسخه) با pres_num
             // =========================
 
-            $refInfo = [
-                'patient_name' => $prescription->patient_name,
-                'doc_name'     => $prescription->doc_name,
-            ];
-// 🔴 بدهکار: مریض
-Journal::create([
-    'journal_date' => $request->pres_date,
-    'entry_type'   => 'debit',
-    'amount'       => $request->net_amount,
-    'description'  => 'بدهکاری مریض بابت نسخه شماره ' . $request->pres_num,
-    'ref_type'     => 'patient',              // 👈 تغییر مهم
-    'ref_id'       => $request->patient_id,   // 👈 reg_id مریض
-    'user_id'      => Auth::id(),
-]);
+            // 🔴 بدهکار: مریض
+            Journal::create([
+                'journal_date' => $request->pres_date,
+                'entry_type'   => 'debit',
+                'amount'       => $request->net_amount,
+                'description'  => 'بدهکاری مریض بابت نسخه شماره ' . $newPresNum,
+                'ref_type'     => 'patient',
+                'ref_id'       => $request->patient_id,
+                'pres_id'      => $prescription->pres_id,  // ✅ اضافه شد
+                'pres_num'     => $newPresNum,            // ✅ اضافه شد
+                'user_id'      => Auth::id(),
+            ]);
 
-// 🟢 بستانکار: فروش دوا
-Journal::create([
-    'journal_date' => $request->pres_date,
-    'entry_type'   => 'credit',
-    'amount'       => $request->net_amount,
-    'description'  => 'فروش دوا بابت نسخه شماره ' . $request->pres_num,
-    'ref_type'     => 'patient',              // 👈 تغییر
-    'ref_id'       => $request->patient_id,
-    'user_id'      => Auth::id(),
-]);
+            // 🟢 بستانکار: فروش دوا
+            Journal::create([
+                'journal_date' => $request->pres_date,
+                'entry_type'   => 'credit',
+                'amount'       => $request->net_amount,
+                'description'  => 'فروش دوا بابت نسخه شماره ' . $newPresNum,
+                'ref_type'     => 'patient',
+                'ref_id'       => $request->patient_id,
+                'pres_id'      => $prescription->pres_id,  // ✅ اضافه شد
+                'pres_num'     => $newPresNum,            // ✅ اضافه شد
+                'user_id'      => Auth::id(),
+            ]);
 
-         
         });
 
         return response()->json([

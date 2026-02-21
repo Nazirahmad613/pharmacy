@@ -78,14 +78,12 @@ class JournalController extends Controller
             }
 
             // ref_type نسخه‌ها
-            if ($j->ref_type === 'patient' && strpos($j->description, 'نسخه شماره') !== false) {
-                $pres_num = preg_replace('/.*نسخه شماره (\d+).*/u', '$1', $j->description);
-                $prescription = Prescription::where('pres_num', $pres_num)->first();
+            if ($j->ref_type === 'patient' && $j->pres_id) {
+                $prescription = Prescription::find($j->pres_id);
 
                 if ($prescription) {
                     $j->full_name    = $prescription->patient_name;
                     $j->display_name = "نسخه شماره {$prescription->pres_num}";
-
                     $j->total_amount = $prescription->net_amount;
                     $j->paid_amount  = $prescription->net_amount; // کل مبلغ پرداخت شده
                     $j->due_amount   = 0;                         // باقی‌مانده صفر
@@ -123,6 +121,7 @@ class JournalController extends Controller
             'amount'       => 'required|numeric|min:0.01',
             'ref_type'     => 'required|string',
             'ref_id'       => 'required|integer',
+            'pres_id'      => 'nullable|integer', // ✅ اضافه شد
         ]);
 
         $exists = Registrations::where('reg_type', $validated['ref_type'])

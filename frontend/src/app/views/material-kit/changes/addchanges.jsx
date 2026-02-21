@@ -263,13 +263,13 @@ export default function JournalPage() {
       <div className="form-container mb-10">
         <form onSubmit={handleSubmit} className="form-grid gap-3">
           <input
-            type="date"
-            name="journal_date"
-            value={formatDateToFa(form.journal_date)}
-            onChange={handleChange}
-            className={inputClass}
-            required
-          />
+  type="date"
+  name="journal_date"
+  value={form.journal_date} 
+  onChange={handleChange}
+  className={inputClass}
+  required
+/>
           <select
             name="entry_type"
             value={form.entry_type}
