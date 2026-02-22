@@ -9,42 +9,77 @@ class AccountSummaryController extends Controller
 {
     public function index(Request $request)
     {
-        $query = DB::table('account_summary_view');
+        $query = DB::table('account_summary');
+
+        /*
+        |--------------------------------------------------------------------------
+        | 🔎 Search (نام حساب)
+        |--------------------------------------------------------------------------
+        */
+        if ($request->filled('search')) {
+            $search = trim($request->search);
+
+            $query->where(function ($q) use ($search) {
+                $q->where('account_name', 'like', "%{$search}%")
+                  ->orWhere('account_type', 'like', "%{$search}%");
+            });
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | 🎯 Filters
+        |--------------------------------------------------------------------------
+        */
 
         // فیلتر نوع حساب
         if ($request->filled('account_type')) {
             $query->where('account_type', $request->account_type);
         }
 
-        // جستجو حرفه‌ای
-        if ($request->filled('search')) {
-            $search = $request->search;
-
-            $query->where(function ($q) use ($search) {
-                $q->where('account_name', 'like', "%{$search}%")
-                  ->orWhere('medications', 'like', "%{$search}%");
-            });
+        // فیلتر حداقل بیلانس
+        if ($request->filled('min_balance')) {
+            $query->where('balance', '>=', $request->min_balance);
         }
 
-        // فیلتر بازه تاریخ (اختیاری)
-        if ($request->filled('from_date')) {
-            $query->whereDate('last_date', '>=', $request->from_date);
+        // فقط بدهکارها
+        if ($request->filled('only_debtors') && $request->only_debtors == 1) {
+            $query->where('balance', '>', 0);
         }
 
-        if ($request->filled('to_date')) {
-            $query->whereDate('last_date', '<=', $request->to_date);
+        // فقط طلبکارها
+        if ($request->filled('only_creditors') && $request->only_creditors == 1) {
+            $query->where('balance', '<', 0);
         }
 
-        // مرتب سازی
-        $query->orderBy('last_date', 'desc');
+        /*
+        |--------------------------------------------------------------------------
+        | 🔄 Sorting
+        |--------------------------------------------------------------------------
+        */
+        $sortBy = $request->get('sort_by', 'account_type');
+        $sortDir = $request->get('sort_dir', 'asc');
 
-        // اگر pagination خواستی
-        if ($request->filled('per_page')) {
-            return response()->json(
-                $query->paginate($request->per_page)
-            );
+        $allowedSorts = [
+            'account_type',
+            'account_name',
+            'total_debit',
+            'total_credit',
+            'balance'
+        ];
+
+        if (in_array($sortBy, $allowedSorts)) {
+            $query->orderBy($sortBy, $sortDir);
         }
 
-        return response()->json($query->get());
+        /*
+        |--------------------------------------------------------------------------
+        | 📄 Pagination
+        |--------------------------------------------------------------------------
+        */
+        $perPage = $request->get('per_page', 10);
+
+        return response()->json(
+            $query->paginate($perPage)
+        );
     }
 }

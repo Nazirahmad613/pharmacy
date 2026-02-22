@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class AccountSummary extends Model
 {
-    protected $table = 'account_summary_view';
+  protected $table = 'account_summary';
 
     protected $primaryKey = null;
 

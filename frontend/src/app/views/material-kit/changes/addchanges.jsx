@@ -11,12 +11,27 @@ const ENTRY_TYPE_FA = {
 };
 
 const REF_TYPE_FA = {
-  sale: "فروش",
-  parchase: "خرید",
-  doctor: "داکتر",
   patient: "مریض",
-  supplier: "حمایت‌کننده",
+  doctor: "داکتر",
+  visitor: "مراجع",
   customer: "مشتری",
+  staff: "کارمند",
+  supplier: "تأمین‌کننده",
+  rent: "کرایه",
+  electricity: "برق",
+  water: "آب",
+  internet: "انترنت",
+  salary: "معاش",
+  fuel: "سوخت",
+  maintenance: "ترمیمات",
+  laboratory: "لابراتوار",
+  transport: "ترانسپورت",
+  consultation: "مشاوره",
+  expense: "مصرف عمومی",
+  income: "درآمد",
+  other: "سایر",
+  sale: "مشتری",
+  parchase: "شرکت دوا",
 };
 
 export default function JournalPage() {
@@ -41,6 +56,9 @@ export default function JournalPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const ROWS_PER_PAGE = 10;
+
+  const inputClass =
+    "bg-[#111] text-white border border-gray-600 rounded-xl px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-600";
 
   // ================= FETCH DATA =================
   const fetchData = async () => {
@@ -99,18 +117,11 @@ export default function JournalPage() {
 
   const getRef = (type, id) => registrationMap[`${type}_${id}`] ?? null;
 
-  // ================= REF TYPES =================
-  const refTypes = useMemo(() => {
-    const regTypes = Array.isArray(registrations)
-      ? registrations.map((r) => r.reg_type)
-      : [];
-    return [...new Set([...regTypes, "sale", "parchase"])];
-  }, [registrations]);
-
+  // ================= FILTERED REFS =================
   const filteredRefs = useMemo(() => {
     if (!form.ref_type) return [];
 
-    if (["doctor", "patient", "customer", "supplier"].includes(form.ref_type)) {
+    if (["doctor", "patient", "customer", "supplier", "staff", "visitor"].includes(form.ref_type)) {
       return registrations.filter((r) => r.reg_type === form.ref_type);
     }
 
@@ -133,9 +144,9 @@ export default function JournalPage() {
 
         if (j.ref_type === "sale") {
           description = `فروش شماره ${j.ref_id}`;
-        }
-
-        if (j.ref_type === "patient" && description.includes("نسخه شماره")) {
+        } else if (j.ref_type === "parchase") {
+          description = `خرید شماره ${j.ref_id}`;
+        } else if (j.ref_type === "patient" && description.includes("نسخه شماره")) {
           const match = description.match(/نسخه شماره (\d+)/);
           const presNum = match ? match[1] : j.ref_id;
           description = `نسخه شماره ${presNum}`;
@@ -143,24 +154,35 @@ export default function JournalPage() {
           paid = amount;
         }
 
+        let source_name = "-";
+        const ref = getRef(j.ref_type, j.ref_id);
+
+        if (ref) {
+          source_name =
+            ref.full_name ||
+            ref.customer_name ||
+            ref.supplier_name ||
+            ref.name ||
+            `شماره ${ref.reg_id || j.ref_id}`;
+        } else {
+          source_name = j.full_name ?? j.display_name ?? `شماره ${j.ref_id}`;
+        }
+
         return {
           id: j.id,
-          date: j.journal_date
-            ? formatDateToFa(j.journal_date)
-            : "-",
+          date: j.journal_date ? formatDateToFa(j.journal_date) : "-",
           entry_type: j.entry_type,
           description,
           amount,
           paid,
           remaining,
           source_type: j.ref_type,
-          source_name: j.full_name ?? j.display_name ?? "-",
+          source_name,
         };
       })
       .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-  }, [journals]);
+  }, [journals, registrationMap, transactions]);
 
-  // ================= SEARCH =================
   const filteredRows = useMemo(() => {
     if (!searchTerm.trim()) return combinedRows;
     const term = searchTerm.toLowerCase();
@@ -176,9 +198,6 @@ export default function JournalPage() {
     (currentPage - 1) * ROWS_PER_PAGE,
     currentPage * ROWS_PER_PAGE
   );
-
-  const inputClass =
-    "bg-[#111] text-white border border-gray-600 rounded-xl px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-600";
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -250,7 +269,6 @@ export default function JournalPage() {
           onChange={(e) => setToDate(e.target.value)}
           className={inputClass}
         />
-
         <input
           type="text"
           placeholder="جستجو..."
@@ -263,13 +281,13 @@ export default function JournalPage() {
       <div className="form-container mb-10">
         <form onSubmit={handleSubmit} className="form-grid gap-3">
           <input
-  type="date"
-  name="journal_date"
-  value={form.journal_date} 
-  onChange={handleChange}
-  className={inputClass}
-  required
-/>
+            type="date"
+            name="journal_date"
+            value={form.journal_date}
+            onChange={handleChange}
+            className={inputClass}
+            required
+          />
           <select
             name="entry_type"
             value={form.entry_type}
@@ -300,6 +318,8 @@ export default function JournalPage() {
             placeholder="توضیحات"
             className={inputClass}
           />
+
+          {/* ===== REF TYPE SELECT با optgroup ===== */}
           <select
             name="ref_type"
             value={form.ref_type}
@@ -308,12 +328,39 @@ export default function JournalPage() {
             required
           >
             <option value="">نوع منبع</option>
-            {refTypes.map((t) => (
-              <option key={t} value={t}>
-                {REF_TYPE_FA[t] ?? t}
-              </option>
-            ))}
+
+            <optgroup label="اشخاص">
+              <option value="patient">مریض</option>
+              <option value="doctor">داکتر</option>
+              <option value="visitor">مراجع</option>
+              <option value="customer">مشتری</option>
+              <option value="staff">کارمند</option>
+              <option value="supplier">تأمین‌کننده</option>
+            </optgroup>
+
+            <optgroup label="مصارف">
+              <option value="rent">کرایه</option>
+              <option value="electricity">برق</option>
+              <option value="water">آب</option>
+              <option value="internet">انترنت</option>
+              <option value="salary">معاش</option>
+              <option value="fuel">سوخت</option>
+              <option value="maintenance">ترمیمات</option>
+            </optgroup>
+
+            <optgroup label="خدمات">
+              <option value="laboratory">لابراتوار</option>
+              <option value="transport">ترانسپورت</option>
+              <option value="consultation">مشاوره</option>
+            </optgroup>
+
+            <optgroup label="دیگر">
+              <option value="expense">مصرف عمومی</option>
+              <option value="income">درآمد</option>
+              <option value="other">سایر</option>
+            </optgroup>
           </select>
+
           <select
             name="ref_id"
             value={form.ref_id}
@@ -334,6 +381,7 @@ export default function JournalPage() {
               );
             })}
           </select>
+
           <button
             type="submit"
             className="bg-blue-700 text-white rounded-xl py-2 hover:bg-blue-800"
@@ -343,6 +391,7 @@ export default function JournalPage() {
         </form>
       </div>
 
+      {/* ===== جدول محاسبات ===== */}
       <div className="table-container">
         <table>
           <thead>
@@ -380,7 +429,7 @@ export default function JournalPage() {
                     <td>{row.amount ?? 0}</td>
                     <td>{row.paid ?? 0}</td>
                     <td>{row.remaining ?? 0}</td>
-                    <td>{REF_TYPE_FA[row.source_type] || "-"}</td>
+                    <td>{REF_TYPE_FA[row.source_type] || row.source_type || "-"}</td>
                     <td>{row.source_name || "-"}</td>
                   </tr>
                 );

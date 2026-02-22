@@ -30,6 +30,7 @@ use App\Http\Controllers\RegistrationsController;
 use App\Http\Controllers\JournalController;
 use App\Http\Controllers\HospitalReportController;
 use App\Http\Controllers\PrescriptionController;
+use App\Http\Controllers\AccountSummaryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -137,6 +138,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // ===== Reports / Views =====
     Route::get('/view-inventory', [ViewInventoryController::class, 'index']);
     Route::get('/view-medications', [ViewMedicationsController::class, 'index']);
+    // ===== Account Summary =====
+Route::get('/account-summary', [AccountSummaryController::class, 'index']);
  
 
  

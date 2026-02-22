@@ -11,57 +11,104 @@ export default function AccountSummaryPage() {
 
   const [accountType, setAccountType] = useState("");
   const [search, setSearch] = useState("");
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
-
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [rowCount, setRowCount] = useState(0);
 
-  useEffect(() => {
-    fetchData();
-  }, [accountType, search, fromDate, toDate, page, pageSize]);
-
+  // ================= FETCH DATA =================
   const fetchData = async () => {
     setLoading(true);
     try {
       const response = await api.get("/account-summary", {
         params: {
-          account_type: accountType,
-          search: search,
-          from_date: fromDate,
-          to_date: toDate,
+          account_type: accountType || undefined,
+          search: search || undefined,
           per_page: pageSize,
-          page: page + 1
-        }
+          page: page + 1,
+        },
       });
 
-      setRows(response.data.data);
-      setRowCount(response.data.total);
-    } catch (error) {
-      console.error(error);
+      setRows(response.data.data ?? []);
+      setRowCount(response.data.total ?? response.data.length ?? 0);
+    } catch (err) {
+      console.error(err);
     }
     setLoading(false);
   };
 
+  useEffect(() => {
+    fetchData();
+  }, [accountType, search, page, pageSize]);
+
+  // ================= COLUMNS =================
   const columns = [
-    { field: "account_type", headerName: "نوع حساب", flex: 1 },
-    { field: "account_name", headerName: "نام", flex: 1.5 },
-    { field: "last_date", headerName: "آخرین تاریخ", flex: 1 },
-    { field: "medications", headerName: "دواها", flex: 2 },
-    { field: "total_quantity", headerName: "مجموع تعداد", flex: 1 },
-    { field: "total_amount", headerName: "مجموع مبلغ", flex: 1 },
-    { field: "total_paid", headerName: "پرداخت شده", flex: 1 },
     {
-      field: "total_due",
-      headerName: "باقی مانده",
+      field: "account_type",
+      headerName: "نوع حساب",
       flex: 1,
+      headerAlign: "right",
+      align: "right",
+      valueFormatter: (params) => {
+        const map = {
+          doctor: "داکتر",
+          patient: "مریض",
+          customer: "مشتری",
+          supplier: "حمایت‌کننده",
+          visitor: "مراجع",
+          staff: "کارمند",
+          rent: "کرایه",
+          electricity: "برق",
+          water: "آب",
+          internet: "انترنت",
+          salary: "معاش",
+          fuel: "سوخت",
+          maintenance: "ترمیمات",
+          laboratory: "لابراتوار",
+          transport: "ترانسپورت",
+          consultation: "مشاوره",
+          expense: "مصرف عمومی",
+          income: "درآمد",
+          other: "سایر",
+        };
+        return map[params.value] || params.value;
+      },
+    },
+    {
+      field: "account_name",
+      headerName: "نام حساب",
+      flex: 1.5,
+      headerAlign: "right",
+      align: "right",
+    },
+    {
+      field: "total_credit",
+      headerName: "مجموعه کل ",
+      flex: 1,
+      type: "number",
+      headerAlign: "center",
+      align: "center",
+    },
+    {
+      field: "total_debit",
+      headerName: "پرداخت شده ",
+      flex: 1,
+      type: "number",
+      headerAlign: "center",
+      align: "center",
+    },
+    {
+      field: "balance",
+      headerName: "باقی‌مانده",
+      flex: 1,
+      type: "number",
+      headerAlign: "center",
+      align: "center",
       renderCell: (params) => (
         <span style={{ color: params.value > 0 ? "red" : "green" }}>
           {params.value}
         </span>
-      )
-    }
+      ),
+    },
   ];
 
   return (
@@ -76,31 +123,17 @@ export default function AccountSummaryPage() {
           style={{ minWidth: 200 }}
         >
           <MenuItem value="">همه</MenuItem>
-          <MenuItem value="sales">فروش</MenuItem>
-          <MenuItem value="purchase">خرید</MenuItem>
-          <MenuItem value="prescription">نسخه</MenuItem>
+          <MenuItem value="doctor">داکتر</MenuItem>
+          <MenuItem value="patient">مریض</MenuItem>
+          <MenuItem value="customer">مشتری</MenuItem>
+          <MenuItem value="supplier">حمایت‌کننده</MenuItem>
         </TextField>
 
         <TextField
           label="جستجو"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-        />
-
-        <TextField
-          type="date"
-          label="از تاریخ"
-          InputLabelProps={{ shrink: true }}
-          value={fromDate}
-          onChange={(e) => setFromDate(e.target.value)}
-        />
-
-        <TextField
-          type="date"
-          label="تا تاریخ"
-          InputLabelProps={{ shrink: true }}
-          value={toDate}
-          onChange={(e) => setToDate(e.target.value)}
+          style={{ minWidth: 200 }}
         />
       </Box>
 
