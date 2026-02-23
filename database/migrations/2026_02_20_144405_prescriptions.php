@@ -14,6 +14,7 @@ return new class extends Migration {
             $table->unsignedBigInteger('patient_id');
             $table->string('patient_name')->nullable();
             $table->integer('patient_age')->nullable();
+            $table->integer('patient_gender')->nullable();
             $table->string('patient_phone')->nullable();
             $table->string('patient_blood_group')->nullable();
 

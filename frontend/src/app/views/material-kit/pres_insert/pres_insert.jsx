@@ -29,6 +29,7 @@
     const [patients, setPatients] = useState([]);
     const [patientInfo, setPatientInfo] = useState({
       age: "",
+      gender: "",  
       phone: "",
       blood_group: "",
       reg_id: "",
@@ -84,6 +85,7 @@
 
       setPatientInfo({
         age: p.age ?? "",
+        gender: p.gender ?? "",  
         phone: p.phone ?? "",
         blood_group: p.blood_group ?? "",
         reg_id: p.reg_id ?? "",
@@ -156,81 +158,15 @@
       setFormItem({ ...emptyItem });
       setPatientInfo({
         age: "",
+       gender: "", 
         phone: "",
         blood_group: "",
         reg_id: "",
         pres_num: ""
       });
     };
-
-    // ===== تبدیل فونت =====
-    function arrayBufferToBase64(buffer) {
-      let binary = '';
-      const bytes = new Uint8Array(buffer);
-      const len = bytes.byteLength;
-      for (let i = 0; i < len; i++) {
-        binary += String.fromCharCode(bytes[i]);
-      }
-      return window.btoa(binary);
-    }
-
-    // ===== تولید PDF =====
-    const generatePDF = async (patientInfo, prescriptionItems, medications, categories, suppliers, totalAmount, discount, netAmount, prescriptionDate, patients, doctors, selectedPatientId, selectedDoctorId) => {
-      const doc = new jsPDF();
-
-      const response = await fetch("/fonts/Vazirmatn-Regular.ttf");
-      const fontBuffer = await response.arrayBuffer();
-      const fontBase64 = arrayBufferToBase64(fontBuffer);
-
-      doc.addFileToVFS("Vazir-Regular.ttf", fontBase64);
-      doc.addFont("Vazir-Regular.ttf", "Vazir", "normal");
-      doc.setFont("Vazir");
-
-      doc.text(`نسخه شماره: ${patientInfo.pres_num}`, 420, 40, { align: "right" });
-      doc.text(`تاریخ: ${prescriptionDate || new Date().toLocaleDateString("fa-IR")}`, 420, 60, { align: "right" });
-      doc.text(`مریض: ${patients.find(p => p.reg_id == selectedPatientId)?.full_name || "-"}`, 420, 80, { align: "right" });
-      doc.text(`سن: ${patientInfo.age}`, 420, 100, { align: "right" });
-      doc.text(`شماره تماس: ${patientInfo.phone}`, 420, 120, { align: "right" });
-      doc.text(`داکتر: ${doctors.find(d => d.reg_id == selectedDoctorId)?.full_name || "-"}`, 420, 140, { align: "right" });
-
-      const tableColumn = [
-        "ردیف","کتگوری","دوا","حمایت‌کننده","نوع دوا","مقدار مصرف","تعداد","قیمت واحد","قیمت مجموعی","ملاحظات"
-      ];
-
-      const tableRows = prescriptionItems.map((item, idx) => {
-        const med = medications.find(m => m.med_id == item.med_id);
-        const cat = categories.find(c => c.category_id == item.category_id);
-        const sup = suppliers.find(s => s.reg_id == item.supplier_id);
-        return [
-          idx + 1,
-          cat?.category_name ?? "-",
-          med?.gen_name ?? "-",
-          sup?.full_name ?? sup?.name ?? "-",
-          item.type,
-          item.dosage,
-          item.quantity,
-          item.unit_price,
-          item.total_price,
-          item.remarks,
-        ];
-      });
-
-      autoTable(doc, {
-        startY: 160,
-        head: [tableColumn],
-        body: tableRows,
-        styles: { font: "Vazir", fontSize: 10, halign: "right" },
-        headStyles: { fillColor: [8, 14, 46], textColor: 255 },
-        margin: { right: 20 },
-        rtl: true,
-      });
-
-      doc.text(`مجموع: ${totalAmount}`, 420, doc.lastAutoTable.finalY + 20, { align: "right" });
-      doc.text(`تخفیف: ${discount}`, 420, doc.lastAutoTable.finalY + 40, { align: "right" });
-      doc.text(`خالص: ${netAmount}`, 420, doc.lastAutoTable.finalY + 60, { align: "right" });
-
-      doc.save(`نسخه_${patientInfo.pres_num}.pdf`);
-    };
+ 
+ 
 
     // ===== ذخیره نسخه =====
     const handleSavePrescription = async () => {
@@ -244,6 +180,7 @@
           patient_id: selectedPatientId,
           pres_num: patientInfo.pres_num,
           patient_age: patientInfo.age,
+          patient_gender: patientInfo.gender,  
           patient_phone: patientInfo.phone,
           patient_reg_id: patientInfo.reg_id,
           patient_blood_group: patientInfo.blood_group,
@@ -254,29 +191,28 @@
           net_amount: netAmount,
           items: prescriptionItems,
         });
+ toast.success("✅ نسخه موفقانه ثبت شد");
+resetForm();
 
-        toast.success("✅ نسخه موفقانه ثبت شد");
-        resetForm();
-        try {
-          await generatePDF(
-            patientInfo,
-            prescriptionItems,
-            medications,
-            categories,
-            suppliers,
-            totalAmount,
-            discount,
-            netAmount,
-            prescriptionDate,
-            patients,
-            doctors,
-            selectedPatientId,
-            selectedDoctorId
-          );
-        } catch (pdfError) {
-          console.error("PDF error:", pdfError);
-          toast.error("❌ خطا در تولید PDF");
-        }
+try {
+  await generatePDF(
+    patientInfo,
+    prescriptionItems,
+    medications,
+    categories,
+    suppliers,
+    totalAmount,
+    discount,
+    netAmount,
+    prescriptionDate,
+    patients,
+    doctors,
+    selectedPatientId,
+    selectedDoctorId
+  );
+} catch (pdfError) {
+  console.error("PDF error:", pdfError);
+}
       } catch (apiError) {
         console.error("API error:", apiError);
         toast.error("❌ خطا در ثبت نسخه");
@@ -327,7 +263,11 @@
                 <label>سن</label>
                 <input value={patientInfo.age} readOnly />
               </div>
-
+     {/* ✅ نمایش جنسیت */}
+          <div>
+            <label>جنسیت</label>
+            <input value={patientInfo.gender} readOnly />
+          </div>
               <div>
                 <label>شماره تماس</label>
                 <input value={patientInfo.phone} readOnly />
@@ -553,37 +493,26 @@
   پرنت نسخه
 </button>
         </div>
+  <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
+        <PrescriptionPrint
+          ref={printRef}
+          data={{
+            pres_num: patientInfo.pres_num,
+            date: prescriptionDate || new Date().toLocaleDateString(),
+            patient: patients.find(p => p.reg_id == selectedPatientId)?.full_name ?? "-",
+            doctor: doctors.find(d => d.reg_id == selectedDoctorId)?.full_name ?? "-",
+            age: patientInfo.age,
+            gender: patientInfo.gender,   // ✅ ارسال به پرنت
+            blood_group: patientInfo.blood_group,
+            items: prescriptionItems,
+            total: totalAmount,
+            discount: discount,
+            net: netAmount
+          }}
+        />
       </div>
- <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
-  <PrescriptionPrint
-    ref={printRef}
-    data={{
-      pres_num: patientInfo.pres_num,
-      date: prescriptionDate || new Date().toLocaleDateString(),
-
-      patient:
-        patients.find(p => p.reg_id == selectedPatientId)?.full_name ?? "-",
-
-      doctor:
-        doctors.find(d => d.reg_id == selectedDoctorId)?.full_name ?? "-",
-
-      age: patientInfo.age,
-      blood_group: patientInfo.blood_group,
-
-      items: prescriptionItems.map(item => {
-        const med = medications.find(m => m.med_id == item.med_id);
-
-        return {
-          ...item,
-          gen_name: med?.gen_name ?? "-"
-        };
-      }),
-
-      total: totalAmount,
-      discount: discount,
-      net: netAmount
-    }}
-  />
+ 
+  
 </div>
     </MainLayoutjur>
   );

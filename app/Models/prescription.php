@@ -15,6 +15,7 @@ class Prescription extends Model
         'patient_id',
         'patient_name',
         'patient_age',
+        'patient_gender',
         'patient_phone',
         'patient_blood_group',
         'doc_id',

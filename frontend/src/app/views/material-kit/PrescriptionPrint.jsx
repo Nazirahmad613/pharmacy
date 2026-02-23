@@ -1,9 +1,19 @@
 import React, { forwardRef } from "react";
 import "./print.css";
 
+
+ 
 const PrescriptionPrint = forwardRef(({ data }, ref) => {
   if (!data) return null;
+ // تبدیل جنسیت به فارسی (حساس نبودن به حروف بزرگ/کوچک و فاصله)
+const genderValue = data?.gender?.toString().trim().toLowerCase();
 
+const genderFa =
+  genderValue === "male" || genderValue === "m"
+    ? "مرد"
+    : genderValue === "female" || genderValue === "f"
+    ? "زن"
+    : genderValue ?? "-";
   return (
     <div ref={ref} className="print-container">
 
@@ -23,6 +33,7 @@ const PrescriptionPrint = forwardRef(({ data }, ref) => {
         <div>شماره نسخه: {data?.pres_num ?? "-"}</div>
         <div>مریض:    {data?.patient ?? "-"}</div>
         <div>سن:   {data?.age ?? "-"}</div>
+       <div>جنسیت {genderFa}</div>
         <div>گروپ خون:   {data?.blood_group ?? "-"}</div>
         <div>داکتر:   {data?.doctor ?? "-"}</div>
         <div>تاریخ:   {data?.date ?? "-"}</div>

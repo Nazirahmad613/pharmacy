@@ -37,6 +37,7 @@ class PrescriptionController extends Controller
                 'patient_id'          => $request->patient_id,
                 'patient_name'        => $patient->full_name ?? $patient->name ?? null,
                 'patient_age'         => $patient->age ?? null,
+                'patient_gender'         => $patient->gender ?? null,
                 'patient_phone'       => $patient->phone ?? null,
                 'patient_blood_group' => $patient->blood_group ?? null,
 
