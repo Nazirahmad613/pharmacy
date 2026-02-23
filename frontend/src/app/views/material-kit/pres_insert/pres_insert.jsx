@@ -2,13 +2,16 @@
   import MainLayoutjur from "../../../../components/MainLayoutjur";
   import { toast, ToastContainer } from "react-toastify";
   import "react-toastify/dist/ReactToastify.css";
-  import ReactToPrint from "react-to-print";
+ import { useReactToPrint } from "react-to-print";
   import { useRef } from "react";
   import PrescriptionPrint from "../PrescriptionPrint";
   import { useAuth } from "app/contexts/AuthContext";
 
   export default function PrescriptionForm() {
     const { api } = useAuth();
+     useEffect(() => {
+    document.title = "."; 
+  }, []);
 
     const emptyItem = {
       category_id: "",
@@ -45,8 +48,11 @@
 
     const [formItem, setFormItem] = useState(emptyItem);
     const [prescriptionItems, setPrescriptionItems] = useState([]);
-    const printRef = useRef();
+   const printRef = useRef();
 
+ const handlePrint = useReactToPrint({
+  contentRef: printRef,
+});
     // ===== محاسبه مجموع =====
     useEffect(() => {
       const sum = prescriptionItems.reduce((t, i) => t + Number(i.total_price), 0);
@@ -276,6 +282,8 @@
         toast.error("❌ خطا در ثبت نسخه");
       }
     };
+
+ 
   return (
     <MainLayoutjur>
       <ToastContainer />
@@ -539,30 +547,45 @@
           <button className="edit" onClick={handleSavePrescription}>
             ثبت نسخه
           </button>
-            <ReactToPrint
-    trigger={() => <button className="edit">پرنت نسخه</button>}
-    content={() => printRef.current}
-  />
+
+
+            <button className="edit" onClick={handlePrint}>
+  پرنت نسخه
+</button>
         </div>
       </div>
-  <div style={{ display: "none" }}>
-    <PrescriptionPrint
-      ref={printRef}
-      data={{
-        pres_num: patientInfo.pres_num,
-        date: prescriptionDate,
-        patient: patients.find(p => p.reg_id == selectedPatientId)?.full_name,
-        doctor: doctors.find(d => d.reg_id == selectedDoctorId)?.full_name,
-        items: prescriptionItems,
-        total: totalAmount,
-        discount: discount,
-        net: netAmount
-      }}
-    />
-  </div>
+ <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
+  <PrescriptionPrint
+    ref={printRef}
+    data={{
+      pres_num: patientInfo.pres_num,
+      date: prescriptionDate || new Date().toLocaleDateString(),
 
+      patient:
+        patients.find(p => p.reg_id == selectedPatientId)?.full_name ?? "-",
 
+      doctor:
+        doctors.find(d => d.reg_id == selectedDoctorId)?.full_name ?? "-",
+
+      age: patientInfo.age,
+      blood_group: patientInfo.blood_group,
+
+      items: prescriptionItems.map(item => {
+        const med = medications.find(m => m.med_id == item.med_id);
+
+        return {
+          ...item,
+          gen_name: med?.gen_name ?? "-"
+        };
+      }),
+
+      total: totalAmount,
+      discount: discount,
+      net: netAmount
+    }}
+  />
+</div>
     </MainLayoutjur>
   );
 
-  }
+  }        
