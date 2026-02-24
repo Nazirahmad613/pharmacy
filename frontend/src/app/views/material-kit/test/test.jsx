@@ -1,88 +1,159 @@
-CREATE OR REPLACE VIEW vw_hospital_reports AS
 
-SELECT
-    'transaction' AS source,
-    j.id AS id,
-    j.journal_date AS date,
-    j.entry_type AS entry_type,
-    j.ref_type AS ref_type,
-    j.amount AS amount,
-    j.description AS notes,
-    p.reg_type AS patient_id,
-    p.reg_type AS patient_name,
-    d.reg_type AS doctor_id,
-    d.reg_type AS doctor_name,
-    m.med_id AS medication_id,
-    m.gen_name AS medication_name,
-    s.reg_type AS supplier_id,
-    s.reg_type AS supplier_name,
-    c.reg_type AS customer_id,
-    c.reg_type AS customer_name,
-    NULL AS quantity,
-    NULL AS unit_price,
-    NULL AS total_price
-FROM journals j
-LEFT JOIN registrations p ON j.patient_id = p.id AND p.reg_type='patient'
-LEFT JOIN registrations d ON j.doc_id = d.id AND d.reg_type='doctor'
-LEFT JOIN registrations c ON j.cust_id = c.id AND c.reg_type='customer'
-LEFT JOIN registrations s ON j.supplier_id = s.id AND s.reg_type='supplier'
-LEFT JOIN medications m ON j.med_id = m.med_id
+          {/* ===== اطلاعات فروش ===== */}
+          <div className="form-container">
+            <h2 style={{ textAlign: "center", marginBottom: "20px" }}>ثبت فروشات</h2>
 
-UNION ALL
+            <div className="form-grid">
+              <div>
+                <label>تاریخ فروش</label>
+                <input type="date" value={saleDate} onChange={e => setSaleDate(e.target.value)} />
+              </div>
 
-SELECT
-    'sales' AS source,
-    si.sales_it_id AS id,
-    s.sales_date AS date,
-    'debit' AS entry_type,
-    'sales' AS ref_type,
-    si.unit_sales * si.quantity AS amount,
-    NULL AS notes,
-    p.reg_id AS patient_id,
-    p.full_name AS patient_name,
-    d.reg_id AS doctor_id,
-    d.full_name AS doctor_name,
-    m.med_id AS medication_id,
-    m.gen_name AS medication_name,
-    sup.reg_id AS supplier_id,
-    sup.full_name AS supplier_name,
-    c.reg_id AS customer_id,
-    c.full_name AS customer_name,
-    si.quantity AS quantity,
-    si.unit_sales AS unit_price,
-    si.price * si.quantity AS total_price
-FROM sales_items si
-JOIN sales s ON si.sales_id = s.sales_id
-JOIN medications m ON si.med_id = m.med_id
-LEFT JOIN registrations sup ON m.supplier_id = sup.reg_id AND sup.reg_type='supplier'
-LEFT JOIN registrations p ON s.patient_id = p.reg_id AND p.reg_type='patient'
-LEFT JOIN registrations d ON s.doc_id = d.reg_id AND d.reg_type='doctor'
-LEFT JOIN registrations c ON s.cust_id = c.reg_id AND c.reg_type='customer'
+              <div>
+                <label>مشتری</label>
+                <select value={formItem.cust_id} onChange={e => handleChange("cust_id", e.target.value)}>
+                  <option value="">-- انتخاب مشتری --</option>
+                  {customers.map((c, index) => (
+                    <option key={c.id ?? c.reg_id ?? `cust-${index}`} value={c.id ?? c.reg_id}>
+                      {c.full_name ?? c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-UNION ALL
+              <div>
+                <label>مجموع فروش</label>
+                <input type="number" value={totalSale} readOnly />
+              </div>
 
-SELECT
-    'parchases' AS source,
-    pi.parchase_it_id AS id,
-    pur.parchase_date AS date,
-    'credit' AS entry_type,
-    'purchase' AS ref_type,
-    pi.unit_price * pi.quantity AS amount,
-    NULL AS notes,
-    NULL AS patient_id,
-    NULL AS patient_name,
-    NULL AS doctor_id,
-    NULL AS doctor_name,
-    m.med_id AS medication_id,
-    m.gen_name AS medication_name,
-    sup.reg_id AS supplier_id,
-    sup.full_name AS supplier_name,
-    NULL AS customer_id,
-    NULL AS customer_name,
-    pi.quantity AS quantity,
-    pi.unit_price AS unit_price,
-    pi.unit_price * pi.quantity AS total_price
-FROM parchaseitems pi
-JOIN parchases pur ON pi.parchase_id = pur.parchase_id
-JOIN medications m ON pi.med_id = m.med_id
-LEFT JOIN registrations sup ON m.supplier_id = sup.reg_id AND sup.reg_type='supplier';
+              <div>
+                <label>تخفیف</label>
+                <input type="number" value={discount} onChange={e => setDiscount(Number(e.target.value))} />
+              </div>
+
+              <div>
+                <label>فروش خالص</label>
+                <input type="number" value={netSales} readOnly />
+              </div>
+
+              <div>
+                <label>پرداخت اولیه</label>
+                <input type="number" value={totalPaid} onChange={e => setTotalPaid(Number(e.target.value))} />
+              </div>
+
+              <div>
+                <label>باقی‌مانده</label>
+                <input type="number" value={remaining} readOnly />
+              </div>
+
+              <div>
+                <label>وضعیت پرداخت</label>
+                <input type="text" value={paymentStatus} readOnly />
+              </div>
+            </div>
+          </div>
+
+          {/* ===== فرم آیتم‌ها ===== */}
+          <div className="form-container">
+            <h3>افزودن آیتم</h3>
+            <div className="form-grid" onKeyDown={handleKeyDown}>
+
+              <div>
+                <label>کتگوری</label>
+                <select value={formItem.category_id} onChange={e => handleChange("category_id", e.target.value)}>
+                  <option value="">-- انتخاب کتگوری --</option>
+                  {categories.map(c => (
+                    <option key={c.category_id} value={c.category_id}>{c.category_name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label>دوا</label>
+                <select value={formItem.med_id} onChange={e => handleChange("med_id", e.target.value)}>
+                  <option value="">-- انتخاب دوا --</option>
+                  {filteredMedications.map(m => (
+                    <option key={m.med_id} value={m.med_id}>{m.gen_name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label>حمایت‌کننده</label>
+                <select value={formItem.supplier_id} onChange={e => handleChange("supplier_id", e.target.value)}>
+                  <option value="">-- انتخاب حمایت‌کننده --</option>
+                  {filteredSuppliers.map((s, index) => (
+                    <option key={s.reg_id ?? `sup-${index}`} value={s.reg_id}>
+                      {s.full_name ?? s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label>نوع دوا</label>
+                <input type="text" value={formItem.type} readOnly />
+              </div>
+
+              <div>
+                <label>تعداد</label>
+                <input type="number" value={formItem.quantity} onChange={e => handleChange("quantity", e.target.value)} />
+              </div>
+
+              <div>
+                <label>قیمت واحد</label>
+                <input type="number" value={formItem.unit_sales} onChange={e => handleChange("unit_sales", e.target.value)} />
+              </div>
+
+              <div>
+                <label>قیمت مجموعی</label>
+                <input type="number" value={formItem.total_sales} readOnly />
+              </div>
+
+              <div>
+                <label>تاریخ انقضا</label>
+                <input type="date" value={formItem.exp_date} onChange={e => handleChange("exp_date", e.target.value)} />
+              </div>
+
+            </div>
+          </div>
+
+          {/* ===== جدول آیتم‌ها ===== */}
+          {saleItems.length > 0 && (
+            <div className="table-container">
+              <table className="dark-table">
+                <thead>
+                  <tr>
+                    <th>شماره</th>
+                    <th>کتگوری</th>
+                    <th>نام دوا</th>
+                    <th>حمایت‌کننده</th>
+                    <th>نوع دوا</th>
+                    <th>تعداد</th>
+                    <th>قیمت واحد</th>
+                    <th>قیمت مجموعی</th>
+                    <th>تاریخ انقضا</th>
+                    <th>عملیات</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {saleItems.map((item, idx) => (
+                    <tr key={item.id}>
+                      <td>{idx + 1}</td>
+                      <td>{item.category_name}</td>
+                      <td>{item.med_name}</td>
+                      <td>{item.supplier_name}</td>
+                      <td>{item.type}</td>
+                      <td>{item.quantity}</td>
+                      <td>{item.unit_sales?.toLocaleString()}</td>
+                      <td>{item.total_sales?.toLocaleString()}</td>
+                      <td>{item.exp_date}</td>
+                      <td>
+                        <button className="delete" onClick={() => handleRemoveItem(item.id)}>حذف</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}

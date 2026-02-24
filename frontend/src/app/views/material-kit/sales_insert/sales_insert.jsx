@@ -1,11 +1,31 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import MainLayoutjur from "../../../../components/MainLayoutjur";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useAuth } from "app/contexts/AuthContext";
+import { useReactToPrint } from "react-to-print";
+import SalePrint from "../SalePrint";
 
 export default function SaleForm() {
   const { api } = useAuth();
+  const printRef = useRef(null);
+
+  // ✅ نسخه جدید react-to-print
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: "sale-bill",
+    pageStyle: `
+      @page {
+        size: A4;
+        margin: 20mm;
+      }
+      @media print {
+        body {
+          -webkit-print-color-adjust: exact;
+        }
+      }
+    `,
+  });
 
   const [saleDate, setSaleDate] = useState("");
   const [categories, setCategories] = useState([]);
@@ -131,7 +151,6 @@ export default function SaleForm() {
       return;
     }
 
-    // گرفتن نام‌ها برای نمایش در جدول
     const med = medications.find(m => Number(m.med_id) === Number(formItem.med_id));
     const cat = categories.find(c => Number(c.category_id) === Number(formItem.category_id));
     const sup = suppliers.find(s => Number(s.reg_id) === Number(formItem.supplier_id));
@@ -190,31 +209,28 @@ export default function SaleForm() {
     try {
       await api.post("/sales", payload);
       toast.success("✅ فروش با موفقیت ثبت شد");
-
-      // ریست فرم
-      setSaleItems([]);
-      setDiscount(0);
-      setTotalSale(0);
-      setNetSales(0);
-      setTotalPaid(0);
-      setRemaining(0);
-      setPaymentStatus("پرداخت نشده");
-      setSaleDate("");
-      setFormItem({
-        cust_id: "",
-        category_id: "",
-        med_id: "",
-        supplier_id: "",
-        type: "",
-        quantity: "",
-        unit_sales: "",
-        total_sales: 0,
-        exp_date: "",
-      });
     } catch (err) {
       console.error(err);
       toast.error("❌ خطا در ثبت فروش");
     }
+  };
+
+  // ✅ آماده سازی دیتا برای پرنت
+  const selectedCustomer = customers.find(
+    c => Number(c.reg_id) === Number(formItem.cust_id)
+  );
+
+  const saleData = {
+    sale_number: "-",
+    date: saleDate || new Date().toLocaleDateString(),
+    customer: selectedCustomer?.full_name ?? "-",
+    items: saleItems,
+    totalSale,
+    discount,
+    netSales,
+    totalPaid,
+    remaining,
+    paymentStatus,
   };
 
   return (
@@ -224,7 +240,7 @@ export default function SaleForm() {
       <div className="main-layout">
         <div className="background-overlay"></div>
         <div className="layout-content">
-
+ 
           {/* ===== اطلاعات فروش ===== */}
           <div className="form-container">
             <h2 style={{ textAlign: "center", marginBottom: "20px" }}>ثبت فروشات</h2>
@@ -388,7 +404,17 @@ export default function SaleForm() {
             ثبت فروش
           </button>
 
+          <button type="button" className="edit" onClick={handlePrint}>
+            چاپ بل فروش
+          </button>
+
         </div>
+
+        {/* ✅ کامپوننت مخفی برای پرنت */}
+        <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
+          <SalePrint ref={printRef} saleData={saleData} />
+        </div>
+
       </div>
     </MainLayoutjur>
   );
