@@ -1,4 +1,4 @@
-import { Fragment } from "react";
+ 
 import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
@@ -9,6 +9,7 @@ import styled from "@mui/material/styles/styled";
 import useSettings from "app/hooks/useSettings";
 import { Paragraph, Span } from "../Typography";
 import MatxVerticalNavExpansionPanel from "./MatxVerticalNavExpansionPanel";
+import { useAuth } from "app/contexts/AuthContext"; // ✅ اضافه شد
 
 // STYLED COMPONENTS
 const ListLabel = styled(Paragraph)(({ theme, mode }) => ({
@@ -54,6 +55,19 @@ export default function MatxVerticalNav({ items }) {
   const { settings } = useSettings();
   const { mode } = settings.layout1Settings.leftSidebar;
   const { t } = useTranslation();
+  const { user } = useAuth(); // ✅ کاربر جاری
+
+  // ✅ فیلتر آیتم‌ها بر اساس نقش کاربر
+  const filterItemsByRole = (data) => {
+    return data
+      .filter(item => !item.roles || item.roles.includes(user?.role))
+      .map(item => ({
+        ...item,
+        children: item.children ? filterItemsByRole(item.children) : undefined,
+      }));
+  };
+
+  const filteredItems = Array.isArray(items) ? filterItemsByRole(items) : [];
 
   const renderLevels = (data) => {
     return data.map((item, index) => {
@@ -64,7 +78,7 @@ export default function MatxVerticalNav({ items }) {
           </ListLabel>
         );
 
-      if (item.children) {
+      if (item.children && item.children.length > 0) {
         return (
           <MatxVerticalNavExpansionPanel mode={mode} item={item} key={index}>
             {renderLevels(item.children)}
@@ -75,11 +89,10 @@ export default function MatxVerticalNav({ items }) {
           <InternalLink key={index}>
             <NavLink
               to={item.path}
-              className={({ isActive }) =>
-                isActive ? `navItemActive` : ""
-              }>
+              className={({ isActive }) => (isActive ? `navItemActive` : "")}
+            >
               <ButtonBase key={item.name} sx={{ width: "100%" }}>
-                {item.icon && <Icon className={item.icon} />} {/* ✅ رفع مشکل */}
+                {item.icon && <Icon className={item.icon} />}
                 <StyledText mode={mode} className="sidenavHoverShow">
                   {t(item.name)}
                 </StyledText>
@@ -94,7 +107,7 @@ export default function MatxVerticalNav({ items }) {
 
   return (
     <div className="navigation" style={{ overflowY: "auto", maxHeight: "100vh" }}>
-      {renderLevels(items)}
+      {renderLevels(filteredItems)}
     </div>
   );
 }

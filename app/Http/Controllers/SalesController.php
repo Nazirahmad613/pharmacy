@@ -39,7 +39,7 @@ class SalesController extends Controller
                         'quantity'      => $item->quantity,
                         'unit_sales'    => $item->unit_sales,
                         'total_sales'   => $item->total_sales,
-                        'exp_date'      => $item->exp_date,
+                      
                     ];
                 }),
             ];
@@ -62,7 +62,7 @@ class SalesController extends Controller
             'items.*.type' => 'required|string',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.unit_sales' => 'required|numeric|min:0',
-            'items.*.exp_date' => 'required|date',
+           
         ]);
 
         DB::beginTransaction();
@@ -94,7 +94,7 @@ class SalesController extends Controller
                     'quantity'    => $item['quantity'],
                     'unit_sales'  => $item['unit_sales'],
                     'total_sales' => $item['quantity'] * $item['unit_sales'],
-                    'exp_date'    => $item['exp_date'],
+                   
                 ]);
             }
 

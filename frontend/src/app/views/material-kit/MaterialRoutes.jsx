@@ -1,5 +1,6 @@
 import { lazy } from "react";
 import Loadable from "app/components/Loadable";
+import AdminRoute from "../material-kit/AdminRoute"; // ✅ Route Guard
 
 // ===== Material UI Samples =====
 const AppForm = Loadable(lazy(() => import("./forms/AppForm")));
@@ -17,6 +18,7 @@ const AppExpansionPanel = Loadable(lazy(() => import("./expansion-panel/AppExpan
 // ===== Forms & Data Entry =====
 const AppAddcatagory = Loadable(lazy(() => import("./addcatagory/addcatagory")));
 const AppAddmedication = Loadable(lazy(() => import("./addinformation/addmedication")));
+const AppUsersPage = Loadable(lazy(() => import("./users/UsersPage"))); // ✅ مدیریت کاربران
 const AppAddchanges = Loadable(lazy(() => import("./changes/addchanges")));
 const AppAddprescriptions = Loadable(lazy(() => import("./pres_insert/pres_insert")));
 const AppAddsales = Loadable(lazy(() => import("./sales_insert/sales_insert")));
@@ -24,9 +26,9 @@ const AppAddparchases = Loadable(lazy(() => import("./parchases/parchases")));
 const AppRegistrationForm = Loadable(lazy(() => import("./registrations/RegistrationForm")));
 
 // ===== Reports =====
- 
-const AppHospital_report = Loadable(lazy(() => import("./reports/Hospital_Report"))); // ✅ اصلاح شد
+const AppHospital_report = Loadable(lazy(() => import("./reports/Hospital_Report")));
 const AppAccountSummaryPage = Loadable(lazy(() => import("./reports/AccountSummaryPage.jsx")));  
+
 // ===== Routes =====
 const materialRoutes = [
   { path: "/material/form", element: <AppForm /> },
@@ -48,9 +50,19 @@ const materialRoutes = [
   { path: "/material/parchases", element: <AppAddparchases /> },
   { path: "/material/addcatagory", element: <AppAddcatagory /> },
   { path: "/material/registrations", element: <AppRegistrationForm /> },
- 
+
   { path: "/material/hospital-report", element: <AppHospital_report /> },
-  { path: "/material/AcountSummaryPage", element: < AppAccountSummaryPage/> },
+  { path: "/material/AcountSummaryPage", element: <AppAccountSummaryPage /> },
+
+  // ===== مسیر مدیریت کاربران فقط برای ادمین =====
+  {
+    path: "/material/users",
+    element: (
+      <AdminRoute>
+        <AppUsersPage />
+      </AdminRoute>
+    ),
+  },
 ];
 
 export default materialRoutes;

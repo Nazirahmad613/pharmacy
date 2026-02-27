@@ -1,4 +1,4 @@
- import { lazy } from "react";
+import { lazy } from "react";
 import { Navigate } from "react-router-dom";
 
 import AuthGuard from "./auth/AuthGuard";
@@ -14,7 +14,8 @@ const AppEchart = Loadable(lazy(() => import("app/views/charts/echarts/AppEchart
 // DASHBOARD PAGE
 const Analytics = Loadable(lazy(() => import("app/views/dashboard/Analytics")));
 
-// const EditPrescription = lazy(() => import("./views/material-kit/reports/edit/EditPrescriptions"));
+// USERS PAGE
+const UsersPage = Loadable(lazy(() => import("../app/views/material-kit/users/UsersPage")));
 
 const routes = [
   // 🔹 ریدایرکت اصلی اصلاح شد (مسیر مطلق)
@@ -28,20 +29,17 @@ const routes = [
     ),
     children: [
       ...materialRoutes,
-      // dashboard route بدون /
+
+      // Dashboard
       { path: "dashboard/default", element: <Analytics />, auth: authRoles.admin },
-      // e-chart route بدون /
-      { path: "charts/echarts", element: <AppEchart />, auth: authRoles.editor }
+
+      // E-Chart
+      { path: "charts/echarts", element: <AppEchart />, auth: authRoles.editor },
+
+      // Users Page (فقط admin)
+      { path: "users", element: <UsersPage />, auth: authRoles.admin }
     ]
   },
-  //  {
-  //   path: "/prescriptions",
-  //   element: <PrescriptionList />,
-  // },
-  // {
-  //   path: "/prescriptions/edit/:id",
-  //   element: <EditPrescription />,
-  // },
 
   // session pages route
   ...sessionRoutes

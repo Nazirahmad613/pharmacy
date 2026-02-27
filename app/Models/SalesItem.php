@@ -22,7 +22,7 @@ class SalesItem extends Model
         'quantity',
         'unit_sales',
         'total_sales',
-        'exp_date',
+     
     ];
 
     /**

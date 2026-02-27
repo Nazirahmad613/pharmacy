@@ -9,6 +9,7 @@ import SalePrint from "../SalePrint";
 export default function SaleForm() {
   const { api } = useAuth();
   const printRef = useRef(null);
+  const [salesId, setSalesId] = useState(null);
 
   // ✅ نسخه جدید react-to-print
   const handlePrint = useReactToPrint({
@@ -144,8 +145,8 @@ export default function SaleForm() {
       !formItem.med_id ||
       !formItem.supplier_id ||
       !formItem.quantity ||
-      !formItem.unit_sales ||
-      !formItem.exp_date
+      !formItem.unit_sales 
+      
     ) {
       toast.error("❌ لطفاً تمام فیلدها را درست پر کنید");
       return;
@@ -175,7 +176,7 @@ export default function SaleForm() {
       quantity: "",
       unit_sales: "",
       total_sales: 0,
-      exp_date: "",
+   
     });
   };
 
@@ -183,55 +184,61 @@ export default function SaleForm() {
     setSaleItems(saleItems.filter(item => item.id !== id));
   };
 
-  const handleSaveSale = async () => {
-    if (saleItems.length === 0) {
-      toast.error("❌ حداقل یک آیتم اضافه کنید");
-      return;
-    }
+   const handleSaveSale = async () => {
+  if (saleItems.length === 0) {
+    toast.error("❌ حداقل یک آیتم اضافه کنید");
+    return;
+  }
 
-    const payload = {
-      sales_date: saleDate || new Date().toISOString().split("T")[0],
-      cust_id: formItem.cust_id,
-      discount,
-      total_paid: totalPaid,
-      items: saleItems.map(item => ({
-        category_id: item.category_id,
-        med_id: item.med_id,
-        supplier_id: item.supplier_id,
-        type: item.type,
-        quantity: Number(item.quantity),
-        unit_sales: Number(item.unit_sales),
-        total_sales: Number(item.total_sales),
-        exp_date: item.exp_date,
-      })),
-    };
-
-    try {
-      await api.post("/sales", payload);
-      toast.success("✅ فروش با موفقیت ثبت شد");
-    } catch (err) {
-      console.error(err);
-      toast.error("❌ خطا در ثبت فروش");
-    }
+  const payload = {
+    sales_date: saleDate || new Date().toISOString().split("T")[0],
+    cust_id: formItem.cust_id,
+    discount,
+    total_paid: totalPaid,
+    items: saleItems.map(item => ({
+      category_id: item.category_id,
+      med_id: item.med_id,
+      supplier_id: item.supplier_id,
+      type: item.type,
+      quantity: Number(item.quantity),
+      unit_sales: Number(item.unit_sales),
+      total_sales: Number(item.total_sales),
+    })),
   };
+
+  try {
+    // ✅ response را بگیر
+    const res = await api.post("/sales", payload);
+
+    // ✅ sales_id را ذخیره کن
+    setSalesId(res.data.sale_id);
+
+    toast.success("✅ فروش با موفقیت ثبت شد");
+
+  } catch (err) {
+    console.error(err);
+    toast.error("❌ خطا در ثبت فروش");
+  }
+};
+ 
 
   // ✅ آماده سازی دیتا برای پرنت
-  const selectedCustomer = customers.find(
-    c => Number(c.reg_id) === Number(formItem.cust_id)
-  );
+const selectedCustomer = customers.find(
+  c => Number(c.reg_id) === Number(formItem.cust_id)
+);
 
-  const saleData = {
-    sale_number: "-",
-    date: saleDate || new Date().toLocaleDateString(),
-    customer: selectedCustomer?.full_name ?? "-",
-    items: saleItems,
-    totalSale,
-    discount,
-    netSales,
-    totalPaid,
-    remaining,
-    paymentStatus,
-  };
+const saleData = {
+  sale_number: salesId ?? "-",   // 👈 این خط اصلاح شد
+  date: saleDate || new Date().toLocaleDateString(),
+  customer: selectedCustomer?.full_name ?? "-",
+  items: saleItems,
+  totalSale,
+  discount,
+  netSales,
+  totalPaid,
+  remaining,
+  paymentStatus,
+};
 
   return (
     <MainLayoutjur>
@@ -352,10 +359,7 @@ export default function SaleForm() {
                 <input type="number" value={formItem.total_sales} readOnly />
               </div>
 
-              <div>
-                <label>تاریخ انقضا</label>
-                <input type="date" value={formItem.exp_date} onChange={e => handleChange("exp_date", e.target.value)} />
-              </div>
+             
 
             </div>
           </div>
@@ -374,7 +378,6 @@ export default function SaleForm() {
                     <th>تعداد</th>
                     <th>قیمت واحد</th>
                     <th>قیمت مجموعی</th>
-                    <th>تاریخ انقضا</th>
                     <th>عملیات</th>
                   </tr>
                 </thead>
@@ -389,7 +392,7 @@ export default function SaleForm() {
                       <td>{item.quantity}</td>
                       <td>{item.unit_sales?.toLocaleString()}</td>
                       <td>{item.total_sales?.toLocaleString()}</td>
-                      <td>{item.exp_date}</td>
+                      
                       <td>
                         <button className="delete" onClick={() => handleRemoveItem(item.id)}>حذف</button>
                       </td>

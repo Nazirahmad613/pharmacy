@@ -31,6 +31,7 @@ use App\Http\Controllers\JournalController;
 use App\Http\Controllers\HospitalReportController;
 use App\Http\Controllers\PrescriptionController;
 use App\Http\Controllers\AccountSummaryController;
+use App\Http\Controllers\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -63,6 +64,8 @@ Route::post('/login', [AuthController::class, 'login']);
 */
 Route::middleware('auth:sanctum')->group(function () {
 
+
+Route::apiResource('users', UserController::class);
 
     // ===== Auth =====
     Route::get('/me', [AuthController::class, 'me']);
@@ -124,7 +127,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ===== Notifications =====
     Route::get('/notifications', [NotificationController::class, 'index']);
-
+    
 
 //   journals   // ===== Journals =====
     Route::get('/journals', [JournalController::class, 'index']); // نمایش همه یا فیلتر شده

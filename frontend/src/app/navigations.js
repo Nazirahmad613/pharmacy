@@ -28,13 +28,27 @@ const navigations = [
     ],
   },
 
+  // 🔹 بخش مدیریت کاربران فقط برای admin
+  { label: "کاربران", type: "label" },
+  {
+    name: "مدیریت کاربران",
+    iconText: "U",
+    roles: ["admin"], // ✅ فقط ادمین
+    children: [
+      {
+        name: "مدیریت کاربران",
+        path: "/material/users",
+        iconText: "U",
+        roles: ["admin"], // ✅ فیلتر نقش
+      },
+    ],
+  },
+
   { label: "نمایش اطلاعات", type: "label" },
   {
     name: "گزارش ها",
     iconText: "G",
     children: [
- 
-      
       { name: "hospital_report", path: "/material/hospital-report", iconText: "HR" },
       { name: "AccountSummaryPage", path: "/material/AcountSummaryPage", iconText: "AS" },
     ],
