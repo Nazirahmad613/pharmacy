@@ -38,7 +38,7 @@ class UserController extends Controller
             'role' => 'sometimes|required|string'
         ]);
 
-        if (isset($validated['password'])) {
+        if (!empty($validated['password'])) {
             $validated['password'] = Hash::make($validated['password']);
         }
 
@@ -49,10 +49,18 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
+        $currentUser = auth()->user();
+
+        // محدود کردن حذف برای hospital_head
+        if ($currentUser->role === 'hospital_head') {
+            return response()->json(['message' => 'دسترسی ندارید'], 403);
+        }
+
+        // حذف کاربر
         $user->delete();
 
         return response()->json([
-            'message' => 'User deleted successfully'
+            'message' => 'حذف شد'
         ]);
     }
 }

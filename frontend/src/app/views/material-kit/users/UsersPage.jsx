@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import api from "../../../../api"; // مسیر api خودت را تنظیم کن
+import api from "../../../../api";
 import MainLayoutjur from "../../../../components/Mainlayoutjur";
 import {
   Box,
@@ -17,12 +17,36 @@ import {
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { FaKey } from "react-icons/fa"; // آیکون کلید
+import { useAuth } from "app/contexts/AuthContext"; // دسترسی به کاربر فعلی
+import { NavLink } from "react-router-dom";
 
 export default function UsersPage() {
+  const { currentUser } = useAuth();
+
+  // 🔹 بررسی نقش کاربر: اگر رئیس عمومی شفاخانه است، فقط گزارش‌ها را ببیند
+  if (currentUser?.role === "hospital_head") {
+    return (
+      <MainLayoutjur>
+        <h2 style={{ textAlign: "center", marginBottom: 20 }}>
+          شما فقط اجازه مشاهده گزارش‌ها را دارید
+        </h2>
+        <Box sx={{ display: "flex", justifyContent: "center" }}>
+          <NavLink to="/reports" style={{ textDecoration: "none" }}>
+            <Button variant="contained" color="primary">
+              مشاهده گزارش‌ها
+            </Button>
+          </NavLink>
+        </Box>
+      </MainLayoutjur>
+    );
+  }
+
+  // بقیه کاربران (admin یا user) اجازه مدیریت کاربران را دارند
   const [users, setUsers] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [formData, setFormData] = useState({ name: "", email: "", role: "user" });
+  const [formData, setFormData] = useState({ name: "", email: "", role: "user", password: "" });
 
   const fetchUsers = () => {
     api
@@ -35,26 +59,21 @@ export default function UsersPage() {
     fetchUsers();
   }, []);
 
-  // باز کردن دیالوگ افزودن یا ویرایش
   const handleOpenDialog = (user = null) => {
     if (user) {
       setEditingUser(user);
-      setFormData({ name: user.name, email: user.email, role: user.role });
+      setFormData({ name: user.name, email: user.email, role: user.role, password: "" });
     } else {
       setEditingUser(null);
-      setFormData({ name: "", email: "", role: "user" });
+      setFormData({ name: "", email: "", role: "user", password: "" });
     }
     setOpenDialog(true);
   };
 
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-  };
+  const handleCloseDialog = () => setOpenDialog(false);
 
-  // ثبت یا ویرایش یوزر
   const handleSave = () => {
     if (editingUser) {
-      // ویرایش
       api
         .put(`/users/${editingUser.id}`, formData)
         .then(() => {
@@ -63,7 +82,6 @@ export default function UsersPage() {
         })
         .catch((err) => console.error(err));
     } else {
-      // افزودن
       api
         .post("/users", formData)
         .then(() => {
@@ -74,7 +92,6 @@ export default function UsersPage() {
     }
   };
 
-  // حذف یوزر
   const handleDelete = (id) => {
     if (window.confirm("آیا مطمئن هستید می‌خواهید این کاربر را حذف کنید؟")) {
       api
@@ -86,14 +103,9 @@ export default function UsersPage() {
 
   return (
     <MainLayoutjur>
-      <Box sx={{ mb: 2, display: "flex", justifyContent: "space-between" }}>
-        <h2>مدیریت کاربران</h2>
-        <Button variant="contained" color="primary" onClick={() => handleOpenDialog()}>
-          افزودن کاربر جدید
-        </Button>
-      </Box>
+      <h2 style={{ textAlign: "center", marginBottom: 20 }}>مدیریت کاربران</h2>
 
-      <table>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr>
             <th>نام</th>
@@ -105,7 +117,9 @@ export default function UsersPage() {
         <tbody>
           {users.map((u) => (
             <tr key={u.id}>
-              <td>{u.name}</td>
+              <td>
+                {u.name} <FaKey style={{ marginLeft: 5, color: "#007bff" }} />
+              </td>
               <td>{u.email}</td>
               <td>{u.role}</td>
               <td>
@@ -121,7 +135,17 @@ export default function UsersPage() {
         </tbody>
       </table>
 
-      {/* دیالوگ افزودن / ویرایش */}
+      <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<FaKey />}
+          onClick={() => handleOpenDialog()}
+        >
+          افزودن کاربر جدید
+        </Button>
+      </Box>
+
       <Dialog open={openDialog} onClose={handleCloseDialog}>
         <DialogTitle>{editingUser ? "ویرایش کاربر" : "افزودن کاربر"}</DialogTitle>
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 300 }}>
@@ -135,6 +159,12 @@ export default function UsersPage() {
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
           />
+          <TextField
+            label={editingUser ? "تغییر پسورد (اختیاری)" : "پسورد"}
+            type="password"
+            value={formData.password}
+            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+          />
           <FormControl>
             <InputLabel>نقش</InputLabel>
             <Select
@@ -144,6 +174,7 @@ export default function UsersPage() {
             >
               <MenuItem value="user">User</MenuItem>
               <MenuItem value="admin">Admin</MenuItem>
+              <MenuItem value="hospital_head">رئیس عمومی شفاخانه</MenuItem>
             </Select>
           </FormControl>
         </DialogContent>

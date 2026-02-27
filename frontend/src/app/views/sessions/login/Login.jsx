@@ -28,18 +28,20 @@ export default function Login() {
 
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState(""); // خطای ورود
 
   const handleFormSubmit = async (values) => {
     try {
       setLoading(true);
+      setLoginError(""); // پاک کردن خطای قبلی
       await login(values.email, values.password);
       enqueueSnackbar("ورود موفقانه انجام شد", { variant: "success" });
       navigate("/dashboard/default");
     } catch (error) {
-      enqueueSnackbar(
-        error?.response?.data?.message || "ایمیل یا رمز عبور اشتباه است",
-        { variant: "error" }
-      );
+      // گرفتن پیام خطای درست
+      const message = error?.response?.data?.message || "ایمیل یا رمز عبور اشتباه است";
+      setLoginError(message); // نمایش خطا در فرم
+      enqueueSnackbar(message, { variant: "error" });
     } finally {
       setLoading(false);
     }
@@ -104,6 +106,9 @@ export default function Login() {
               {touched.password && errors.password && (
                 <div className="error">{errors.password}</div>
               )}
+
+              {/* خطای ورود اشتباه */}
+              {loginError && <div className="login-error">{loginError}</div>}
 
               <button
                 type="submit"
@@ -279,6 +284,16 @@ export default function Login() {
             padding: 30px;
           }
         }
+
+          .login-error {
+  font-size: 14px;
+  color: #ff4d4f;
+  font-weight: bold;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+        
       `}</style>
     </div>
   );

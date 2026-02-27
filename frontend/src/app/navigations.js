@@ -16,30 +16,31 @@ const navigations = [
   {
     name: "ثبت معلومات جدید",
     iconText: "F",
+    roles: [ "user"], // فقط admin و user می توانند این بخش را ببینند
     children: [
-      { name: "RegistationForm", path: "/material/registrations", iconText: "RG" },
-      { name: "addmedication", path: "/material/addinformation", iconText: "AM" },
-      { name: "addchanges", path: "/material/changes", iconText: "AS" },
-      { name: "pres_insert", path: "/material/pres_insert", iconText: "PI" },
-      { name: "sales_insert", path: "/material/sales_insert", iconText: "SI" },
-      { name: "parchases", path: "/material/parchases", iconText: "PR" },
-      { name: "addcatagory", path: "/material/addcatagory", iconText: "AC" },
-      { name: "PaymentForm", path: "/material/payment", iconText: "py" },
+      { name: "RegistationForm", path: "/material/registrations", iconText: "RG", roles: ["admin", "user"] },
+      { name: "addmedication", path: "/material/addinformation", iconText: "AM", roles: ["admin", "user"] },
+      { name: "addchanges", path: "/material/changes", iconText: "AS", roles: ["admin", "user"] },
+      { name: "pres_insert", path: "/material/pres_insert", iconText: "PI", roles: ["admin", "user"] },
+      { name: "sales_insert", path: "/material/sales_insert", iconText: "SI", roles: ["admin", "user"] },
+      { name: "parchases", path: "/material/parchases", iconText: "PR", roles: ["admin", "user"] },
+      { name: "addcatagory", path: "/material/addcatagory", iconText: "AC", roles: ["admin", "user"] },
+      { name: "PaymentForm", path: "/material/payment", iconText: "py", roles: ["admin", "user"] },
     ],
   },
 
   // 🔹 بخش مدیریت کاربران فقط برای admin
-  { label: "کاربران", type: "label" },
+  { label: "کاربران", type: "label", roles: ["admin"] },
   {
     name: "مدیریت کاربران",
     iconText: "U",
-    roles: ["admin"], // ✅ فقط ادمین
+    roles: ["admin"], // فقط admin
     children: [
       {
         name: "مدیریت کاربران",
         path: "/material/users",
         iconText: "U",
-        roles: ["admin"], // ✅ فیلتر نقش
+        roles: ["admin"], // فقط admin
       },
     ],
   },
@@ -48,6 +49,7 @@ const navigations = [
   {
     name: "گزارش ها",
     iconText: "G",
+    // 🔹 گزارش‌ها برای همه کاربران قابل مشاهده است
     children: [
       { name: "hospital_report", path: "/material/hospital-report", iconText: "HR" },
       { name: "AccountSummaryPage", path: "/material/AcountSummaryPage", iconText: "AS" },
@@ -57,7 +59,8 @@ const navigations = [
   {
     name: "charts",
     iconText: "C",
-    children: [{ name: "echarts", path: "/charts/echarts", iconText: "E" }],
+    roles: ["admin", "user"], // فقط admin و user
+    children: [{ name: "echarts", path: "/charts/echarts", iconText: "E", roles: ["admin", "user"] }],
   },
 
   {
