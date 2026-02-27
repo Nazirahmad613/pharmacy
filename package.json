@@ -8,6 +8,7 @@
     "react-hook-form": "^7.55.0",
     "react-i18next": "^15.4.1",
     "react-to-print": "^3.2.0",
+    "recharts": "^3.7.0",
     "uuid": "^13.0.0"
   }
 }

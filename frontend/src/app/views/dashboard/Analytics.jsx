@@ -11,6 +11,7 @@ import StatCards2 from "./shared/StatCards2";
 import DoughnutChart from "./shared/Doughnut";
 import UpgradeCard from "./shared/UpgradeCard";
 import TopSellingTable from "./shared/TopSellingTable";
+import MainLayoutjur from "../../../components/Mainlayoutjur";
 
 // STYLED COMPONENTS
 const ContentBox = styled("div")(({ theme }) => ({
@@ -73,6 +74,7 @@ export default function Analytics() {
   const { t, i18n } = useTranslation(); // استفاده از useTranslation برای ترجمه‌ها
 
   return (
+    <MainLayoutjur>
     <Fragment>
       {/* اضافه کردن دکمه تغییر زبان */}
       <LanguageSwitcher />
@@ -105,5 +107,6 @@ export default function Analytics() {
         </Grid>
       </ContentBox>
     </Fragment>
+    </MainLayoutjur>
   );
 }
