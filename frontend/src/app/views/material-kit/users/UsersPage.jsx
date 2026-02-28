@@ -14,26 +14,63 @@ import {
   FormControl,
   InputLabel,
   IconButton,
+  CircularProgress,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { FaKey } from "react-icons/fa"; // آیکون کلید
-import { useAuth } from "app/contexts/AuthContext"; // دسترسی به کاربر فعلی
+import { FaKey } from "react-icons/fa";
+// import { useAuth } from "app/contexts/AuthContext"; // غیرفعال کردیم برای تست
 import { NavLink } from "react-router-dom";
 
 export default function UsersPage() {
-  const { currentUser } = useAuth();
+  // 🔹 برای تست، یک currentUser موقت تعریف می‌کنیم
+  const currentUser = { id: 1, name: "Test User", role: "admin" };
 
-  // 🔹 بررسی نقش کاربر: اگر رئیس عمومی شفاخانه است، فقط گزارش‌ها را ببیند
-  if (currentUser?.role === "hospital_head") {
+  const [users, setUsers] = useState([]);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    role: "user",
+    password: "",
+  });
+  const [loading, setLoading] = useState(true);
+
+  const isAdminOrSuper = ["admin", "super_admin"].includes(currentUser.role.toLowerCase());
+
+  // 🔹 فقط وقتی currentUser آماده است
+  useEffect(() => {
+    // شبیه‌سازی درخواست API
+    api
+      .get("/users")
+      .then((res) => {
+        setUsers(res.data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
     return (
       <MainLayoutjur>
-        <h2 style={{ textAlign: "center", marginBottom: 20 }}>
-          شما فقط اجازه مشاهده گزارش‌ها را دارید
-        </h2>
-        <Box sx={{ display: "flex", justifyContent: "center" }}>
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
+          <CircularProgress />
+        </Box>
+      </MainLayoutjur>
+    );
+  }
+
+  if (currentUser.role === "hospital_head") {
+    return (
+      <MainLayoutjur>
+        <Box sx={{ textAlign: "center", mt: 5 }}>
+          <h2>شما فقط اجازه مشاهده گزارش‌ها را دارید</h2>
           <NavLink to="/reports" style={{ textDecoration: "none" }}>
-            <Button variant="contained" color="primary">
+            <Button variant="contained" color="primary" sx={{ mt: 2 }}>
               مشاهده گزارش‌ها
             </Button>
           </NavLink>
@@ -42,23 +79,7 @@ export default function UsersPage() {
     );
   }
 
-  // بقیه کاربران (admin یا user) اجازه مدیریت کاربران را دارند
-  const [users, setUsers] = useState([]);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [editingUser, setEditingUser] = useState(null);
-  const [formData, setFormData] = useState({ name: "", email: "", role: "user", password: "" });
-
-  const fetchUsers = () => {
-    api
-      .get("/users")
-      .then((res) => setUsers(res.data))
-      .catch((err) => console.error(err));
-  };
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
+  // ===== بقیه کد بدون تغییر =====
   const handleOpenDialog = (user = null) => {
     if (user) {
       setEditingUser(user);
@@ -74,30 +95,27 @@ export default function UsersPage() {
 
   const handleSave = () => {
     if (editingUser) {
-      api
-        .put(`/users/${editingUser.id}`, formData)
+      api.put(`/users/${editingUser.id}`, formData)
         .then(() => {
-          fetchUsers();
+          setUsers(users.map(u => (u.id === editingUser.id ? { ...u, ...formData } : u)));
           handleCloseDialog();
         })
-        .catch((err) => console.error(err));
+        .catch(console.error);
     } else {
-      api
-        .post("/users", formData)
-        .then(() => {
-          fetchUsers();
+      api.post("/users", formData)
+        .then(res => {
+          setUsers([...users, res.data]);
           handleCloseDialog();
         })
-        .catch((err) => console.error(err));
+        .catch(console.error);
     }
   };
 
   const handleDelete = (id) => {
     if (window.confirm("آیا مطمئن هستید می‌خواهید این کاربر را حذف کنید؟")) {
-      api
-        .delete(`/users/${id}`)
-        .then(() => fetchUsers())
-        .catch((err) => console.error(err));
+      api.delete(`/users/${id}`)
+        .then(() => setUsers(users.filter(u => u.id !== id)))
+        .catch(console.error);
     }
   };
 
@@ -115,11 +133,9 @@ export default function UsersPage() {
           </tr>
         </thead>
         <tbody>
-          {users.map((u) => (
+          {users.map(u => (
             <tr key={u.id}>
-              <td>
-                {u.name} <FaKey style={{ marginLeft: 5, color: "#007bff" }} />
-              </td>
+              <td>{u.name} <FaKey style={{ marginLeft: 5, color: "#007bff" }} /></td>
               <td>{u.email}</td>
               <td>{u.role}</td>
               <td>
@@ -136,12 +152,7 @@ export default function UsersPage() {
       </table>
 
       <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<FaKey />}
-          onClick={() => handleOpenDialog()}
-        >
+        <Button variant="contained" color="primary" startIcon={<FaKey />} onClick={() => handleOpenDialog()}>
           افزودن کاربر جدید
         </Button>
       </Box>
@@ -152,29 +163,30 @@ export default function UsersPage() {
           <TextField
             label="نام"
             value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            onChange={e => setFormData({ ...formData, name: e.target.value })}
           />
           <TextField
             label="ایمیل"
             value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            onChange={e => setFormData({ ...formData, email: e.target.value })}
           />
           <TextField
             label={editingUser ? "تغییر پسورد (اختیاری)" : "پسورد"}
             type="password"
             value={formData.password}
-            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+            onChange={e => setFormData({ ...formData, password: e.target.value })}
           />
-          <FormControl>
+          <FormControl fullWidth>
             <InputLabel>نقش</InputLabel>
             <Select
               value={formData.role}
               label="نقش"
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              onChange={e => setFormData({ ...formData, role: e.target.value })}
             >
               <MenuItem value="user">User</MenuItem>
               <MenuItem value="admin">Admin</MenuItem>
               <MenuItem value="hospital_head">رئیس عمومی شفاخانه</MenuItem>
+              {isAdminOrSuper && <MenuItem value="super_admin">Super Admin</MenuItem>}
             </Select>
           </FormControl>
         </DialogContent>

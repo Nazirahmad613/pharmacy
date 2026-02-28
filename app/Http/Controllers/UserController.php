@@ -13,16 +13,20 @@ class UserController extends Controller
         return response()->json(User::all());
     }
 
+
+
+
     public function store(Request $request)
     {
         $validated = $request->validate([
             'name' => 'required|string',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6',
-            'role' => 'required|string'
+            'role' => 'required|in:user,admin,hospital_head,super_admin'
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
+        
 
         $user = User::create($validated);
 

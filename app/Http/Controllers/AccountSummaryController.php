@@ -9,77 +9,30 @@ class AccountSummaryController extends Controller
 {
     public function index(Request $request)
     {
+        // استفاده از جدول view account_summary
         $query = DB::table('account_summary');
 
-        /*
-        |--------------------------------------------------------------------------
-        | 🔎 Search (نام حساب)
-        |--------------------------------------------------------------------------
-        */
+        // 🔎 جستجو بر اساس نام یا نوع حساب
         if ($request->filled('search')) {
             $search = trim($request->search);
-
             $query->where(function ($q) use ($search) {
                 $q->where('account_name', 'like', "%{$search}%")
                   ->orWhere('account_type', 'like', "%{$search}%");
             });
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | 🎯 Filters
-        |--------------------------------------------------------------------------
-        */
-
-        // فیلتر نوع حساب
+        // 🎯 فیلتر نوع حساب
         if ($request->filled('account_type')) {
             $query->where('account_type', $request->account_type);
         }
 
-        // فیلتر حداقل بیلانس
-        if ($request->filled('min_balance')) {
-            $query->where('balance', '>=', $request->min_balance);
-        }
+        // 📄 مرتب‌سازی
+        $query->orderBy('account_type', 'asc')->orderBy('account_name', 'asc');
 
-        // فقط بدهکارها
-        if ($request->filled('only_debtors') && $request->only_debtors == 1) {
-            $query->where('balance', '>', 0);
-        }
+        // 🔄 صفحه‌بندی (اختیاری)
+        $perPage = $request->get('per_page', 1000); // اگر می‌خوای همه رو بگیری، بزرگ بگیر
+        $results = $query->paginate($perPage);
 
-        // فقط طلبکارها
-        if ($request->filled('only_creditors') && $request->only_creditors == 1) {
-            $query->where('balance', '<', 0);
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | 🔄 Sorting
-        |--------------------------------------------------------------------------
-        */
-        $sortBy = $request->get('sort_by', 'account_type');
-        $sortDir = $request->get('sort_dir', 'asc');
-
-        $allowedSorts = [
-            'account_type',
-            'account_name',
-            'total_debit',
-            'total_credit',
-            'balance'
-        ];
-
-        if (in_array($sortBy, $allowedSorts)) {
-            $query->orderBy($sortBy, $sortDir);
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | 📄 Pagination
-        |--------------------------------------------------------------------------
-        */
-        $perPage = $request->get('per_page', 10);
-
-        return response()->json(
-            $query->paginate($perPage)
-        );
+        return response()->json($results);
     }
 }
