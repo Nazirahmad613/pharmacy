@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\Journal;
+use App\Models\Departement;
 
 class Registrations extends Model
 {
@@ -33,7 +34,7 @@ class Registrations extends Model
 
   public function department()
     {
-        return $this->belongsTo(Department::class, 'department_id');
+        return $this->belongsTo(Departement::class, 'department_id');
     }
 
 

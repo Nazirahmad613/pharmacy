@@ -1,45 +1,39 @@
 import React, { forwardRef } from "react";
 import "./print.css";
 
-
- 
 const PrescriptionPrint = forwardRef(({ data }, ref) => {
-  if (!data) return null;
- // تبدیل جنسیت به فارسی (حساس نبودن به حروف بزرگ/کوچک و فاصله)
-const genderValue = data?.gender?.toString().trim().toLowerCase();
 
-const genderFa =
-  genderValue === "male" || genderValue === "m"
-    ? "مرد"
-    : genderValue === "female" || genderValue === "f"
-    ? "زن"
-    : genderValue ?? "-";
+  const genderValue = data?.gender?.toString().trim().toLowerCase();
+
+  const genderFa =
+    genderValue === "male" || genderValue === "m"
+      ? "مرد"
+      : genderValue === "female" || genderValue === "f"
+      ? "زن"
+      : genderValue ?? "-";
+
   return (
     <div ref={ref} className="print-container">
 
-      {/* ====== Header ====== */}
       <div className="print-header">
-        <h1 className="clinic-title">شفاخانه الفلاح </h1>
-        
-       <div className="header-contact">
-  <p className="address">آدرس : کابل قلعه نجارا</p>
-  <p className="phone">شماره تماس: 0789020202</p>
-</div>
+        <h1 className="clinic-title">شفاخانه الفلاح</h1>
+        <div>
+          <p>آدرس: کابل قلعه نجارا</p>
+          <p>شماره تماس: 0789020202</p>
+        </div>
         <hr />
       </div>
 
-      {/* ====== Info Section ====== */}
       <div className="print-info">
         <div>شماره نسخه: {data?.pres_num ?? "-"}</div>
-        <div>مریض:    {data?.patient ?? "-"}</div>
-        <div>سن:   {data?.age ?? "-"}</div>
-       <div>جنسیت {genderFa}</div>
-        <div>گروپ خون:   {data?.blood_group ?? "-"}</div>
-        <div>داکتر:   {data?.doctor ?? "-"}</div>
-        <div>تاریخ:   {data?.date ?? "-"}</div>
+        <div>مریض: {data?.patient ?? "-"}</div>
+        <div>سن: {data?.age ?? "-"}</div>
+        <div>جنسیت: {genderFa}</div>
+        <div>گروپ خون: {data?.blood_group ?? "-"}</div>
+        <div>داکتر: {data?.doctor ?? "-"}</div>
+        <div>تاریخ: {data?.date ?? "-"}</div>
       </div>
 
-      {/* ====== Table ====== */}
       <table className="print-table">
         <thead>
           <tr>
@@ -58,7 +52,7 @@ const genderFa =
               <tr key={index}>
                 <td>{index + 1}</td>
                 <td>{item?.type ?? "-"}</td>
-                <td>{item?.gen_name ?? item?.name ?? "-"}</td>
+                <td>{item?.gen_name ?? "-"}</td>
                 <td>{item?.dosage ?? "-"}</td>
                 <td>{item?.quantity ?? "-"}</td>
                 <td>{item?.unit_price ?? "-"}</td>
@@ -73,9 +67,8 @@ const genderFa =
         </tbody>
       </table>
 
-      {/* ====== Footer ====== */}
-      <div className="print-footer">
-        <div>مجموع: {data?.total ?? 0}</div>
+      <div>
+        مجموع: {data?.total ?? 0}
       </div>
 
     </div>

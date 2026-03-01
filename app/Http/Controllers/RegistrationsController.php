@@ -35,7 +35,7 @@ class RegistrationsController extends Controller
     // 📤 لیست
     public function index(Request $request)
     {
-       $query = Registration::with('department');
+       $query = Registrations::with('department');
 
         if ($request->filled('reg_type')) {
             $query->where('reg_type', $request->reg_type);

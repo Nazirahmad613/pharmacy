@@ -58,13 +58,15 @@
 }
 
 .balance-positive {
-  color: #054508;
+  color: #1ce025;
   font-weight: bold;
+  font-size: large;
 }
 
 .balance-negative {
-  color: #d32f2f;
+  color: #e43636;
   font-weight: bold;
+  font-size: large;
 }
 
 .pagination-wrapper {

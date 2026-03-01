@@ -117,6 +117,35 @@ export default function AccountSummaryText() {
     );
   }
 
+  const translateAccountType = (type) => {
+  const map = {
+    patient: "مریض",
+    doctor: "داکتر",
+    visitor: "مراجع",
+    customer: "مشتری",
+    staff: "کارمند",
+    supplier: "تأمین‌کننده",
+
+    rent: "کرایه",
+    electricity: "برق",
+    water: "آب",
+    internet: "انترنت",
+    salary: "معاش",
+    fuel: "سوخت",
+    maintenance: "ترمیمات",
+
+    laboratory: "لابراتوار",
+    transport: "ترانسپورت",
+    consultation: "مشاوره",
+
+    expense: "مصرف عمومی",
+    income: "درآمد",
+    other: "سایر",
+  };
+
+  return map[type] || type;
+};
+
   return (
     <Box className="account-page">
       <Typography variant="h4" className="account-title">
@@ -176,9 +205,8 @@ export default function AccountSummaryText() {
                 <Typography className="account-name">
                   {item.account_name}
                 </Typography>
-
                 <Typography className="account-info">
-                  نوع حساب: <strong>{item.account_type}</strong>
+                  نوع حساب:     <strong>{translateAccountType(item.account_type)}</strong>
                 </Typography>
 
                 <Typography className="account-info">

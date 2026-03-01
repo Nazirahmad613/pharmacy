@@ -25,11 +25,13 @@ export default function RegistrationForm() {
   const [departments, setDepartments] = useState([]);
 
   // ===== بارگذاری لیست بخش‌ها =====
-   useEffect(() => {
+  useEffect(() => {
   const fetchDepartments = async () => {
     try {
       const res = await api.get("/departments");
-      setDepartments(res.data); // فقط آرایه مستقیم
+      // اگر API یک شیء با data برمی‌گرداند:
+      const deps = Array.isArray(res.data) ? res.data : res.data.data || [];
+      setDepartments(deps);
     } catch (err) {
       console.error("خطا در بارگذاری بخش‌ها:", err);
       setDepartments([]);
@@ -37,6 +39,7 @@ export default function RegistrationForm() {
   };
   fetchDepartments();
 }, [api]);
+
   // ================= تغییر مقدار =================
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -255,4 +258,4 @@ export default function RegistrationForm() {
       </div>
     </MainLayoutpur>
   );
-}
+}    

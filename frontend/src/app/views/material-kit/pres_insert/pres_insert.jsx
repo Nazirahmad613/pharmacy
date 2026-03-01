@@ -1,108 +1,110 @@
-  import { useState, useEffect } from "react";
-  import MainLayoutjur from "../../../../components/MainLayoutjur";
-  import { toast, ToastContainer } from "react-toastify";
-  import "react-toastify/dist/ReactToastify.css";
- import { useReactToPrint } from "react-to-print";
-  import { useRef } from "react";
-  import PrescriptionPrint from "../PrescriptionPrint";
-  import { useAuth } from "app/contexts/AuthContext";
+import { useState, useEffect, useRef } from "react";
+import MainLayoutjur from "../../../../components/MainLayoutjur";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { useReactToPrint } from "react-to-print";
+import PrescriptionPrint from "../PrescriptionPrint";
+import { useAuth } from "app/contexts/AuthContext";
 
-  export default function PrescriptionForm() {
-    const { api } = useAuth();
-     useEffect(() => {
-    document.title = "."; 
+export default function PrescriptionForm() {
+  const { api } = useAuth();
+
+  useEffect(() => {
+    document.title = ".";
   }, []);
 
-    const emptyItem = {
-      category_id: "",
-      med_id: "",
-      supplier_id: "",
-      quantity: "",
-      unit_price: 0,
-      total_price: 0,
-      type: "",
-      dosage: "",
-      remarks: ""
-    };
+  const emptyItem = {
+    category_id: "",
+    med_id: "",
+    supplier_id: "",
+    quantity: "",
+    unit_price: 0,
+    total_price: 0,
+    type: "",
+    dosage: "",
+    remarks: ""
+  };
 
-    const [selectedPatientId, setSelectedPatientId] = useState("");
-    const [patients, setPatients] = useState([]);
-    const [patientInfo, setPatientInfo] = useState({
-      age: "",
-      gender: "",  
-      phone: "",
-      blood_group: "",
-      reg_id: "",
-      pres_num: ""
+  const [selectedPatientId, setSelectedPatientId] = useState("");
+  const [patients, setPatients] = useState([]);
+  const [patientInfo, setPatientInfo] = useState({
+    age: "",
+    gender: "",
+    phone: "",
+    blood_group: "",
+    reg_id: "",
+    pres_num: ""
+  });
+
+  const [selectedDoctorId, setSelectedDoctorId] = useState("");
+  const [doctors, setDoctors] = useState([]);
+  const [prescriptionDate, setPrescriptionDate] = useState("");
+  const [totalAmount, setTotalAmount] = useState(0);
+  const [discount, setDiscount] = useState(0);
+  const [netAmount, setNetAmount] = useState(0);
+
+  const [categories, setCategories] = useState([]);
+  const [medications, setMedications] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+
+  const [formItem, setFormItem] = useState(emptyItem);
+  const [prescriptionItems, setPrescriptionItems] = useState([]);
+
+  const printRef = useRef(null);
+
+  // ===== تابع پرینت =====
+  const handlePrint = useReactToPrint({
+    content: () => printRef.current,
+    documentTitle: patientInfo?.pres_num || "Prescription",
+  });
+
+  // ===== محاسبه مجموع =====
+  useEffect(() => {
+    const sum = prescriptionItems.reduce((t, i) => t + Number(i.total_price), 0);
+    setTotalAmount(sum);
+  }, [prescriptionItems]);
+
+  useEffect(() => {
+    setNetAmount(totalAmount - discount);
+  }, [totalAmount, discount]);
+
+  // ===== بارگذاری داده‌ها =====
+  useEffect(() => {
+    api.get("/registrations").then(res => {
+      const data = res.data.data ?? res.data ?? [];
+      setPatients(data.filter(r => r.reg_type === "patient"));
+      setDoctors(data.filter(r => r.reg_type === "doctor"));
+      setSuppliers(data.filter(r => r.reg_type === "supplier"));
     });
 
-    const [selectedDoctorId, setSelectedDoctorId] = useState("");
-    const [doctors, setDoctors] = useState([]);
-    const [prescriptionDate, setPrescriptionDate] = useState("");
-    const [totalAmount, setTotalAmount] = useState(0);
-    const [discount, setDiscount] = useState(0);
-    const [netAmount, setNetAmount] = useState(0);
+    api.get("/categories").then(res => setCategories(res.data.data ?? res.data));
+    api.get("/medications").then(res => setMedications(res.data.data ?? res.data));
+  }, [api]);
 
-    const [categories, setCategories] = useState([]);
-    const [medications, setMedications] = useState([]);
-    const [suppliers, setSuppliers] = useState([]);
+  // ===== اطلاعات مریض انتخاب شده =====
+  useEffect(() => {
+    if (!selectedPatientId) return;
+    const p = patients.find(x => x.reg_id == selectedPatientId);
+    if (!p) return;
 
-    const [formItem, setFormItem] = useState(emptyItem);
-    const [prescriptionItems, setPrescriptionItems] = useState([]);
-   const printRef = useRef();
+    setPatientInfo({
+      age: p.age ?? "",
+      gender: p.gender ?? "",
+      phone: p.phone ?? "",
+      blood_group: p.blood_group ?? "",
+      reg_id: p.reg_id ?? "",
+      pres_num: p.pres_num ?? ""
+    });
+  }, [selectedPatientId, patients]);
 
- const handlePrint = useReactToPrint({
-  contentRef: printRef,
-});
-    // ===== محاسبه مجموع =====
-    useEffect(() => {
-      const sum = prescriptionItems.reduce((t, i) => t + Number(i.total_price), 0);
-      setTotalAmount(sum);
-    }, [prescriptionItems]);
-
-    useEffect(() => {
-      setNetAmount(totalAmount - discount);
-    }, [totalAmount, discount]);
-
-    // ===== بارگذاری داده‌ها =====
-    useEffect(() => {
-      api.get("/registrations").then(res => {
-        const data = res.data.data ?? res.data ?? [];
-        setPatients(data.filter(r => r.reg_type === "patient"));
-        setDoctors(data.filter(r => r.reg_type === "doctor"));
-        setSuppliers(data.filter(r => r.reg_type === "supplier"));
-      });
-
-      api.get("/categories").then(res => setCategories(res.data.data ?? res.data));
-      api.get("/medications").then(res => setMedications(res.data.data ?? res.data));
-    }, [api]);
-
-    // ===== اطلاعات مریض انتخاب شده =====
-    useEffect(() => {
-      if (!selectedPatientId) return;
-      const p = patients.find(x => x.reg_id == selectedPatientId);
-      if (!p) return;
-
-      setPatientInfo({
-        age: p.age ?? "",
-        gender: p.gender ?? "",  
-        phone: p.phone ?? "",
-        blood_group: p.blood_group ?? "",
-        reg_id: p.reg_id ?? "",
-        pres_num: p.pres_num ?? ""
-      });
-    }, [selectedPatientId, patients]);
-
-    // ===== فیلتر دواها و حمایت‌کننده‌ها =====
-    const filteredMedications = medications.filter(
-      m => Number(m.category_id) === Number(formItem.category_id)
-    );
-    const selectedMedication = medications.find(m => Number(m.med_id) === Number(formItem.med_id));
-    const filteredSuppliers = selectedMedication
-      ? suppliers.filter(s => s.reg_id == selectedMedication.supplier_id)
-      : [];
-
-    // ... همه ایمپورت‌ها و state‌ها همانند قبل
+  // ===== فیلتر دواها و حمایت‌کننده‌ها =====
+  const filteredMedications = medications.filter(
+    m => Number(m.category_id) === Number(formItem.category_id)
+  );
+  const selectedMedication = medications.find(m => Number(m.med_id) === Number(formItem.med_id));
+  const filteredSuppliers = selectedMedication
+    ? suppliers.filter(s => s.reg_id == selectedMedication.supplier_id)
+    : [];
 
   // ===== تغییرات فرم آیتم =====
   const handleChange = (field, value) => {
@@ -142,89 +144,86 @@
     }
   };
 
+  const handleRemoveItem = index => {
+    setPrescriptionItems(prev => prev.filter((_, i) => i !== index));
+  };
 
-    const handleRemoveItem = index => {
-      setPrescriptionItems(prev => prev.filter((_, i) => i !== index));
-    };
+  const resetForm = () => {
+    setSelectedPatientId("");
+    setSelectedDoctorId("");
+    setPrescriptionDate("");
+    setDiscount(0);
+    setTotalAmount(0);
+    setNetAmount(0);
+    setPrescriptionItems([]);
+    setFormItem({ ...emptyItem });
+    setPatientInfo({
+      age: "",
+      gender: "",
+      phone: "",
+      blood_group: "",
+      reg_id: "",
+      pres_num: ""
+    });
+  };
 
-    const resetForm = () => {
-      setSelectedPatientId("");
-      setSelectedDoctorId("");
-      setPrescriptionDate("");
-      setDiscount(0);
-      setTotalAmount(0);
-      setNetAmount(0);
-      setPrescriptionItems([]);
-      setFormItem({ ...emptyItem });
-      setPatientInfo({
-        age: "",
-       gender: "", 
-        phone: "",
-        blood_group: "",
-        reg_id: "",
-        pres_num: ""
+  // ===== ذخیره نسخه =====
+  const handleSavePrescription = async () => {
+    if (!selectedPatientId || !selectedDoctorId || prescriptionItems.length === 0) {
+      toast.error("❌ معلومات نسخه ناقص است");
+      return;
+    }
+
+    try {
+      await api.post("/prescriptions", {
+        patient_id: selectedPatientId,
+        pres_num: patientInfo.pres_num,
+        patient_age: patientInfo.age,
+        patient_gender: patientInfo.gender,
+        patient_phone: patientInfo.phone,
+        patient_reg_id: patientInfo.reg_id,
+        patient_blood_group: patientInfo.blood_group,
+        doc_id: selectedDoctorId,
+        pres_date: prescriptionDate || new Date().toISOString().slice(0, 10),
+        total_amount: totalAmount,
+        discount,
+        net_amount: netAmount,
+        items: prescriptionItems,
       });
-    };
- 
- 
+      toast.success("✅ نسخه موفقانه ثبت شد");
+      resetForm();
+    } catch (apiError) {
+      console.error("API error:", apiError);
+      toast.error("❌ خطا در ثبت نسخه");
+    }
+  };
 
-    // ===== ذخیره نسخه =====
-    const handleSavePrescription = async () => {
-      if (!selectedPatientId || !selectedDoctorId || prescriptionItems.length === 0) {
-        toast.error("❌ معلومات نسخه ناقص است");
-        return;
-      }
-
-      try {
-        await api.post("/prescriptions", {
-          patient_id: selectedPatientId,
-          pres_num: patientInfo.pres_num,
-          patient_age: patientInfo.age,
-          patient_gender: patientInfo.gender,  
-          patient_phone: patientInfo.phone,
-          patient_reg_id: patientInfo.reg_id,
-          patient_blood_group: patientInfo.blood_group,
-          doc_id: selectedDoctorId,
-          pres_date: prescriptionDate || new Date().toISOString().slice(0, 10),
-          total_amount: totalAmount,
-          discount,
-          net_amount: netAmount,
-          items: prescriptionItems,
-        });
- toast.success("✅ نسخه موفقانه ثبت شد");
-resetForm();
-
-try {
-  await generatePDF(
-    patientInfo,
-    prescriptionItems,
-    medications,
-    categories,
-    suppliers,
-    totalAmount,
+  // ===== داده‌های پرینت =====
+  const printData = {
+    pres_num: patientInfo.pres_num,
+    date: prescriptionDate || new Date().toLocaleDateString(),
+    patient: patients.find(p => p.reg_id == selectedPatientId)?.full_name ?? "-",
+    doctor: doctors.find(d => d.reg_id == selectedDoctorId)?.full_name ?? "-",
+    age: patientInfo.age,
+    gender: patientInfo.gender,
+    blood_group: patientInfo.blood_group,
+    total: totalAmount,
     discount,
-    netAmount,
-    prescriptionDate,
-    patients,
-    doctors,
-    selectedPatientId,
-    selectedDoctorId
-  );
-} catch (pdfError) {
-  console.error("PDF error:", pdfError);
-}
-      } catch (apiError) {
-        console.error("API error:", apiError);
-        toast.error("❌ خطا در ثبت نسخه");
-      }
-    };
+    net: netAmount,
+    items: prescriptionItems.map(item => ({
+      ...item,
+      category_name: categories.find(c => c.category_id == item.category_id)?.category_name ?? "-",
+      med_name: medications.find(m => m.med_id == item.med_id)?.gen_name ?? "-",
+      supplier_name: suppliers.find(s => s.reg_id == item.supplier_id)?.full_name ?? "-"
+    }))
+  };
 
  
   return (
     <MainLayoutjur>
       <ToastContainer />
 
-      <div className="main-layout">
+       <div className="main-layout">
         <div className="background-overlay"></div>
 
         <div className="layout-content">
@@ -488,32 +487,21 @@ try {
             ثبت نسخه
           </button>
 
-
-            <button className="edit" onClick={handlePrint}>
-  پرنت نسخه
-</button>
+  <button className="edit" onClick={() => {
+            if (!prescriptionItems.length) {
+              toast.error("آیتمی برای چاپ وجود ندارد");
+              return;
+            }
+            handlePrint();
+          }}>
+            پرنت نسخه
+          </button>
         </div>
-  <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
-        <PrescriptionPrint
-          ref={printRef}
-          data={{
-            pres_num: patientInfo.pres_num,
-            date: prescriptionDate || new Date().toLocaleDateString(),
-            patient: patients.find(p => p.reg_id == selectedPatientId)?.full_name ?? "-",
-            doctor: doctors.find(d => d.reg_id == selectedDoctorId)?.full_name ?? "-",
-            age: patientInfo.age,
-            gender: patientInfo.gender,   // ✅ ارسال به پرنت
-            blood_group: patientInfo.blood_group,
-            items: prescriptionItems,
-            total: totalAmount,
-            discount: discount,
-            net: netAmount
-          }}
-        />
-      </div>
- 
-  
-</div>
+        
+                <div style={{ display: "none" }}>
+          <PrescriptionPrint ref={printRef} data={printData} />
+        </div>
+        </div>
     </MainLayoutjur>
   );
 
