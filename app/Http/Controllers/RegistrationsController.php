@@ -21,6 +21,7 @@ class RegistrationsController extends Controller
             'address'    => 'nullable|string',
             'visit_date' => 'nullable|date',
             'note'       => 'nullable|string',
+            'department_id'=> 'nullable|exists:departments,id',
         ]);
 
         $data = Registrations::create($validated);
@@ -34,7 +35,7 @@ class RegistrationsController extends Controller
     // 📤 لیست
     public function index(Request $request)
     {
-        $query = Registrations::query();
+       $query = Registration::with('department');
 
         if ($request->filled('reg_type')) {
             $query->where('reg_type', $request->reg_type);

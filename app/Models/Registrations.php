@@ -21,6 +21,7 @@ class Registrations extends Model
         'father_name',
         'phone',
         'gender',
+        'department_id',
         'age',
         'blood_group',
         'address',
@@ -28,6 +29,15 @@ class Registrations extends Model
         'note',
         'status',
     ];
+
+
+  public function department()
+    {
+        return $this->belongsTo(Department::class, 'department_id');
+    }
+
+
+
 
     /* =========================
        Relationships

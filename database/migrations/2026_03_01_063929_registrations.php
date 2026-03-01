@@ -12,7 +12,6 @@ return new class extends Migration
             $table->id('reg_id');
 
             $table->enum('reg_type', [
-
                 // 👤 اشخاص
                 'patient',
                 'doctor',
@@ -20,7 +19,6 @@ return new class extends Migration
                 'customer',
                 'staff',
                 'supplier',
-
                 // 💸 مصارف
                 'rent',
                 'electricity',
@@ -29,12 +27,10 @@ return new class extends Migration
                 'salary',
                 'fuel',
                 'maintenance',
-
                 // 📄 خدمات
                 'laboratory',
                 'transport',
                 'consultation',
-
                 // 🔘 سایر
                 'expense',
                 'income',
@@ -54,8 +50,17 @@ return new class extends Migration
             $table->date('visit_date')->nullable()->comment('تاریخ مراجعه یا مصرف');
             $table->text('note')->nullable();
 
+            // ===== ستون جدید: department_id =====
+            $table->unsignedBigInteger('department_id')->nullable()->comment('ارتباط با بخش');
+
             $table->tinyInteger('status')->default(1);
             $table->timestamps();
+
+            // foreign key به جدول departments
+            $table->foreign('department_id')
+                  ->references('id')
+                  ->on('departments')
+                  ->onDelete('set null');
         });
     }
 

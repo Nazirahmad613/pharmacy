@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "app/contexts/AuthContext";
+import { accountStyles } from "./AccountSummaryStyles";
+import "./AccountSummary.css";
+
 import {
   Box,
   TextField,
@@ -14,6 +17,7 @@ import {
 
 export default function AccountSummaryText() {
   const { api, user, loading: authLoading } = useAuth();
+
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [search, setSearch] = useState("");
@@ -21,11 +25,10 @@ export default function AccountSummaryText() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // ===== دریافت داده‌ها از API =====
+  // ===== دریافت داده‌ها =====
   useEffect(() => {
     if (authLoading) return;
 
@@ -39,23 +42,27 @@ export default function AccountSummaryText() {
     const fetchData = async () => {
       setLoading(true);
       setError("");
+
       try {
         const res = await api.get("/account-summary");
 
         let apiData = [];
-        if (res.data && res.data.data && Array.isArray(res.data.data)) {
+
+        if (res.data?.data && Array.isArray(res.data.data)) {
           apiData = res.data.data;
         } else if (Array.isArray(res.data)) {
           apiData = res.data;
         }
 
-        if (!apiData.length) setError("هیچ حسابی یافت نشد");
+        if (!apiData.length) {
+          setError("هیچ حسابی یافت نشد");
+        }
 
         setData(apiData);
         setFilteredData(apiData);
-        setCurrentPage(1); // reset page
+        setCurrentPage(1);
       } catch (err) {
-        console.error("خطا در دریافت حساب‌ها:", err);
+        console.error(err);
         setError("خطا در دریافت داده‌ها. لطفاً API و توکن را بررسی کنید.");
         setData([]);
         setFilteredData([]);
@@ -70,11 +77,16 @@ export default function AccountSummaryText() {
   // ===== فیلتر و جستجو =====
   useEffect(() => {
     let temp = [...data];
-    if (filterType) temp = temp.filter((item) => item.account_type === filterType);
-    if (search)
+
+    if (filterType) {
+      temp = temp.filter((item) => item.account_type === filterType);
+    }
+
+    if (search) {
       temp = temp.filter((item) =>
         item.account_name.toLowerCase().includes(search.toLowerCase())
       );
+    }
 
     temp.sort((a, b) => {
       if (a.account_type < b.account_type) return -1;
@@ -85,40 +97,42 @@ export default function AccountSummaryText() {
     });
 
     setFilteredData(temp);
-    setCurrentPage(1); // reset page on filter/search
+    setCurrentPage(1);
   }, [search, filterType, data]);
 
-  // محاسبه آیتم‌های صفحه فعلی
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
-  // ===== Loading هنگام بارگذاری Auth =====
+  // ===== Loading کاربر =====
   if (authLoading) {
     return (
-      <Box sx={{ p: 3, textAlign: "center" }}>
+      <Box className="loading-box">
         <CircularProgress />
-        <Typography>در حال بارگذاری اطلاعات کاربر...</Typography>
+        <Typography mt={2}>
+          در حال بارگذاری اطلاعات کاربر...
+        </Typography>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 3, direction: "rtl" }}>
-      <Typography variant="h4" sx={{ mb: 3, textAlign: "center" }}>
+    <Box className="account-page">
+      <Typography variant="h4" className="account-title">
         گزارش حساب‌ها
       </Typography>
 
       {/* جستجو و فیلتر */}
-      <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap" }}>
+      <Box className="filter-section">
         <TextField
           label="جستجوی نام حساب"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          fullWidth
+          sx={accountStyles.searchBox}
         />
-        <FormControl sx={{ minWidth: 150 }}>
+
+        <FormControl sx={accountStyles.selectBox}>
           <InputLabel>فیلتر نوع حساب</InputLabel>
           <Select
             value={filterType}
@@ -134,61 +148,70 @@ export default function AccountSummaryText() {
         </FormControl>
       </Box>
 
-      {/* Loading API */}
+      {/* Loading */}
       {loading && (
-        <Box sx={{ textAlign: "center", my: 3 }}>
+        <Box className="loading-box">
           <CircularProgress />
-          <Typography>در حال بارگذاری داده‌ها...</Typography>
         </Box>
       )}
 
-      {/* نمایش خطا */}
+      {/* خطا */}
       {!loading && error && (
-        <Typography sx={{ textAlign: "center", mt: 3, color: "red" }}>
+        <Typography className="error-text">
           {error}
         </Typography>
       )}
 
-      {/* کارت‌های هر حساب در یک Row جدا */}
+      {/* کارت‌ها */}
       {!loading && !error && currentItems.length > 0 && (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          {currentItems.map((item) => (
-            <Box
-              key={`${item.account_type}_${item.account_id}`}
-              sx={{
-                display: "flex",
-                flexDirection: "row", // افقی هر کارت
-                border: "1px solid #ccc",
-                borderRadius: 2,
-                p: 2,
-                backgroundColor: "#f9f9f9",
-                gap: 3,
-                flexWrap: "wrap",
-              }}
-            >
-              <Typography variant="h6" sx={{ minWidth: 150 }}>
-                {item.account_name}
-              </Typography>
-              <Typography sx={{ minWidth: 120 }}>
-                نوع حساب: <strong>{item.account_type}</strong>
-              </Typography>
-                مجموع حساب <strong>{Number(item.total_credit || 0).toLocaleString()}</strong>
-              <Typography sx={{ minWidth: 120 }}>
-              مجموعه پرداخت شده <strong>{Number(item.total_debit || 0).toLocaleString()}</strong>
-              </Typography>
-              <Typography sx={{ minWidth: 120 }}>
-              </Typography>
-              <Typography sx={{ minWidth: 120 }}>
-           مجموعه باقی مانده <strong>{Number(item.balance || 0).toLocaleString()}</strong>
-              </Typography>
-            </Box>
-          ))}
+          {currentItems.map((item) => {
+            const balance = Number(item.balance || 0);
+
+            return (
+              <Box
+                key={`${item.account_type}_${item.account_id}`}
+                className="account-card"
+              >
+                <Typography className="account-name">
+                  {item.account_name}
+                </Typography>
+
+                <Typography className="account-info">
+                  نوع حساب: <strong>{item.account_type}</strong>
+                </Typography>
+
+                <Typography className="account-info">
+                  مجموع حساب:{" "}
+                  {Number(item.total_credit || 0).toLocaleString()}
+                </Typography>
+
+                <Typography className="account-info">
+                  پرداخت شده:{" "}
+                  {Number(item.total_debit || 0).toLocaleString()}
+                </Typography>
+
+                <Typography className="account-info">
+                  باقی مانده:{" "}
+                  <span
+                    className={
+                      balance >= 0
+                        ? "balance-positive"
+                        : "balance-negative"
+                    }
+                  >
+                    {balance.toLocaleString()}
+                  </span>
+                </Typography>
+              </Box>
+            );
+          })}
         </Box>
       )}
 
-      {/* Pagination Controls */}
+      {/* Pagination */}
       {!loading && !error && filteredData.length > itemsPerPage && (
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 3, gap: 1, flexWrap: "wrap" }}>
+        <Box className="pagination-wrapper">
           <Button
             variant="contained"
             disabled={currentPage === 1}
@@ -196,15 +219,18 @@ export default function AccountSummaryText() {
           >
             قبلی
           </Button>
+
           {Array.from({ length: totalPages }, (_, i) => (
             <Button
               key={i + 1}
               variant={currentPage === i + 1 ? "contained" : "outlined"}
+              sx={accountStyles.paginationButton(currentPage === i + 1)}
               onClick={() => setCurrentPage(i + 1)}
             >
               {i + 1}
             </Button>
           ))}
+
           <Button
             variant="contained"
             disabled={currentPage === totalPages}
@@ -213,12 +239,6 @@ export default function AccountSummaryText() {
             بعدی
           </Button>
         </Box>
-      )}
-
-      {!loading && !error && filteredData.length === 0 && (
-        <Typography sx={{ textAlign: "center", mt: 3 }}>
-          هیچ حسابی یافت نشد
-        </Typography>
       )}
     </Box>
   );

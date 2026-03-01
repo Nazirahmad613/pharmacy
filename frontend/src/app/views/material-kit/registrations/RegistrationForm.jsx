@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MainLayoutpur from "../../../../components/MainLayoutpur";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -19,8 +19,24 @@ export default function RegistrationForm() {
     visit_date: "",
     note: "",
     status: 1,
+    department_id: "", // ===== اضافه شد =====
   });
 
+  const [departments, setDepartments] = useState([]);
+
+  // ===== بارگذاری لیست بخش‌ها =====
+   useEffect(() => {
+  const fetchDepartments = async () => {
+    try {
+      const res = await api.get("/departments");
+      setDepartments(res.data); // فقط آرایه مستقیم
+    } catch (err) {
+      console.error("خطا در بارگذاری بخش‌ها:", err);
+      setDepartments([]);
+    }
+  };
+  fetchDepartments();
+}, [api]);
   // ================= تغییر مقدار =================
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -51,6 +67,7 @@ export default function RegistrationForm() {
         visit_date: "",
         note: "",
         status: 1,
+        department_id: "", // ریست فیلد
       });
     } catch (err) {
       console.error(err);
@@ -61,173 +78,181 @@ export default function RegistrationForm() {
   return (
     <MainLayoutpur>
       <ToastContainer />
- <div className="form-container">
-  <h2 style={{ textAlign: "center" }}> راجستریشن عمومی شفاخانه</h2>
+      <div className="form-container">
+        <h2 style={{ textAlign: "center" }}>راجستریشن عمومی شفاخانه</h2>
 
-  <form onSubmit={handleSubmit} className="form-grid">
-    {/* نوع */}
-    <div>
-      <label>نوع راجستریشن *</label>
-      <select
-        name="reg_type"
-        value={form.reg_type}
-        onChange={handleChange}
-        className="form-control"
-      >
-        <option value="">-- انتخاب --</option>
+        <form onSubmit={handleSubmit} className="form-grid">
+          {/* نوع */}
+          <div>
+            <label>نوع راجستریشن *</label>
+            <select
+              name="reg_type"
+              value={form.reg_type}
+              onChange={handleChange}
+              className="form-control"
+            >
+              <option value="">-- انتخاب --</option>
+              <optgroup label="اشخاص">
+                <option value="patient">مریض</option>
+                <option value="doctor">داکتر</option>
+                <option value="visitor">مراجع</option>
+                <option value="customer">مشتری</option>
+                <option value="staff">کارمند</option>
+                <option value="supplier">تأمین‌کننده</option>
+              </optgroup>
+              <optgroup label="مصارف">
+                <option value="rent">کرایه</option>
+                <option value="electricity">برق</option>
+                <option value="water">آب</option>
+                <option value="internet">انترنت</option>
+                <option value="salary">معاش</option>
+                <option value="fuel">سوخت</option>
+                <option value="maintenance">ترمیمات</option>
+              </optgroup>
+              <optgroup label="خدمات">
+                <option value="laboratory">لابراتوار</option>
+                <option value="transport">ترانسپورت</option>
+                <option value="consultation">مشاوره</option>
+              </optgroup>
+              <optgroup label="دیگر">
+                <option value="expense">مصرف عمومی</option>
+                <option value="income">درآمد</option>
+                <option value="other">سایر</option>
+              </optgroup>
+            </select>
+          </div>
 
-        <optgroup label="اشخاص">
-          <option value="patient">مریض</option>
-          <option value="doctor">داکتر</option>
-          <option value="visitor">مراجع</option>
-          <option value="customer">مشتری</option>
-          <option value="staff">کارمند</option>
-          <option value="supplier">تأمین‌کننده</option>
-        </optgroup>
+          {/* بخش / Department */}
+          <div>
+            <label>بخش</label>
+            <select
+  name="department_id"
+  value={form.department_id}
+  onChange={handleChange}
+  className="form-control"
+>
+  <option value="">-- انتخاب بخش --</option>
+  {Array.isArray(departments) &&
+    departments.map((dep) => (
+      <option key={dep.id} value={dep.id}>
+        {dep.name}
+      </option>
+    ))}
+</select>
+          </div>
 
-        <optgroup label="مصارف">
-          <option value="rent">کرایه</option>
-          <option value="electricity">برق</option>
-          <option value="water">آب</option>
-          <option value="internet">انترنت</option>
-          <option value="salary">معاش</option>
-          <option value="fuel">سوخت</option>
-          <option value="maintenance">ترمیمات</option>
-        </optgroup>
+          {/* نام */}
+          <div>
+            <label>نام کامل / عنوان *</label>
+            <input
+              type="text"
+              name="full_name"
+              value={form.full_name}
+              onChange={handleChange}
+              className="form-control"
+            />
+          </div>
 
-        <optgroup label="خدمات">
-          <option value="laboratory">لابراتوار</option>
-          <option value="transport">ترانسپورت</option>
-          <option value="consultation">مشاوره</option>
-        </optgroup>
+          {/* سایر فیلدها بدون تغییر */}
+          <div>
+            <label>نام پدر</label>
+            <input
+              type="text"
+              name="father_name"
+              value={form.father_name}
+              onChange={handleChange}
+              className="form-control"
+            />
+          </div>
 
-        <optgroup label="دیگر">
-          <option value="expense">مصرف عمومی</option>
-          <option value="income">درآمد</option>
-          <option value="other">سایر</option>
-        </optgroup>
-      </select>
-    </div>
+          <div>
+            <label>شماره تماس</label>
+            <input
+              type="text"
+              name="phone"
+              value={form.phone}
+              onChange={handleChange}
+              className="form-control"
+            />
+          </div>
 
-    {/* نام */}
-    <div>
-      <label>نام کامل / عنوان *</label>
-      <input
-        type="text"
-        name="full_name"
-        value={form.full_name}
-        onChange={handleChange}
-        className="form-control"
-      />
-    </div>
+          <div>
+            <label>جنسیت</label>
+            <select
+              name="gender"
+              value={form.gender}
+              onChange={handleChange}
+              className="form-control"
+            >
+              <option value="">-- انتخاب --</option>
+              <option value="male">مرد</option>
+              <option value="female">زن</option>
+              <option value="other">دیگر</option>
+            </select>
+          </div>
 
-    {/* نام پدر */}
-    <div>
-      <label>نام پدر</label>
-      <input
-        type="text"
-        name="father_name"
-        value={form.father_name}
-        onChange={handleChange}
-        className="form-control"
-      />
-    </div>
+          <div>
+            <label>سن</label>
+            <input
+              type="number"
+              name="age"
+              value={form.age}
+              onChange={handleChange}
+              className="form-control"
+            />
+          </div>
 
-    {/* تلفن */}
-    <div>
-      <label>شماره تماس</label>
-      <input
-        type="text"
-        name="phone"
-        value={form.phone}
-        onChange={handleChange}
-        className="form-control"
-      />
-    </div>
+          <div>
+            <label>گروه خون</label>
+            <input
+              type="text"
+              name="blood_group"
+              value={form.blood_group}
+              onChange={handleChange}
+              className="form-control"
+            />
+          </div>
 
-    {/* جنسیت */}
-    <div>
-      <label>جنسیت</label>
-      <select
-        name="gender"
-        value={form.gender}
-        onChange={handleChange}
-        className="form-control"
-      >
-        <option value="">-- انتخاب --</option>
-        <option value="male">مرد</option>
-        <option value="female">زن</option>
-        <option value="other">دیگر</option>
-      </select>
-    </div>
+          <div>
+            <label>تاریخ مراجعه / مصرف</label>
+            <input
+              type="date"
+              name="visit_date"
+              value={form.visit_date}
+              onChange={handleChange}
+              className="form-control"
+            />
+          </div>
 
-    {/* سن */}
-    <div>
-      <label>سن</label>
-      <input
-        type="number"
-        name="age"
-        value={form.age}
-        onChange={handleChange}
-        className="form-control"
-      />
-    </div>
+          <div className="full-width">
+            <label>آدرس</label>
+            <textarea
+              name="address"
+              value={form.address}
+              onChange={handleChange}
+              className="form-control"
+              rows="3"
+            />
+          </div>
 
-    {/* گروه خون */}
-    <div>
-      <label>گروه خون</label>
-      <input
-        type="text"
-        name="blood_group"
-        value={form.blood_group}
-        onChange={handleChange}
-        className="form-control"
-      />
-    </div>
+          <div className="full-width">
+            <label>یادداشت</label>
+            <textarea
+              name="note"
+              value={form.note}
+              onChange={handleChange}
+              className="form-control"
+              rows="3"
+            />
+          </div>
 
-    {/* تاریخ */}
-    <div>
-      <label>تاریخ مراجعه / مصرف</label>
-      <input
-        type="date"
-        name="visit_date"
-        value={form.visit_date}
-        onChange={handleChange}
-        className="form-control"
-      />
-    </div>
-
-    {/* آدرس */}
-    <div className="full-width">
-      <label>آدرس</label>
-      <textarea
-        name="address"
-        value={form.address}
-        onChange={handleChange}
-        className="form-control"
-        rows="3"
-      />
-    </div>
-
-    {/* یادداشت */}
-    <div className="full-width">
-      <label>یادداشت</label>
-      <textarea
-        name="note"
-        value={form.note}
-        onChange={handleChange}
-        className="form-control"
-        rows="3"
-      />
-    </div>
-
-    {/* دکمه */}
-    <div className="full-width center">
-      <button type="submit" className="edit">ثبت راجستریشن</button>
-    </div>
-  </form>
-</div>
-
+          <div className="full-width center">
+            <button type="submit" className="edit">
+              ثبت راجستریشن
+            </button>
+          </div>
+        </form>
+      </div>
     </MainLayoutpur>
   );
 }
