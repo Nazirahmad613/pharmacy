@@ -97,7 +97,7 @@ export default function SaleForm() {
     }
 
     const cust = customers.find(c => Number(c.reg_id) === Number(formItem.cust_id));
-    if (cust) setCustomerNID(cust.nid_number ?? "");
+    if (cust) setCustomerNID(cust.tazkira_number ?? "");
   }, [formItem.cust_id, customers]);
 
   // ===== فیلتر دواها و حمایت‌کننده‌ها =====
@@ -196,7 +196,7 @@ export default function SaleForm() {
     const payload = {
       sales_date: saleDate || new Date().toISOString().split("T")[0],
       cust_id: formItem.cust_id,
-      customer_nid: customerNID, // ✅ اضافه شد
+      tazkira_number: customerNID, // ✅ اضافه شد
       discount,
       total_paid: totalPaid,
       items: saleItems.map(item => ({
@@ -228,7 +228,7 @@ export default function SaleForm() {
     sale_number: salesId ?? "-",
     date: saleDate || new Date().toLocaleDateString(),
     customer: selectedCustomer?.full_name ?? "-",
-    customer_nid: customerNID, // ✅ برای پرینت اضافه شد
+    tazkira_number: customerNID, // ✅ برای پرینت اضافه شد
     items: saleItems,
     totalSale,
     discount,

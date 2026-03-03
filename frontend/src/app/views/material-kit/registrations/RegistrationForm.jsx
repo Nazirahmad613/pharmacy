@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import MainLayoutpur from "../../../../components/MainLayoutpur";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -10,7 +10,7 @@ export default function RegistrationForm() {
   const [form, setForm] = useState({
     reg_type: "",
     full_name: "",
-    nid_number: "", // ===== اضافه شد =====
+    tazkira_number: "",
     father_name: "",
     phone: "",
     gender: "",
@@ -24,8 +24,11 @@ export default function RegistrationForm() {
   });
 
   const [departments, setDepartments] = useState([]);
+  const [registrations, setRegistrations] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ROWS_PER_PAGE = 10;
 
-  // ===== بارگذاری لیست بخش‌ها =====
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
@@ -38,14 +41,25 @@ export default function RegistrationForm() {
       }
     };
     fetchDepartments();
+    fetchRegistrations();
   }, [api]);
 
-  // ================= تغییر مقدار =================
+  const fetchRegistrations = async () => {
+    try {
+      const res = await api.get("/registrations");
+      const regs = Array.isArray(res.data) ? res.data : res.data.data || [];
+      setRegistrations(regs.reverse());
+      setCurrentPage(1);
+    } catch (err) {
+      console.error("خطا در دریافت رجستریشن‌ها:", err);
+      setRegistrations([]);
+    }
+  };
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // ================= ثبت اطلاعات =================
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -54,8 +68,7 @@ export default function RegistrationForm() {
       return;
     }
 
-    // اعتبارسنجی شماره تذکره (اگر پر شده باشد)
-    if (form.nid_number && !/^\d{4}-\d{4}-\d{5}$/.test(form.nid_number)) {
+    if (form.tazkira_number && !/^\d{4}-\d{4}-\d{5}$/.test(form.tazkira_number)) {
       toast.error("❌ فرمت شماره تذکره معتبر نیست (مثال: 1399-1102-30366)");
       return;
     }
@@ -63,11 +76,10 @@ export default function RegistrationForm() {
     try {
       await api.post("/registrations", form);
       toast.success("✅ ثبت موفقانه انجام شد");
-
       setForm({
         reg_type: "",
         full_name: "",
-        nid_number: "", // ریست فیلد
+        tazkira_number: "",
         father_name: "",
         phone: "",
         gender: "",
@@ -79,11 +91,46 @@ export default function RegistrationForm() {
         status: 1,
         department_id: "",
       });
+      fetchRegistrations();
     } catch (err) {
       console.error(err);
       toast.error("❌ خطا در ثبت معلومات");
     }
   };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("آیا مطمئن هستید که می‌خواهید این رجستریشن را حذف کنید؟")) return;
+    try {
+      await api.delete(`/registrations/${id}`);
+      toast.success("✅ حذف موفقانه انجام شد");
+      fetchRegistrations();
+    } catch (err) {
+      console.error(err);
+      toast.error("❌ خطا در حذف رجستریشن");
+    }
+  };
+
+  const handleEdit = (reg) => {
+    setForm({ ...reg });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const filteredRows = useMemo(() => {
+    if (!searchTerm.trim()) return registrations;
+    const term = searchTerm.toLowerCase();
+    return registrations.filter(
+      (r) =>
+        r.full_name?.toLowerCase().includes(term) ||
+        r.tazkira_number?.toLowerCase().includes(term) ||
+        r.phone?.toLowerCase().includes(term)
+    );
+  }, [registrations, searchTerm]);
+
+  const totalPages = Math.ceil(filteredRows.length / ROWS_PER_PAGE);
+  const currentRows = filteredRows.slice(
+    (currentPage - 1) * ROWS_PER_PAGE,
+    currentPage * ROWS_PER_PAGE
+  );
 
   return (
     <MainLayoutpur>
@@ -92,7 +139,6 @@ export default function RegistrationForm() {
         <h2 style={{ textAlign: "center" }}>راجستریشن عمومی شفاخانه</h2>
 
         <form onSubmit={handleSubmit} className="form-grid">
-          {/* نوع */}
           <div>
             <label>نوع راجستریشن *</label>
             <select
@@ -132,7 +178,6 @@ export default function RegistrationForm() {
             </select>
           </div>
 
-          {/* بخش / Department */}
           <div>
             <label>بخش</label>
             <select
@@ -142,16 +187,14 @@ export default function RegistrationForm() {
               className="form-control"
             >
               <option value="">-- انتخاب بخش --</option>
-              {Array.isArray(departments) &&
-                departments.map((dep) => (
-                  <option key={dep.id} value={dep.id}>
-                    {dep.name}
-                  </option>
-                ))}
+              {departments.map((dep) => (
+                <option key={dep.id} value={dep.id}>
+                  {dep.name}
+                </option>
+              ))}
             </select>
           </div>
 
-          {/* نام */}
           <div>
             <label>نام کامل / عنوان *</label>
             <input
@@ -163,20 +206,18 @@ export default function RegistrationForm() {
             />
           </div>
 
-          {/* شماره تذکره */}
           <div>
             <label>شماره تذکره</label>
             <input
               type="text"
-              name="nid_number"
-              value={form.nid_number}
+              name="tazkira_number"
+              value={form.tazkira_number}
               onChange={handleChange}
               placeholder="مثال: 1300-1105-0000"
               className="form-control"
             />
           </div>
 
-          {/* نام پدر */}
           <div>
             <label>نام پدر</label>
             <input
@@ -188,7 +229,6 @@ export default function RegistrationForm() {
             />
           </div>
 
-          {/* سایر فیلدها بدون تغییر */}
           <div>
             <label>شماره تماس</label>
             <input
@@ -225,25 +265,26 @@ export default function RegistrationForm() {
               className="form-control"
             />
           </div>
-<div>
-  <label>گروه خون</label>
-  <select
-    name="blood_group"
-    value={form.blood_group}
-    onChange={handleChange}
-    className="form-control"
-  >
-    <option value="">-- انتخاب گروه خون --</option>
-    <option value="A+">A+</option>
-    <option value="A-">A-</option>
-    <option value="B+">B+</option>
-    <option value="B-">B-</option>
-    <option value="AB+">AB+</option>
-    <option value="AB-">AB-</option>
-    <option value="O+">O+</option>
-    <option value="O-">O-</option>
-  </select>
-</div>
+
+          <div>
+            <label>گروه خون</label>
+            <select
+              name="blood_group"
+              value={form.blood_group}
+              onChange={handleChange}
+              className="form-control"
+            >
+              <option value="">-- انتخاب گروه خون --</option>
+              <option value="A+">A+</option>
+              <option value="A-">A-</option>
+              <option value="B+">B+</option>
+              <option value="B-">B-</option>
+              <option value="AB+">AB+</option>
+              <option value="AB-">AB-</option>
+              <option value="O+">O+</option>
+              <option value="O-">O-</option>
+            </select>
+          </div>
 
           <div>
             <label>تاریخ مراجعه / مصرف</label>
@@ -284,6 +325,87 @@ export default function RegistrationForm() {
             </button>
           </div>
         </form>
+      </div>
+
+      <div className="form-container mt-10">
+        <h3 style={{ textAlign: "center" }}>لیست حساب‌های ثبت شده</h3>
+        <div className="mb-3">
+          <input
+            type="text"
+            placeholder="جستجو..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="form-control"
+          />
+        </div>
+        <table className="w-full text-white border-collapse">
+          <thead>
+            <tr className="bg-gray-700">
+              <th>نام کامل</th>
+              <th>شماره تذکره</th>
+              <th>نوع</th>
+              <th>شماره تماس</th>
+              <th>بخش</th>
+              <th>عملیات</th>
+            </tr>
+          </thead>
+          <tbody>
+            {currentRows.length ? (
+              currentRows.map((r) => (
+                <tr key={r.id} className="hover:bg-gray-800 transition-colors">
+                  <td>{r.full_name || "-"}</td>
+                  <td>{r.tazkira_number || "-"}</td>
+                  <td>{r.reg_type || "-"}</td>
+                  <td>{r.phone || "-"}</td>
+                  <td>
+                    {departments.find((d) => d.id === r.department_id)?.name || "-"}
+                  </td>
+                  <td className="flex gap-1">
+                    <button
+                      onClick={() => handleEdit(r)}
+                      className="bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded"
+                    >
+                      تصحیح
+                    </button>
+                    <button
+                      onClick={() => handleDelete(r.id)}
+                      className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded"
+                    >
+                      حذف
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="6" style={{ textAlign: "center" }}>
+                  نتیجه‌ای یافت نشد
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+        {totalPages > 1 && (
+          <div className="flex justify-center gap-3 mt-4">
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => p - 1)}
+              className="px-4 py-2 bg-gray-700 rounded disabled:opacity-50"
+            >
+              قبلی
+            </button>
+            <span className="px-4 py-2">
+              {currentPage} / {totalPages}
+            </span>
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((p) => p + 1)}
+              className="px-4 py-2 bg-gray-700 rounded disabled:opacity-50"
+            >
+              بعدی
+            </button>
+          </div>
+        )}
       </div>
     </MainLayoutpur>
   );

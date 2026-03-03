@@ -8,17 +8,10 @@ import { useAuth } from "app/contexts/AuthContext";
 
 export default function PrescriptionForm() {
   const { api } = useAuth();
-  const printRef = useRef(null);
 
-  // ===== react-to-print مانند SaleForm =====
-  const handlePrint = useReactToPrint({
-    contentRef: printRef,
-    documentTitle: "prescription",
-    pageStyle: `
-      @page { size: A4; margin: 20mm; }
-      @media print { body { -webkit-print-color-adjust: exact; } }
-    `
-  });
+  useEffect(() => {
+    document.title = ".";
+  }, []);
 
   const emptyItem = {
     category_id: "",
@@ -35,7 +28,13 @@ export default function PrescriptionForm() {
   const [selectedPatientId, setSelectedPatientId] = useState("");
   const [patients, setPatients] = useState([]);
   const [patientInfo, setPatientInfo] = useState({
-    age: "", gender: "", phone: "", blood_group: "", reg_id: "", pres_num: ""
+    age: "",
+    gender: "",
+    phone: "",
+    blood_group: "",
+    reg_id: "",
+    pres_num: "",
+    tazkira_number: ""
   });
 
   const [selectedDoctorId, setSelectedDoctorId] = useState("");
@@ -51,18 +50,23 @@ export default function PrescriptionForm() {
 
   const [formItem, setFormItem] = useState(emptyItem);
   const [prescriptionItems, setPrescriptionItems] = useState([]);
-  const [prescriptionId, setPrescriptionId] = useState(null);
 
-  // ===== محاسبه مجموع =====
+  const printRef = useRef(null);
+
+  const handlePrint = useReactToPrint({
+    content: () => printRef.current,
+    documentTitle: patientInfo?.pres_num || "Prescription",
+  });
+
   useEffect(() => {
-    setTotalAmount(prescriptionItems.reduce((t, i) => t + Number(i.total_price), 0));
+    const sum = prescriptionItems.reduce((t, i) => t + Number(i.total_price), 0);
+    setTotalAmount(sum);
   }, [prescriptionItems]);
 
   useEffect(() => {
     setNetAmount(totalAmount - discount);
   }, [totalAmount, discount]);
 
-  // ===== لود داده‌ها =====
   useEffect(() => {
     api.get("/registrations").then(res => {
       const data = res.data.data ?? res.data ?? [];
@@ -75,22 +79,22 @@ export default function PrescriptionForm() {
     api.get("/medications").then(res => setMedications(res.data.data ?? res.data));
   }, [api]);
 
-  // ===== انتخاب مریض =====
   useEffect(() => {
     if (!selectedPatientId) return;
     const p = patients.find(x => x.reg_id == selectedPatientId);
     if (!p) return;
+
     setPatientInfo({
       age: p.age ?? "",
       gender: p.gender ?? "",
       phone: p.phone ?? "",
       blood_group: p.blood_group ?? "",
       reg_id: p.reg_id ?? "",
-      pres_num: p.pres_num ?? ""
+      pres_num: p.pres_num ?? "",
+      tazkira_number: p.tazkira_number ?? ""
     });
   }, [selectedPatientId, patients]);
 
-  // ===== فیلتر دواها و حمایت‌کننده‌ها =====
   const filteredMedications = medications.filter(
     m => Number(m.category_id) === Number(formItem.category_id)
   );
@@ -99,7 +103,6 @@ export default function PrescriptionForm() {
     ? suppliers.filter(s => s.reg_id == selectedMedication.supplier_id)
     : [];
 
-  // ===== تغییرات فرم آیتم =====
   const handleChange = (field, value) => {
     let updated = { ...formItem, [field]: value };
 
@@ -124,20 +127,20 @@ export default function PrescriptionForm() {
     setFormItem(updated);
   };
 
-  // ===== افزودن آیتم با Enter =====
   const handleKeyDown = e => {
-    if (e.key !== "Enter") return;
-    e.preventDefault();
-    if (!formItem.category_id || !formItem.med_id || !formItem.supplier_id || Number(formItem.quantity) <= 0) {
-      toast.error("❌ معلومات آیتم کامل نیست");
-      return;
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (!formItem.category_id || !formItem.med_id || !formItem.supplier_id || Number(formItem.quantity) <= 0) {
+        toast.error("❌ معلومات آیتم کامل نیست");
+        return;
+      }
+      setPrescriptionItems(prev => [...prev, { ...formItem }]);
+      setFormItem({ ...emptyItem });
     }
-    setPrescriptionItems(prev => [...prev, { ...formItem, id: Date.now() }]);
-    setFormItem({ ...emptyItem });
   };
 
-  const handleRemoveItem = id => {
-    setPrescriptionItems(prev => prev.filter(item => item.id !== id));
+  const handleRemoveItem = index => {
+    setPrescriptionItems(prev => prev.filter((_, i) => i !== index));
   };
 
   const resetForm = () => {
@@ -150,7 +153,13 @@ export default function PrescriptionForm() {
     setPrescriptionItems([]);
     setFormItem({ ...emptyItem });
     setPatientInfo({
-      age: "", gender: "", phone: "", blood_group: "", reg_id: "", pres_num: ""
+      age: "",
+      gender: "",
+      phone: "",
+      blood_group: "",
+      reg_id: "",
+      pres_num: "",
+      tazkira_number: ""
     });
   };
 
@@ -159,50 +168,53 @@ export default function PrescriptionForm() {
       toast.error("❌ معلومات نسخه ناقص است");
       return;
     }
- const res = await api.post("/prescriptions", {
-  patient_id: selectedPatientId,
-  pres_num: patientInfo.pres_num,
-  patient_age: patientInfo.age,
-  patient_gender: patientInfo.gender,
-  patient_phone: patientInfo.phone,
-  patient_reg_id: patientInfo.reg_id,
-  patient_blood_group: patientInfo.blood_group,
-  doc_id: selectedDoctorId,
-  pres_date: prescriptionDate || new Date().toISOString().slice(0, 10),
-  total_amount: totalAmount,
-  discount,
-  net_amount: netAmount,
-  items: prescriptionItems,
-});
 
-// 👇 مقدار آی‌دی نسخه را ذخیره می‌کنیم
-setPrescriptionId(res.data.prescription_id ?? null);
-
-toast.success("✅ نسخه موفقانه ثبت شد");
-resetForm();
+    try {
+      await api.post("/prescriptions", {
+        patient_id: selectedPatientId,
+        pres_num: patientInfo.pres_num,
+        patient_age: patientInfo.age,
+        patient_gender: patientInfo.gender,
+        patient_phone: patientInfo.phone,
+        patient_reg_id: patientInfo.reg_id,
+        patient_blood_group: patientInfo.blood_group,
+        tazkira_number: patientInfo.tazkira_number,
+        doc_id: selectedDoctorId,
+        pres_date: prescriptionDate || new Date().toISOString().slice(0, 10),
+        total_amount: totalAmount,
+        discount,
+        net_amount: netAmount,
+        items: prescriptionItems,
+      });
+      toast.success("✅ نسخه موفقانه ثبت شد");
+      resetForm();
+    } catch (apiError) {
+      console.error("API error:", apiError);
+      toast.error("❌ خطا در ثبت نسخه");
+    }
   };
 
-  // ===== آماده سازی دیتا برای پرنت مانند SaleForm =====
   const printData = {
-  pres_num: prescriptionId ?? patientInfo.pres_num ?? "-",  // 👈 اصلاح شد
-  date: prescriptionDate || new Date().toLocaleDateString(),
-  patient: patients.find(p => p.reg_id == selectedPatientId)?.full_name ?? "-",
-  doctor: doctors.find(d => d.reg_id == selectedDoctorId)?.full_name ?? "-",
-  age: patientInfo.age,
-  gender: patientInfo.gender,
-  blood_group: patientInfo.blood_group,
-  totalAmount,
-  discount,
-  netAmount,
-  items: prescriptionItems.map(item => ({
-    ...item,
-    category_name: categories.find(c => c.category_id == item.category_id)?.category_name ?? "-",
-    med_name: medications.find(m => m.med_id == item.med_id)?.gen_name ?? "-",
-    supplier_name: suppliers.find(s => s.reg_id == item.supplier_id)?.full_name ?? "-",
-  }))
-};
- 
- 
+    pres_num: patientInfo.pres_num,
+    date: prescriptionDate || new Date().toLocaleDateString(),
+    patient: patients.find(p => p.reg_id == selectedPatientId)?.full_name ?? "-",
+    doctor: doctors.find(d => d.reg_id == selectedDoctorId)?.full_name ?? "-",
+    age: patientInfo.age,
+    gender: patientInfo.gender,
+    blood_group: patientInfo.blood_group,
+    tazkira_number: patientInfo.tazkira_number,
+    total: totalAmount,
+    discount,
+    net: netAmount,
+    items: prescriptionItems.map(item => ({
+      ...item,
+      category_name: categories.find(c => c.category_id == item.category_id)?.category_name ?? "-",
+      med_name: medications.find(m => m.med_id == item.med_id)?.gen_name ?? "-",
+      supplier_name: suppliers.find(s => s.reg_id == item.supplier_id)?.full_name ?? "-"
+    }))
+  };
+
+
   return (
     <MainLayoutjur>
       <ToastContainer />
@@ -242,29 +254,35 @@ resetForm();
                 </select>
               </div>
 
-              <div>
-                <label>سن</label>
-                <input value={patientInfo.age} readOnly />
-              </div>
-     {/* ✅ نمایش جنسیت */}
-          <div>
-            <label>جنسیت</label>
-            <input value={patientInfo.gender} readOnly />
-          </div>
-              <div>
-                <label>شماره تماس</label>
-                <input value={patientInfo.phone} readOnly />
-              </div>
+     <div>
+  <label>سن</label>
+  <input value={patientInfo.age} readOnly />
+</div>
 
-              <div>
-                <label>آی‌دی مریض</label>
-                <input value={patientInfo.reg_id} readOnly />
-              </div>
+<div>
+  <label>جنسیت</label>
+  <input value={patientInfo.gender} readOnly />
+</div>
 
-              <div>
-                <label>گروه خون</label>
-                <input value={patientInfo.blood_group} readOnly />
-              </div>
+<div>
+  <label>شماره تماس</label>
+  <input value={patientInfo.phone} readOnly />
+</div>
+
+<div>
+  <label>آی‌دی مریض</label>
+  <input value={patientInfo.reg_id} readOnly />
+</div>
+
+<div>
+  <label>شماره تذکره</label>
+  <input value={patientInfo.tazkira_number} readOnly />
+</div>
+
+<div>
+  <label>گروه خون</label>
+  <input value={patientInfo.blood_group} readOnly />
+</div>
 
               <div>
                 <label>داکتر</label>
@@ -466,23 +484,26 @@ resetForm();
               </table>
             </div>
           )}
-  <button className="edit" onClick={handleSavePrescription}>ثبت نسخه</button>
 
-          <button className="edit" onClick={() => {
+          <button className="edit" onClick={handleSavePrescription}>
+            ثبت نسخه
+          </button>
+
+  <button className="edit" onClick={() => {
             if (!prescriptionItems.length) {
               toast.error("آیتمی برای چاپ وجود ندارد");
               return;
             }
             handlePrint();
-          }}>چاپ نسخه</button>
-
+          }}>
+            پرنت نسخه
+          </button>
         </div>
-
-        {/* ✅ کامپوننت مخفی برای پرنت */}
-        <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
+        
+                <div style={{ display: "none" }}>
           <PrescriptionPrint ref={printRef} data={printData} />
         </div>
-      </div>
+        </div>
     </MainLayoutjur>
   );
 

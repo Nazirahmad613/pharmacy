@@ -35,23 +35,27 @@ class JournalController extends Controller
             $j->total_amount = null;
             $j->paid_amount = null;
             $j->due_amount = null;
+            $j->tazkira_number = $j->tazkira_number; // ✅ نمایش مستقیم
 
-            // برای ref_type های استاندارد ثبت شده در جدول Registrations
             if (in_array($j->ref_type, ['doctor', 'patient', 'customer', 'supplier'])) {
                 $reg = Registrations::where('reg_type', $j->ref_type)
                     ->where('reg_id', $j->ref_id)
                     ->first();
-                $j->full_name = $reg->full_name ?? null;
-                $j->display_name = $reg->full_name ?? null;
+
+                if ($reg) {
+                    $j->full_name = $reg->full_name;
+                    $j->display_name = $reg->full_name;
+                    $j->tazkira_number = $reg->tazkira_number; // ✅ گرفتن از ثبت‌نام
+                }
             }
 
-            // ref_type فروش
             if ($j->ref_type === 'sale') {
                 $sale = Sales::with('customer')->find($j->ref_id);
 
                 if ($sale) {
                     $j->full_name = $sale->customer->full_name ?? null;
                     $j->display_name = $sale->customer->full_name ?? "فروش شماره {$j->ref_id}";
+                    $j->tazkira_number = $sale->customer->tazkira_number ?? null;
 
                     $j->total_amount = $sale->net_sales;
                     $j->paid_amount  = $sale->total_paid;
@@ -61,13 +65,13 @@ class JournalController extends Controller
                 }
             }
 
-            // ref_type خرید
             if ($j->ref_type === 'parchase') {
                 $parchase = Parchase::with('supplier')->find($j->ref_id);
 
                 if ($parchase) {
                     $j->full_name = $parchase->supplier->full_name ?? null;
                     $j->display_name = $parchase->supplier->full_name ?? "خرید شماره {$j->ref_id}";
+                    $j->tazkira_number = $parchase->supplier->tazkira_number ?? null;
 
                     $j->total_amount = $parchase->total_parchase;
                     $j->paid_amount  = $parchase->par_paid;
@@ -77,7 +81,6 @@ class JournalController extends Controller
                 }
             }
 
-            // ref_type نسخه‌ها
             if ($j->ref_type === 'patient' && $j->pres_id) {
                 $prescription = Prescription::find($j->pres_id);
 
@@ -85,8 +88,8 @@ class JournalController extends Controller
                     $j->full_name    = $prescription->patient_name;
                     $j->display_name = "نسخه شماره {$prescription->pres_num}";
                     $j->total_amount = $prescription->net_amount;
-                    $j->paid_amount  = $prescription->net_amount; // کل مبلغ پرداخت شده
-                    $j->due_amount   = 0;                         // باقی‌مانده صفر
+                    $j->paid_amount  = $prescription->net_amount;
+                    $j->due_amount   = 0;
                 }
             }
 
@@ -94,19 +97,6 @@ class JournalController extends Controller
         });
 
         return response()->json($journals);
-    }
-
-    /**
-     * دریافت لیست ثبت‌نام‌ها
-     */
-    public function registrations(Request $request)
-    {
-        $query = Registrations::query();
-        if ($request->filled('type')) $query->where('reg_type', $request->type);
-
-        return response()->json(
-            $query->select('reg_id', 'full_name', 'reg_type')->get()
-        );
     }
 
     /**
@@ -121,19 +111,20 @@ class JournalController extends Controller
             'amount'       => 'required|numeric|min:0.01',
             'ref_type'     => 'required|string',
             'ref_id'       => 'required|integer',
-            'pres_id'      => 'nullable|integer', // ✅ اضافه شد
+            'pres_id'      => 'nullable|integer',
         ]);
 
-        $exists = Registrations::where('reg_type', $validated['ref_type'])
+        $reg = Registrations::where('reg_type', $validated['ref_type'])
             ->where('reg_id', $validated['ref_id'])
-            ->exists();
+            ->first();
 
-        if (! $exists && !in_array($validated['ref_type'], ['sale','parchase'])) {
+        if (! $reg && !in_array($validated['ref_type'], ['sale','parchase'])) {
             return response()->json(['message' => 'رویداد انتخاب‌شده معتبر نیست.'], 422);
         }
 
         $journal = Journal::create([
             ...$validated,
+            'tazkira_number' => $reg->tazkira_number ?? null, // ✅ ثبت شماره تذکره
             'user_id' => Auth::id(),
         ]);
 
@@ -142,4 +133,25 @@ class JournalController extends Controller
             'journal' => $journal
         ], 201);
     }
+
+public function destroy($id)
+{
+    $journal = Journal::find($id);
+
+    if (!$journal) {
+        return response()->json(['message' => 'ژورنال یافت نشد.'], 404);
+    }
+
+    try {
+        $journal->delete();
+        return response()->json(['message' => 'ژورنال با موفقیت حذف شد.']);
+    } catch (\Exception $e) {
+        return response()->json(['message' => 'خطا در حذف ژورنال.'], 500);
+    }
+}
+
+
+
+
+
 }

@@ -28,7 +28,7 @@ class Registrations extends Model
         'address',
         'visit_date',
         'note',
-        'nid_number',  // ✅ اضافه شد
+        'tazkira_number',  // ✅ اضافه شد
         'status',
     ];
 

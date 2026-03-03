@@ -16,6 +16,7 @@ class Journal extends Model
         'description',
         'entry_type',
         'amount',
+        'tazkira_number',
         'ref_type',
         'ref_id',
         'user_id',

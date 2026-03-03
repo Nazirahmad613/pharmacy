@@ -15,29 +15,29 @@ class PrescriptionController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'patient_id'   => 'required',
-            'doc_id'       => 'required',
-            'pres_date'    => 'required|date',
-            'items'        => 'required|array|min:1',
-            'total_amount' => 'required|numeric',
-            'net_amount'   => 'required|numeric',
+            'patient_id'      => 'required',
+            'doc_id'          => 'required',
+            'pres_date'       => 'required|date',
+            'items'           => 'required|array|min:1',
+            'total_amount'    => 'required|numeric',
+            'net_amount'      => 'required|numeric',
+            'tazkira_number'  => 'nullable|string',
         ]);
 
         DB::transaction(function () use ($request) {
 
-            // ===== snapshot مریض و داکتر =====
             $patient = Registrations::find($request->patient_id);
             $doc     = Registrations::find($request->doc_id);
 
             $lastPres = Prescription::orderBy('pres_num', 'desc')->lockForUpdate()->first();
             $newPresNum = $lastPres ? $lastPres->pres_num + 1 : 1;
 
-            // ===== ثبت نسخه =====
             $prescription = Prescription::create([
                 'patient_id'          => $request->patient_id,
                 'patient_name'        => $patient->full_name ?? $patient->name ?? null,
+                'tazkira_number'      => $request->tazkira_number ?? $patient->tazkira_number ?? null,
                 'patient_age'         => $patient->age ?? null,
-                'patient_gender'         => $patient->gender ?? null,
+                'patient_gender'      => $patient->gender ?? null,
                 'patient_phone'       => $patient->phone ?? null,
                 'patient_blood_group' => $patient->blood_group ?? null,
 
@@ -51,7 +51,6 @@ class PrescriptionController extends Controller
                 'net_amount'   => $request->net_amount,
             ]);
 
-            // ===== آیتم‌های نسخه =====
             foreach ($request->items as $item) {
                 PrescriptionItem::create([
                     'pres_id'     => $prescription->pres_id,
@@ -67,11 +66,6 @@ class PrescriptionController extends Controller
                 ]);
             }
 
-            // =========================
-            // ثبت ژورنال (نسخه) با pres_num
-            // =========================
-
-            // 🔴 بدهکار: مریض
             Journal::create([
                 'journal_date' => $request->pres_date,
                 'entry_type'   => 'debit',
@@ -79,12 +73,12 @@ class PrescriptionController extends Controller
                 'description'  => 'بدهکاری مریض بابت نسخه شماره ' . $newPresNum,
                 'ref_type'     => 'patient',
                 'ref_id'       => $request->patient_id,
-                'pres_id'      => $prescription->pres_id,  // ✅ اضافه شد
-                'pres_num'     => $newPresNum,            // ✅ اضافه شد
+                'tazkira_number'=> $request->tazkira_number ?? $patient->tazkira_number ?? null,
+                'pres_id'      => $prescription->pres_id,
+                'pres_num'     => $newPresNum,
                 'user_id'      => Auth::id(),
             ]);
 
-            // 🟢 بستانکار: فروش دوا
             Journal::create([
                 'journal_date' => $request->pres_date,
                 'entry_type'   => 'credit',
@@ -92,8 +86,9 @@ class PrescriptionController extends Controller
                 'description'  => 'فروش دوا بابت نسخه شماره ' . $newPresNum,
                 'ref_type'     => 'patient',
                 'ref_id'       => $request->patient_id,
-                'pres_id'      => $prescription->pres_id,  // ✅ اضافه شد
-                'pres_num'     => $newPresNum,            // ✅ اضافه شد
+                'tazkira_number'=> $request->tazkira_number ?? $patient->tazkira_number ?? null,
+                'pres_id'      => $prescription->pres_id,
+                'pres_num'     => $newPresNum,
                 'user_id'      => Auth::id(),
             ]);
 

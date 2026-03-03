@@ -13,9 +13,9 @@ return new class extends Migration
 
             $table->date('sales_date');
 
-            // 🔗 مشتری (از جدول registration عمومی)
+            // 🔗 مشتری (از جدول registrations عمومی)
             $table->unsignedBigInteger('cust_id');
-            $table->string('customer_nid')->nullable();  
+            $table->string('tazkira_number')->nullable();  
 
             // 🔗 کاربر فروشنده
             $table->unsignedBigInteger('sales_user');
@@ -47,8 +47,8 @@ return new class extends Migration
 
             // 🔐 کلیدهای خارجی
             $table->foreign('cust_id')
-                  ->references('id')   // کلید اصلی جدول registration
-                  ->on('registration')
+                  ->references('reg_id')   // کلید اصلی جدول registrations
+                  ->on('registrations')
                   ->onDelete('cascade');
 
             $table->foreign('sales_user')
@@ -66,3 +66,16 @@ return new class extends Migration
         Schema::dropIfExists('sales');
     }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+ 

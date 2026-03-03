@@ -14,6 +14,7 @@ class Prescription extends Model
     protected $fillable = [
         'patient_id',
         'patient_name',
+        'tazkira_number',
         'patient_age',
         'patient_gender',
         'patient_phone',

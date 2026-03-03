@@ -48,6 +48,7 @@ export default function JournalPage() {
     amount: "",
     ref_type: "",
     ref_id: "",
+    tazkira_number: "",
   });
 
   const [filterType, setFilterType] = useState("");
@@ -60,7 +61,6 @@ export default function JournalPage() {
   const inputClass =
     "bg-[#111] text-white border border-gray-600 rounded-xl px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-600";
 
-  // ================= FETCH DATA =================
   const fetchData = async () => {
     try {
       const [journalsRes, registrationsRes, salesRes, parchaseRes] =
@@ -106,7 +106,6 @@ export default function JournalPage() {
     fetchData();
   }, [filterType, fromDate, toDate]);
 
-  // ================= REGISTRATION MAP =================
   const registrationMap = useMemo(() => {
     const map = {};
     registrations.forEach((r) => {
@@ -117,7 +116,6 @@ export default function JournalPage() {
 
   const getRef = (type, id) => registrationMap[`${type}_${id}`] ?? null;
 
-  // ================= FILTERED REFS =================
   const filteredRefs = useMemo(() => {
     if (!form.ref_type) return [];
 
@@ -130,7 +128,6 @@ export default function JournalPage() {
       : [];
   }, [form.ref_type, registrations, transactions]);
 
-  // ================= COMBINED ROWS =================
   const combinedRows = useMemo(() => {
     if (!journals.length) return [];
 
@@ -155,6 +152,7 @@ export default function JournalPage() {
         }
 
         let source_name = "-";
+        let tazkira_number = j.tazkira_number ?? "-";
         const ref = getRef(j.ref_type, j.ref_id);
 
         if (ref) {
@@ -164,6 +162,8 @@ export default function JournalPage() {
             ref.supplier_name ||
             ref.name ||
             `شماره ${ref.reg_id || j.ref_id}`;
+
+          tazkira_number = ref.tazkira_number ?? j.tazkira_number ?? "-";
         } else {
           source_name = j.full_name ?? j.display_name ?? `شماره ${j.ref_id}`;
         }
@@ -178,6 +178,7 @@ export default function JournalPage() {
           remaining,
           source_type: j.ref_type,
           source_name,
+          tazkira_number,
         };
       })
       .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
@@ -189,7 +190,8 @@ export default function JournalPage() {
     return combinedRows.filter(
       (row) =>
         row.source_name?.toLowerCase().includes(term) ||
-        row.description?.toLowerCase().includes(term)
+        row.description?.toLowerCase().includes(term) ||
+        row.tazkira_number?.toLowerCase().includes(term)
     );
   }, [combinedRows, searchTerm]);
 
@@ -229,11 +231,54 @@ export default function JournalPage() {
         amount: "",
         ref_type: "",
         ref_id: "",
+        tazkira_number: "",
       });
       fetchData();
     } catch (err) {
       toast.error(err.response?.data?.message || "خطا در ذخیره");
     }
+  };
+
+  const handleEdit = async (id) => {
+    const journal = journals.find((j) => j.id === id);
+    if (!journal) return;
+    setForm({
+      journal_date: journal.journal_date,
+      description: journal.description,
+      entry_type: journal.entry_type,
+      amount: journal.amount ?? journal.total_amount ?? 0,
+      ref_type: journal.ref_type,
+      ref_id: journal.ref_id,
+      tazkira_number: journal.tazkira_number ?? "",
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("آیا از حذف این ژورنال مطمئن هستید؟")) return;
+    try {
+      await api.delete(`/journals/${id}`);
+      toast.success("ژورنال حذف شد");
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "خطا در حذف");
+    }
+  };
+
+  const handlePrint = (row) => {
+    const printWindow = window.open("", "_blank");
+    printWindow.document.write(`<h3>ژورنال شماره ${row.id}</h3>`);
+    printWindow.document.write(`<p>تاریخ: ${row.date}</p>`);
+    printWindow.document.write(`<p>نوع: ${ENTRY_TYPE_FA[row.entry_type]}</p>`);
+    printWindow.document.write(`<p>توضیحات: ${row.description}</p>`);
+    printWindow.document.write(`<p>مبلغ کل: ${row.amount}</p>`);
+    printWindow.document.write(`<p>پرداخت شده: ${row.paid}</p>`);
+    printWindow.document.write(`<p>باقی‌مانده: ${row.remaining}</p>`);
+    printWindow.document.write(`<p>منبع: ${REF_TYPE_FA[row.source_type]}</p>`);
+    printWindow.document.write(`<p>نام منبع: ${row.source_name}</p>`);
+    printWindow.document.write(`<p>شماره تذکره: ${row.tazkira_number}</p>`);
+    printWindow.document.close();
+    printWindow.print();
   };
 
   return (
@@ -255,80 +300,31 @@ export default function JournalPage() {
           ))}
         </select>
 
-        <input
-          type="date"
-          placeholder="از تاریخ"
-          value={fromDate}
-          onChange={(e) => setFromDate(e.target.value)}
-          className={inputClass}
-        />
-        <input
-          type="date"
-          placeholder="تا تاریخ"
-          value={toDate}
-          onChange={(e) => setToDate(e.target.value)}
-          className={inputClass}
-        />
-        <input
-          type="text"
-          placeholder="جستجو..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className={inputClass}
-        />
+        <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className={inputClass} />
+        <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className={inputClass} />
+        <input type="text" placeholder="جستجو..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className={inputClass} />
       </div>
 
       <div className="form-container mb-10">
         <form onSubmit={handleSubmit} className="form-grid gap-3">
-          <input
-            type="date"
-            name="journal_date"
-            value={form.journal_date}
-            onChange={handleChange}
-            className={inputClass}
-            required
-          />
-          <select
-            name="entry_type"
-            value={form.entry_type}
-            onChange={handleChange}
-            className={inputClass}
-            required
-          >
+          <input type="date" name="journal_date" value={form.journal_date} onChange={handleChange} className={inputClass} required />
+          <select name="entry_type" value={form.entry_type} onChange={handleChange} className={inputClass} required>
             {Object.keys(ENTRY_TYPE_FA).map((t) => (
-              <option key={t} value={t}>
-                {ENTRY_TYPE_FA[t]}
-              </option>
+              <option key={t} value={t}>{ENTRY_TYPE_FA[t]}</option>
             ))}
           </select>
-          <input
-            type="number"
-            name="amount"
-            value={form.amount}
-            onChange={handleChange}
-            placeholder="مبلغ"
-            className={inputClass}
-            required
-          />
+          <input type="number" name="amount" value={form.amount} onChange={handleChange} placeholder="مبلغ" className={inputClass} required />
+          <input type="text" name="description" value={form.description} onChange={handleChange} placeholder="توضیحات" className={inputClass} />
           <input
             type="text"
-            name="description"
-            value={form.description}
+            name="tazkira_number"
+            value={form.tazkira_number}
             onChange={handleChange}
-            placeholder="توضیحات"
+            placeholder="شماره تذکره"
             className={inputClass}
           />
-
-          {/* ===== REF TYPE SELECT با optgroup ===== */}
-          <select
-            name="ref_type"
-            value={form.ref_type}
-            onChange={handleChange}
-            className={inputClass}
-            required
-          >
+          <select name="ref_type" value={form.ref_type} onChange={handleChange} className={inputClass} required>
             <option value="">نوع منبع</option>
-
             <optgroup label="اشخاص">
               <option value="patient">مریض</option>
               <option value="doctor">داکتر</option>
@@ -337,7 +333,6 @@ export default function JournalPage() {
               <option value="staff">کارمند</option>
               <option value="supplier">تأمین‌کننده</option>
             </optgroup>
-
             <optgroup label="مصارف">
               <option value="rent">کرایه</option>
               <option value="electricity">برق</option>
@@ -347,13 +342,11 @@ export default function JournalPage() {
               <option value="fuel">سوخت</option>
               <option value="maintenance">ترمیمات</option>
             </optgroup>
-
             <optgroup label="خدمات">
               <option value="laboratory">لابراتوار</option>
               <option value="transport">ترانسپورت</option>
               <option value="consultation">مشاوره</option>
             </optgroup>
-
             <optgroup label="دیگر">
               <option value="expense">مصرف عمومی</option>
               <option value="income">درآمد</option>
@@ -361,14 +354,7 @@ export default function JournalPage() {
             </optgroup>
           </select>
 
-          <select
-            name="ref_id"
-            value={form.ref_id}
-            onChange={handleChange}
-            disabled={!form.ref_type}
-            className={inputClass}
-            required
-          >
+          <select name="ref_id" value={form.ref_id} onChange={handleChange} disabled={!form.ref_type} className={inputClass} required>
             <option value="">نام منبع</option>
             {filteredRefs.map((r) => {
               const id = r.sales_id || r.parchase_id || r.id || r.reg_id;
@@ -382,20 +368,17 @@ export default function JournalPage() {
             })}
           </select>
 
-          <button
-            type="submit"
-            className="bg-blue-700 text-white rounded-xl py-2 hover:bg-blue-800"
-          >
+          <button type="submit" className="bg-blue-700 text-white rounded-xl py-2 hover:bg-blue-800">
             ثبت
           </button>
         </form>
       </div>
 
-      {/* ===== جدول محاسبات ===== */}
       <div className="table-container">
         <table>
           <thead>
             <tr>
+              <th>عملیات</th>
               <th>تاریخ</th>
               <th>نوع</th>
               <th>توضیحات</th>
@@ -404,6 +387,7 @@ export default function JournalPage() {
               <th>باقی‌مانده</th>
               <th>منبع</th>
               <th>نام منبع</th>
+              <th>شماره تذکره</th>
             </tr>
           </thead>
           <tbody>
@@ -415,14 +399,12 @@ export default function JournalPage() {
                 else if (row.source_type === "patient") bgColor = "#1a701a";
 
                 return (
-                  <tr
-                    key={row.id}
-                    style={{
-                      backgroundColor: bgColor,
-                      transition: "0.2s",
-                      color: "#fff",
-                    }}
-                  >
+                  <tr key={row.id} style={{ backgroundColor: bgColor, transition: "0.2s", color: "#fff" }}>
+                    <td className="flex gap-1">
+                      <button onClick={() => handleEdit(row.id)} className="bg-yellow-600 px-2 py-1 rounded hover:bg-yellow-700">تصحیح</button>
+                      <button onClick={() => handleDelete(row.id)} className="bg-red-600 px-2 py-1 rounded hover:bg-red-700">حذف</button>
+                      <button onClick={() => handlePrint(row)} className="bg-green-600 px-2 py-1 rounded hover:bg-green-700">پرینت</button>
+                    </td>
                     <td>{row.date || "-"}</td>
                     <td>{ENTRY_TYPE_FA[row.entry_type] || "-"}</td>
                     <td>{row.description || "-"}</td>
@@ -431,12 +413,13 @@ export default function JournalPage() {
                     <td>{row.remaining ?? 0}</td>
                     <td>{REF_TYPE_FA[row.source_type] || row.source_type || "-"}</td>
                     <td>{row.source_name || "-"}</td>
+                    <td>{row.tazkira_number || "-"}</td>
                   </tr>
                 );
               })
             ) : (
               <tr>
-                <td colSpan="8" style={{ textAlign: "center" }}>
+                <td colSpan="10" style={{ textAlign: "center" }}>
                   نتیجه‌ای یافت نشد
                 </td>
               </tr>
@@ -447,21 +430,13 @@ export default function JournalPage() {
 
       {totalPages > 1 && (
         <div className="flex justify-center gap-3 mt-4">
-          <button
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage((p) => p - 1)}
-            className="px-4 py-2 bg-gray-700 rounded disabled:opacity-50"
-          >
+          <button disabled={currentPage === 1} onClick={() => setCurrentPage((p) => p - 1)} className="px-4 py-2 bg-gray-700 rounded disabled:opacity-50">
             قبلی
           </button>
           <span className="px-4 py-2">
             {currentPage} / {totalPages}
           </span>
-          <button
-            disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage((p) => p + 1)}
-            className="px-4 py-2 bg-gray-700 rounded disabled:opacity-50"
-          >
+          <button disabled={currentPage === totalPages} onClick={() => setCurrentPage((p) => p + 1)} className="px-4 py-2 bg-gray-700 rounded disabled:opacity-50">
             بعدی
           </button>
         </div>

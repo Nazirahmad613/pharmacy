@@ -13,7 +13,7 @@ class Sales extends Model
 
     protected $fillable = [
         'cust_id',
-        'customer_nid',  // ✅ اضافه شد
+        'tazkira_number',  // ✅ اضافه شد
         'sales_date',
         'total_sales',
         'discount',

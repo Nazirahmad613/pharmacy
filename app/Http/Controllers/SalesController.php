@@ -52,7 +52,7 @@ public function store(Request $request)
     $validated = $request->validate([
         'sales_date' => 'required|date',
         'cust_id' => 'required|exists:registrations,reg_id',
-        'customer_nid' => 'nullable|string', // ✅ اضافه شد
+        'tazkira_number' => 'nullable|string', // ✅ اضافه شد
         'discount' => 'nullable|numeric|min:0',
         'total_paid' => 'nullable|numeric|min:0',
         'items' => 'required|array|min:1',
@@ -77,7 +77,7 @@ public function store(Request $request)
         $sale = Sales::create([
             'sales_date'  => $validated['sales_date'],
             'cust_id'     => $validated['cust_id'],
-            'customer_nid'=> $validated['customer_nid'], // ✅ اضافه شد
+            'tazkira_number'=> $validated['tazkira_number'], // ✅ اضافه شد
             'total_sales' => $totalSales,
             'discount'    => $discount,
             'net_sales'   => $netSales,
@@ -106,7 +106,7 @@ public function store(Request $request)
             'ref_type'     => 'sale',
             'ref_id'       => $sale->sales_id,
             'user_id'      => Auth::id(),
-            'customer_nid' => $sale->customer_nid, // ✅ اضافه شد
+            'tazkira_number' => $sale->tazkira_number, // ✅ اضافه شد
             'customer_name'=> $sale->customer->full_name ?? '-', // نام مشتری
         ]);
 
@@ -119,7 +119,7 @@ public function store(Request $request)
                 'ref_type'     => 'sale',
                 'ref_id'       => $sale->sales_id,
                 'user_id'      => Auth::id(),
-                'customer_nid' => $sale->customer_nid, // ✅ اضافه شد
+                'tazkira_number' => $sale->tazkira_number, // ✅ اضافه شد
                 'customer_name'=> $sale->customer->full_name ?? '-', 
             ]);
         }

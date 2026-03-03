@@ -22,7 +22,7 @@ class RegistrationsController extends Controller
             'visit_date'   => 'nullable|date',
             'note'         => 'nullable|string',
             'department_id'=> 'nullable|exists:departments,id',
-            'nid_number'   => [
+            'tazkira_number'   => [
                 'nullable',
                 'regex:/^\d{4}-\d{4}-\d{5}$/'
             ], // ✅ شماره تذکره با فرمت صحیح
@@ -49,4 +49,25 @@ class RegistrationsController extends Controller
             $query->orderBy('reg_id', 'desc')->get()
         );
     }
+
+    public function destroy($reg_id)
+    {
+        $registration = Registrations::find($reg_id);
+
+        if (! $registration) {
+            return response()->json([
+                'message' => 'رجستریشن یافت نشد.'
+            ], 404);
+        }
+
+        $registration->delete();
+
+        return response()->json([
+            'message' => 'رجستریشن با موفقیت حذف شد.'
+        ], 200);
+    }
+
+
+
 }
+
