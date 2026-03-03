@@ -10,6 +10,7 @@ export default function RegistrationForm() {
   const [form, setForm] = useState({
     reg_type: "",
     full_name: "",
+    nid_number: "", // ===== اضافه شد =====
     father_name: "",
     phone: "",
     gender: "",
@@ -19,26 +20,25 @@ export default function RegistrationForm() {
     visit_date: "",
     note: "",
     status: 1,
-    department_id: "", // ===== اضافه شد =====
+    department_id: "",
   });
 
   const [departments, setDepartments] = useState([]);
 
   // ===== بارگذاری لیست بخش‌ها =====
   useEffect(() => {
-  const fetchDepartments = async () => {
-    try {
-      const res = await api.get("/departments");
-      // اگر API یک شیء با data برمی‌گرداند:
-      const deps = Array.isArray(res.data) ? res.data : res.data.data || [];
-      setDepartments(deps);
-    } catch (err) {
-      console.error("خطا در بارگذاری بخش‌ها:", err);
-      setDepartments([]);
-    }
-  };
-  fetchDepartments();
-}, [api]);
+    const fetchDepartments = async () => {
+      try {
+        const res = await api.get("/departments");
+        const deps = Array.isArray(res.data) ? res.data : res.data.data || [];
+        setDepartments(deps);
+      } catch (err) {
+        console.error("خطا در بارگذاری بخش‌ها:", err);
+        setDepartments([]);
+      }
+    };
+    fetchDepartments();
+  }, [api]);
 
   // ================= تغییر مقدار =================
   const handleChange = (e) => {
@@ -54,6 +54,12 @@ export default function RegistrationForm() {
       return;
     }
 
+    // اعتبارسنجی شماره تذکره (اگر پر شده باشد)
+    if (form.nid_number && !/^\d{4}-\d{4}-\d{5}$/.test(form.nid_number)) {
+      toast.error("❌ فرمت شماره تذکره معتبر نیست (مثال: 1399-1102-30366)");
+      return;
+    }
+
     try {
       await api.post("/registrations", form);
       toast.success("✅ ثبت موفقانه انجام شد");
@@ -61,6 +67,7 @@ export default function RegistrationForm() {
       setForm({
         reg_type: "",
         full_name: "",
+        nid_number: "", // ریست فیلد
         father_name: "",
         phone: "",
         gender: "",
@@ -70,7 +77,7 @@ export default function RegistrationForm() {
         visit_date: "",
         note: "",
         status: 1,
-        department_id: "", // ریست فیلد
+        department_id: "",
       });
     } catch (err) {
       console.error(err);
@@ -129,19 +136,19 @@ export default function RegistrationForm() {
           <div>
             <label>بخش</label>
             <select
-  name="department_id"
-  value={form.department_id}
-  onChange={handleChange}
-  className="form-control"
->
-  <option value="">-- انتخاب بخش --</option>
-  {Array.isArray(departments) &&
-    departments.map((dep) => (
-      <option key={dep.id} value={dep.id}>
-        {dep.name}
-      </option>
-    ))}
-</select>
+              name="department_id"
+              value={form.department_id}
+              onChange={handleChange}
+              className="form-control"
+            >
+              <option value="">-- انتخاب بخش --</option>
+              {Array.isArray(departments) &&
+                departments.map((dep) => (
+                  <option key={dep.id} value={dep.id}>
+                    {dep.name}
+                  </option>
+                ))}
+            </select>
           </div>
 
           {/* نام */}
@@ -156,7 +163,20 @@ export default function RegistrationForm() {
             />
           </div>
 
-          {/* سایر فیلدها بدون تغییر */}
+          {/* شماره تذکره */}
+          <div>
+            <label>شماره تذکره</label>
+            <input
+              type="text"
+              name="nid_number"
+              value={form.nid_number}
+              onChange={handleChange}
+              placeholder="مثال: 1300-1105-0000"
+              className="form-control"
+            />
+          </div>
+
+          {/* نام پدر */}
           <div>
             <label>نام پدر</label>
             <input
@@ -168,6 +188,7 @@ export default function RegistrationForm() {
             />
           </div>
 
+          {/* سایر فیلدها بدون تغییر */}
           <div>
             <label>شماره تماس</label>
             <input
@@ -204,17 +225,25 @@ export default function RegistrationForm() {
               className="form-control"
             />
           </div>
-
-          <div>
-            <label>گروه خون</label>
-            <input
-              type="text"
-              name="blood_group"
-              value={form.blood_group}
-              onChange={handleChange}
-              className="form-control"
-            />
-          </div>
+<div>
+  <label>گروه خون</label>
+  <select
+    name="blood_group"
+    value={form.blood_group}
+    onChange={handleChange}
+    className="form-control"
+  >
+    <option value="">-- انتخاب گروه خون --</option>
+    <option value="A+">A+</option>
+    <option value="A-">A-</option>
+    <option value="B+">B+</option>
+    <option value="B-">B-</option>
+    <option value="AB+">AB+</option>
+    <option value="AB-">AB-</option>
+    <option value="O+">O+</option>
+    <option value="O-">O-</option>
+  </select>
+</div>
 
           <div>
             <label>تاریخ مراجعه / مصرف</label>
@@ -258,4 +287,4 @@ export default function RegistrationForm() {
       </div>
     </MainLayoutpur>
   );
-}    
+}

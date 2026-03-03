@@ -1,6 +1,5 @@
 <?php
-
-namespace App\Models;
+ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,6 +13,7 @@ class Sales extends Model
 
     protected $fillable = [
         'cust_id',
+        'customer_nid',  // ✅ اضافه شد
         'sales_date',
         'total_sales',
         'discount',
@@ -22,37 +22,36 @@ class Sales extends Model
         'total_paid',
     ];
 
-    // 🔗 ستون‌های محاسبه‌شده
     protected $appends = [
         'remaining_amount',
         'payment_status',
     ];
 
-    // 🔗 رابطه مشتری (از جدول registration)
+    // رابطه مشتری
     public function customer()
     {
         return $this->belongsTo(\App\Models\Registrations::class, 'cust_id', 'reg_id');
     }
 
-    // 🔗 آیتم‌های فروش
+    // آیتم‌های فروش
     public function items()
     {
         return $this->hasMany(SalesItem::class, 'sales_id', 'sales_id');
     }
 
-    // 🔗 کاربر فروشنده
+    // کاربر فروشنده
     public function user()
     {
         return $this->belongsTo(User::class, 'sales_user', 'id');
     }
 
-    // 🔗 محاسبه باقی‌مانده
+    // محاسبه باقی‌مانده
     public function getRemainingAmountAttribute()
     {
         return $this->net_sales - $this->total_paid;
     }
 
-    // 🔗 محاسبه وضعیت پرداخت
+    // وضعیت پرداخت
     public function getPaymentStatusAttribute()
     {
         if ($this->total_paid == 0) {

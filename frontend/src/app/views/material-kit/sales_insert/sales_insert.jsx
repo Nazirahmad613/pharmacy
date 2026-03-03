@@ -11,20 +11,12 @@ export default function SaleForm() {
   const printRef = useRef(null);
   const [salesId, setSalesId] = useState(null);
 
-  // ✅ نسخه جدید react-to-print
   const handlePrint = useReactToPrint({
     contentRef: printRef,
     documentTitle: "sale-bill",
     pageStyle: `
-      @page {
-        size: A4;
-        margin: 20mm;
-      }
-      @media print {
-        body {
-          -webkit-print-color-adjust: exact;
-        }
-      }
+      @page { size: A4; margin: 20mm; }
+      @media print { body { -webkit-print-color-adjust: exact; } }
     `,
   });
 
@@ -50,10 +42,12 @@ export default function SaleForm() {
     quantity: "",
     unit_sales: "",
     total_sales: 0,
-    exp_date: "",
   });
 
   const [saleItems, setSaleItems] = useState([]);
+
+  // ✅ شماره تذکره مشتری
+  const [customerNID, setCustomerNID] = useState("");
 
   // ===== محاسبه مجموع فروش =====
   useEffect(() => {
@@ -94,6 +88,17 @@ export default function SaleForm() {
         setCustomers([]);
       });
   }, [api]);
+
+  // ===== بروزرسانی شماره تذکره هنگام انتخاب مشتری =====
+  useEffect(() => {
+    if (!formItem.cust_id) {
+      setCustomerNID("");
+      return;
+    }
+
+    const cust = customers.find(c => Number(c.reg_id) === Number(formItem.cust_id));
+    if (cust) setCustomerNID(cust.nid_number ?? "");
+  }, [formItem.cust_id, customers]);
 
   // ===== فیلتر دواها و حمایت‌کننده‌ها =====
   const filteredMedications = medications.filter(
@@ -146,7 +151,6 @@ export default function SaleForm() {
       !formItem.supplier_id ||
       !formItem.quantity ||
       !formItem.unit_sales 
-      
     ) {
       toast.error("❌ لطفاً تمام فیلدها را درست پر کنید");
       return;
@@ -176,7 +180,6 @@ export default function SaleForm() {
       quantity: "",
       unit_sales: "",
       total_sales: 0,
-   
     });
   };
 
@@ -184,61 +187,56 @@ export default function SaleForm() {
     setSaleItems(saleItems.filter(item => item.id !== id));
   };
 
-   const handleSaveSale = async () => {
-  if (saleItems.length === 0) {
-    toast.error("❌ حداقل یک آیتم اضافه کنید");
-    return;
-  }
+  const handleSaveSale = async () => {
+    if (saleItems.length === 0) {
+      toast.error("❌ حداقل یک آیتم اضافه کنید");
+      return;
+    }
 
-  const payload = {
-    sales_date: saleDate || new Date().toISOString().split("T")[0],
-    cust_id: formItem.cust_id,
-    discount,
-    total_paid: totalPaid,
-    items: saleItems.map(item => ({
-      category_id: item.category_id,
-      med_id: item.med_id,
-      supplier_id: item.supplier_id,
-      type: item.type,
-      quantity: Number(item.quantity),
-      unit_sales: Number(item.unit_sales),
-      total_sales: Number(item.total_sales),
-    })),
+    const payload = {
+      sales_date: saleDate || new Date().toISOString().split("T")[0],
+      cust_id: formItem.cust_id,
+      customer_nid: customerNID, // ✅ اضافه شد
+      discount,
+      total_paid: totalPaid,
+      items: saleItems.map(item => ({
+        category_id: item.category_id,
+        med_id: item.med_id,
+        supplier_id: item.supplier_id,
+        type: item.type,
+        quantity: Number(item.quantity),
+        unit_sales: Number(item.unit_sales),
+        total_sales: Number(item.total_sales),
+      })),
+    };
+
+    try {
+      const res = await api.post("/sales", payload);
+      setSalesId(res.data.sale_id);
+      toast.success("✅ فروش با موفقیت ثبت شد");
+    } catch (err) {
+      console.error(err);
+      toast.error("❌ خطا در ثبت فروش");
+    }
   };
 
-  try {
-    // ✅ response را بگیر
-    const res = await api.post("/sales", payload);
+  const selectedCustomer = customers.find(
+    c => Number(c.reg_id) === Number(formItem.cust_id)
+  );
 
-    // ✅ sales_id را ذخیره کن
-    setSalesId(res.data.sale_id);
-
-    toast.success("✅ فروش با موفقیت ثبت شد");
-
-  } catch (err) {
-    console.error(err);
-    toast.error("❌ خطا در ثبت فروش");
-  }
-};
- 
-
-  // ✅ آماده سازی دیتا برای پرنت
-const selectedCustomer = customers.find(
-  c => Number(c.reg_id) === Number(formItem.cust_id)
-);
-
-const saleData = {
-  sale_number: salesId ?? "-",   // 👈 این خط اصلاح شد
-  date: saleDate || new Date().toLocaleDateString(),
-  customer: selectedCustomer?.full_name ?? "-",
-  items: saleItems,
-  totalSale,
-  discount,
-  netSales,
-  totalPaid,
-  remaining,
-  paymentStatus,
-};
+  const saleData = {
+    sale_number: salesId ?? "-",
+    date: saleDate || new Date().toLocaleDateString(),
+    customer: selectedCustomer?.full_name ?? "-",
+    customer_nid: customerNID, // ✅ برای پرینت اضافه شد
+    items: saleItems,
+    totalSale,
+    discount,
+    netSales,
+    totalPaid,
+    remaining,
+    paymentStatus,
+  };
 
   return (
     <MainLayoutjur>
@@ -247,7 +245,7 @@ const saleData = {
       <div className="main-layout">
         <div className="background-overlay"></div>
         <div className="layout-content">
- 
+
           {/* ===== اطلاعات فروش ===== */}
           <div className="form-container">
             <h2 style={{ textAlign: "center", marginBottom: "20px" }}>ثبت فروشات</h2>
@@ -268,6 +266,12 @@ const saleData = {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* ✅ نمایش شماره تذکره */}
+              <div>
+                <label>شماره تذکره مشتری</label>
+                <input type="text" value={customerNID} readOnly />
               </div>
 
               <div>
@@ -306,7 +310,6 @@ const saleData = {
           <div className="form-container">
             <h3>افزودن آیتم</h3>
             <div className="form-grid" onKeyDown={handleKeyDown}>
-
               <div>
                 <label>کتگوری</label>
                 <select value={formItem.category_id} onChange={e => handleChange("category_id", e.target.value)}>
@@ -358,9 +361,6 @@ const saleData = {
                 <label>قیمت مجموعی</label>
                 <input type="number" value={formItem.total_sales} readOnly />
               </div>
-
-             
-
             </div>
           </div>
 
@@ -392,7 +392,6 @@ const saleData = {
                       <td>{item.quantity}</td>
                       <td>{item.unit_sales?.toLocaleString()}</td>
                       <td>{item.total_sales?.toLocaleString()}</td>
-                      
                       <td>
                         <button className="delete" onClick={() => handleRemoveItem(item.id)}>حذف</button>
                       </td>

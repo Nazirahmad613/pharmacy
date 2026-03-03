@@ -177,3 +177,22 @@ button.edit:hover {
 .dark-table tbody tr:hover td {
   background-color: #123b75;
 }
+
+
+/* ===== اصلاح نمایش Toast ===== */
+.Toastify__toast-container {
+  z-index: 999999 !important;
+}
+
+.Toastify__toast {
+  z-index: 999999 !important;
+}
+
+.background-overlay {
+  z-index: 1;
+}
+
+.layout-content {
+  position: relative;
+  z-index: 2;
+}

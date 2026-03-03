@@ -11,17 +11,21 @@ class RegistrationsController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'reg_type'   => 'required|string',
-            'full_name'  => 'required|string|max:255',
-            'father_name'=> 'nullable|string|max:255',
-            'phone'      => 'nullable|string|max:50',
-            'gender'     => 'nullable|string',
-            'age'        => 'nullable|integer',
-            'blood_group'=> 'nullable|string|max:10',
-            'address'    => 'nullable|string',
-            'visit_date' => 'nullable|date',
-            'note'       => 'nullable|string',
+            'reg_type'     => 'required|string',
+            'full_name'    => 'required|string|max:255',
+            'father_name'  => 'nullable|string|max:255',
+            'phone'        => 'nullable|string|max:50',
+            'gender'       => 'nullable|string',
+            'age'          => 'nullable|integer',
+            'blood_group'  => 'nullable|string|max:10',
+            'address'      => 'nullable|string',
+            'visit_date'   => 'nullable|date',
+            'note'         => 'nullable|string',
             'department_id'=> 'nullable|exists:departments,id',
+            'nid_number'   => [
+                'nullable',
+                'regex:/^\d{4}-\d{4}-\d{5}$/'
+            ], // ✅ شماره تذکره با فرمت صحیح
         ]);
 
         $data = Registrations::create($validated);
@@ -35,7 +39,7 @@ class RegistrationsController extends Controller
     // 📤 لیست
     public function index(Request $request)
     {
-       $query = Registrations::with('department');
+        $query = Registrations::with('department');
 
         if ($request->filled('reg_type')) {
             $query->where('reg_type', $request->reg_type);

@@ -28,17 +28,15 @@ class Registrations extends Model
         'address',
         'visit_date',
         'note',
+        'nid_number',  // ✅ اضافه شد
         'status',
     ];
 
 
-  public function department()
+    public function department()
     {
         return $this->belongsTo(Departement::class, 'department_id');
     }
-
-
-
 
     /* =========================
        Relationships

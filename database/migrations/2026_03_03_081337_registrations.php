@@ -53,6 +53,9 @@ return new class extends Migration
             // ===== ستون جدید: department_id =====
             $table->unsignedBigInteger('department_id')->nullable()->comment('ارتباط با بخش');
 
+            // ===== ستون جدید: nid_number =====
+            $table->string('nid_number', 25)->nullable()->comment('شماره تذکره شخص (فرمت: 1399-1102-30366)');
+
             $table->tinyInteger('status')->default(1);
             $table->timestamps();
 

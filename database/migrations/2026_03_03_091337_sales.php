@@ -15,6 +15,7 @@ return new class extends Migration
 
             // 🔗 مشتری (از جدول registration عمومی)
             $table->unsignedBigInteger('cust_id');
+            $table->string('customer_nid')->nullable();  
 
             // 🔗 کاربر فروشنده
             $table->unsignedBigInteger('sales_user');
