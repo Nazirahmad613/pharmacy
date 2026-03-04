@@ -27,6 +27,7 @@ export default function RegistrationForm() {
   const [registrations, setRegistrations] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [editingId, setEditingId] = useState(null);
   const ROWS_PER_PAGE = 10;
 
   useEffect(() => {
@@ -59,61 +60,74 @@ export default function RegistrationForm() {
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
+ 
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  if (!form.reg_type || !form.full_name) {
+    toast.error("❌ نوع راجستریشن و نام الزامی است");
+    return;
+  }
 
-    if (!form.reg_type || !form.full_name) {
-      toast.error("❌ نوع راجستریشن و نام الزامی است");
-      return;
-    }
+  if (form.tazkira_number && !/^\d{4}-\d{4}-\d{5}$/.test(form.tazkira_number)) {
+    toast.error("❌ فرمت شماره تذکره معتبر نیست");
+    return;
+  }
 
-    if (form.tazkira_number && !/^\d{4}-\d{4}-\d{5}$/.test(form.tazkira_number)) {
-      toast.error("❌ فرمت شماره تذکره معتبر نیست (مثال: 1399-1102-30366)");
-      return;
-    }
-
-    try {
+  try {
+    if (editingId) {
+      await api.put(`/registrations/${editingId}`, form);
+      toast.success("✅ معلومات با موفقیت تصحیح شد");
+    } else {
       await api.post("/registrations", form);
       toast.success("✅ ثبت موفقانه انجام شد");
-      setForm({
-        reg_type: "",
-        full_name: "",
-        tazkira_number: "",
-        father_name: "",
-        phone: "",
-        gender: "",
-        age: "",
-        blood_group: "",
-        address: "",
-        visit_date: "",
-        note: "",
-        status: 1,
-        department_id: "",
-      });
-      fetchRegistrations();
-    } catch (err) {
-      console.error(err);
-      toast.error("❌ خطا در ثبت معلومات");
     }
-  };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("آیا مطمئن هستید که می‌خواهید این رجستریشن را حذف کنید؟")) return;
-    try {
-      await api.delete(`/registrations/${id}`);
-      toast.success("✅ حذف موفقانه انجام شد");
-      fetchRegistrations();
-    } catch (err) {
-      console.error(err);
-      toast.error("❌ خطا در حذف رجستریشن");
-    }
-  };
+    setForm({
+      reg_type: "",
+      full_name: "",
+      tazkira_number: "",
+      father_name: "",
+      phone: "",
+      gender: "",
+      age: "",
+      blood_group: "",
+      address: "",
+      visit_date: "",
+      note: "",
+      status: 1,
+      department_id: "",
+    });
 
+    setEditingId(null);
+    fetchRegistrations();
+  } catch (err) {
+    console.error(err);
+    toast.error("❌ خطا در ذخیره معلومات");
+  }
+};
+
+
+
+  
+const handleDelete = async (reg_id) => {
+  if (!window.confirm("آیا مطمئن هستید که می‌خواهید این رجستریشن را حذف کنید؟")) return;
+
+  try {
+    await api.delete(`/registrations/${reg_id}`);
+    toast.success("✅ حذف موفقانه انجام شد");
+    fetchRegistrations();
+  } catch (err) {
+    console.error(err);
+    toast.error("❌ خطا در حذف رجستریشن");
+  }
+};
   const handleEdit = (reg) => {
-    setForm({ ...reg });
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  setForm({ ...reg });
+  setEditingId(reg.reg_id);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
+
 
   const filteredRows = useMemo(() => {
     if (!searchTerm.trim()) return registrations;
@@ -341,7 +355,7 @@ export default function RegistrationForm() {
         <table className="w-full text-white border-collapse">
           <thead>
             <tr className="bg-gray-700">
-              <th>نام کامل</th>
+              <th>/ عنوان نام کامل</th>
               <th>شماره تذکره</th>
               <th>نوع</th>
               <th>شماره تماس</th>
@@ -349,41 +363,56 @@ export default function RegistrationForm() {
               <th>عملیات</th>
             </tr>
           </thead>
-          <tbody>
-            {currentRows.length ? (
-              currentRows.map((r) => (
-                <tr key={r.id} className="hover:bg-gray-800 transition-colors">
-                  <td>{r.full_name || "-"}</td>
-                  <td>{r.tazkira_number || "-"}</td>
-                  <td>{r.reg_type || "-"}</td>
-                  <td>{r.phone || "-"}</td>
-                  <td>
-                    {departments.find((d) => d.id === r.department_id)?.name || "-"}
-                  </td>
-                  <td className="flex gap-1">
-                    <button
-                      onClick={() => handleEdit(r)}
-                      className="bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded"
-                    >
-                      تصحیح
-                    </button>
-                    <button
-                      onClick={() => handleDelete(r.id)}
-                      className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded"
-                    >
-                      حذف
-                    </button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="6" style={{ textAlign: "center" }}>
-                  نتیجه‌ای یافت نشد
-                </td>
-              </tr>
-            )}
-          </tbody>
+         <tbody>
+  {currentRows.length ? (
+    currentRows.map((r) => (
+      <tr key={r.reg_id} className="hover:bg-gray-800 transition-colors">
+        <td>{r.full_name || "-"}</td>
+        <td>{r.tazkira_number || "-"}</td>
+        <td>{r.reg_type || "-"}</td>
+        <td>{r.phone || "-"}</td>
+        <td>
+          {departments.find((d) => d.id === r.department_id)?.name || "-"}
+        </td>
+        <td className="flex gap-1">
+          <button
+            onClick={() => handleEdit(r)}
+            style={{
+              backgroundColor: "#facc15",
+              color: "#000",
+              padding: "5px 10px",
+              borderRadius: "5px",
+              border: "none",
+              cursor: "pointer",
+            }}
+          >
+            تصحیح
+          </button>
+
+          <button
+            onClick={() => handleDelete(r.reg_id)}
+            style={{
+              backgroundColor: "#dc2626",
+              color: "#fff",
+              padding: "5px 10px",
+              borderRadius: "5px",
+              border: "none",
+              cursor: "pointer",
+            }}
+          >
+            حذف
+          </button>
+        </td>
+      </tr>
+    ))
+  ) : (
+    <tr>
+      <td colSpan="6" style={{ textAlign: "center" }}>
+        نتیجه‌ای یافت نشد
+      </td>
+    </tr>
+  )}
+</tbody>
         </table>
         {totalPages > 1 && (
           <div className="flex justify-center gap-3 mt-4">

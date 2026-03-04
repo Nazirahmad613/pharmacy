@@ -7,12 +7,11 @@ use App\Models\Category;
 use App\Models\Registrations;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Exception;
 
 class MedicationController extends Controller
 {
     /**
-     * 📋 لیست دواها با کتگوری و حمایت‌کننده
+     * 📋 لیست دواها
      */
     public function index()
     {
@@ -26,42 +25,51 @@ class MedicationController extends Controller
     /**
      * 💾 ثبت دوا جدید
      */
- 
- public function store(Request $request)
-{
-    $categoryTable = (new Category())->getTable();
-    $registrationTable = (new Registrations())->getTable();
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'category_id' => [
+                'required',
+                'integer',
+                Rule::exists('categories', 'category_id')
+            ],
+            'supplier_id' => [
+                'required',
+                'integer',
+                Rule::exists('registrations', 'reg_id')
+                    ->where('reg_type', 'supplier')
+            ],
+            'gen_name' => 'required|string|max:255',
+            'dosage'   => 'required|string|max:255',
+            'type'     => 'required|string|max:255',
+        ]);
 
-    $validated = $request->validate([
-        'category_id' => ['required','integer', Rule::exists($categoryTable,'category_id')],
-        'supplier_id' => ['required','integer', Rule::exists($registrationTable,'reg_id')->where('reg_type','supplier')],
-        'gen_name' => 'required|string|max:255',
-        'dosage'   => 'required|string|max:255',
-        'type'     => 'required|string|max:255',
-    ]);
+        try {
 
-    try {
-        // فقط ثبت دوا، بدون تراکنش و ژورنال
-        $medication = Medication::create($validated);
+            $medication = Medication::create($validated);
 
-        return response()->json([
-            'message' => '✅ دوا با موفقیت ثبت شد',
-            'medication' => Medication::with('category','supplier')->find($medication->med_id)
-        ], 201);
+            return response()->json([
+                'message' => '✅ دوا با موفقیت ثبت شد',
+                'medication' => Medication::with(['category','supplier'])
+                    ->find($medication->med_id)
+            ], 201);
 
-    } catch (\Exception $e) {
-        return response()->json([
-            'error' => '❌ خطا در ثبت دوا',
-            'message' => $e->getMessage()
-        ], 500);
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'error' => '❌ خطا در ثبت دوا',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
-}
 
-
-
+    /**
+     * 🔍 نمایش یک دوا
+     */
     public function show($med_id)
     {
-        $medication = Medication::with(['category', 'supplier'])->find($med_id);
+        $medication = Medication::with(['category', 'supplier'])
+            ->find($med_id);
 
         if (!$medication) {
             return response()->json(['error' => 'دوا پیدا نشد'], 404);
@@ -76,21 +84,24 @@ class MedicationController extends Controller
     public function update(Request $request, $med_id)
     {
         $validated = $request->validate([
-            'category_id' => 'required|exists:categories,category_id',
-
-            // ✅ دوباره فقط supporter
+            'category_id' => [
+                'required',
+                'integer',
+                Rule::exists('categories', 'category_id')
+            ],
             'supplier_id' => [
                 'required',
-                Rule::exists('registrations', 'id')
-                    ->where('reg_type', 'supporter')
+                'integer',
+                Rule::exists('registrations', 'reg_id')
+                    ->where('reg_type', 'supplier')
             ],
-
             'gen_name' => 'required|string|max:255',
             'dosage'   => 'required|string|max:255',
             'type'     => 'required|string|max:255',
         ]);
 
         $medication = Medication::find($med_id);
+
         if (!$medication) {
             return response()->json(['error' => 'دوا پیدا نشد'], 404);
         }
@@ -99,7 +110,8 @@ class MedicationController extends Controller
 
         return response()->json([
             'message' => '✅ دوا با موفقیت ویرایش شد',
-            'medication' => $medication
+            'medication' => Medication::with(['category','supplier'])
+                ->find($med_id)
         ]);
     }
 
@@ -109,12 +121,15 @@ class MedicationController extends Controller
     public function destroy($med_id)
     {
         $medication = Medication::find($med_id);
+
         if (!$medication) {
             return response()->json(['error' => 'دوا پیدا نشد'], 404);
         }
 
         $medication->delete();
 
-        return response()->json(['message' => '✅ دوا با موفقیت حذف شد']);
+        return response()->json([
+            'message' => '✅ دوا با موفقیت حذف شد'
+        ]);
     }
 }

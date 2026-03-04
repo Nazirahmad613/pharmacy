@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import "./MainLayoutjur.css";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const backgrounds = [
   "/backgrounds/bg1.jpg",

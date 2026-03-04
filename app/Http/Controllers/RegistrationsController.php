@@ -50,22 +50,58 @@ class RegistrationsController extends Controller
         );
     }
 
-    public function destroy($reg_id)
-    {
-        $registration = Registrations::find($reg_id);
+   public function update(Request $request, $reg_id)
+{
+    $registration = Registrations::where('reg_id', $reg_id)->first();
 
-        if (! $registration) {
-            return response()->json([
-                'message' => 'رجستریشن یافت نشد.'
-            ], 404);
-        }
-
-        $registration->delete();
-
+    if (!$registration) {
         return response()->json([
-            'message' => 'رجستریشن با موفقیت حذف شد.'
-        ], 200);
+            'message' => 'رجستریشن یافت نشد.'
+        ], 404);
     }
+
+    $validated = $request->validate([
+        'reg_type'     => 'required|string',
+        'full_name'    => 'required|string|max:255',
+        'father_name'  => 'nullable|string|max:255',
+        'phone'        => 'nullable|string|max:50',
+        'gender'       => 'nullable|string',
+        'age'          => 'nullable|integer',
+        'blood_group'  => 'nullable|string|max:10',
+        'address'      => 'nullable|string',
+        'visit_date'   => 'nullable|date',
+        'note'         => 'nullable|string',
+        'department_id'=> 'nullable|exists:departments,id',
+        'tazkira_number' => [
+            'nullable',
+            'regex:/^\d{4}-\d{4}-\d{5}$/'
+        ],
+    ]);
+
+    $registration->update($validated);
+
+    return response()->json([
+        'message' => 'رجستریشن با موفقیت تصحیح شد.',
+        'data' => $registration
+    ], 200);
+}
+
+public function destroy($reg_id)
+{
+    $registration = Registrations::where('reg_id', $reg_id)->first();
+
+    if (!$registration) {
+        return response()->json([
+            'message' => 'رجستریشن یافت نشد.'
+        ], 404);
+    }
+
+    $registration->delete();
+
+    return response()->json([
+        'message' => 'رجستریشن با موفقیت حذف شد.'
+    ], 200);
+}
 
 
 

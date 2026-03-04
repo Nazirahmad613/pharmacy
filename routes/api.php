@@ -121,12 +121,40 @@ Route::middleware('auth:sanctum')->group(function () {
     // ===== Notifications =====
     Route::get('/notifications', [NotificationController::class, 'index']);
 
+
+// لیست دواها
+Route::get('/medications', [MedicationController::class, 'index']);
+
+// ثبت دوا
+Route::post('/medications', [MedicationController::class, 'store']);
+
+// نمایش یک دوا
+Route::get('/medications/{med_id}', [MedicationController::class, 'show']);
+
+// ✏️ تصحیح دوا
+Route::put('/medications/{med_id}', [MedicationController::class, 'update']);
+
+// ❌ حذف دوا
+Route::delete('/medications/{med_id}', [MedicationController::class, 'destroy']);
+
+
+
+
+
+
     // ===== Journals =====
     Route::get('/journals', [JournalController::class, 'index']);
     Route::get('/journals/{id}', [JournalController::class, 'show']);
     Route::post('/journals', [JournalController::class, 'store']);
     Route::put('/journals/{id}', [JournalController::class, 'update']);
     Route::delete('/journals/{id}', [JournalController::class, 'destroy']);
+
+Route::put('/registrations/{reg_id}', [RegistrationsController::class, 'update']);
+Route::delete('/registrations/{reg_id}', [RegistrationsController::class, 'destroy']);
+
+
+
+
 
     // ===== Reports / Views =====
     Route::get('/view-inventory', [ViewInventoryController::class, 'index']);
