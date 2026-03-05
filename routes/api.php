@@ -139,6 +139,15 @@ Route::delete('/medications/{med_id}', [MedicationController::class, 'destroy'])
 
 
 
+// روت های مربوطه به تصیح و حزف و نمایش نسخه 
+
+Route::get('/prescriptions', [PrescriptionController::class,'index']);
+Route::put('/prescriptions/{pres_id}', [PrescriptionController::class,'update']);
+Route::delete('/prescriptions/{pres_id}', [PrescriptionController::class,'destroy']);
+
+
+
+
 
 
 

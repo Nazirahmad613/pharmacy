@@ -47,9 +47,15 @@ export default function PrescriptionForm() {
   const [categories, setCategories] = useState([]);
   const [medications, setMedications] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
-
+const [prescriptionsList, setPrescriptionsList] = useState([]);
   const [formItem, setFormItem] = useState(emptyItem);
   const [prescriptionItems, setPrescriptionItems] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+const itemsPerPage =2; // نمایش 6 نسخه در هر صفحه
+const indexOfLastItem = currentPage * itemsPerPage;
+const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+const currentPrescriptions = prescriptionsList.slice(indexOfFirstItem, indexOfLastItem);
+const totalPages = Math.ceil(prescriptionsList.length / itemsPerPage);
 
   const printRef = useRef(null);
 
@@ -57,6 +63,19 @@ export default function PrescriptionForm() {
     content: () => printRef.current,
     documentTitle: patientInfo?.pres_num || "Prescription",
   });
+
+  useEffect(() => {
+  loadPrescriptions();
+}, []);
+
+const loadPrescriptions = async () => {
+  try {
+    const res = await api.get("/prescriptions");
+    setPrescriptionsList(res.data.data ?? res.data ?? []);
+  } catch (error) {
+    console.error(error);
+  }
+};
 
   useEffect(() => {
     const sum = prescriptionItems.reduce((t, i) => t + Number(i.total_price), 0);
@@ -188,6 +207,7 @@ export default function PrescriptionForm() {
       });
       toast.success("✅ نسخه موفقانه ثبت شد");
       resetForm();
+       loadPrescriptions();  
     } catch (apiError) {
       console.error("API error:", apiError);
       toast.error("❌ خطا در ثبت نسخه");
@@ -214,297 +234,378 @@ export default function PrescriptionForm() {
     }))
   };
 
+  const handleDeletePrescription = async (id) => {
+  if (!confirm("آیا میخواهید این نسخه حذف شود؟")) return;
 
-  return (
-    <MainLayoutjur>
-      <ToastContainer />
+  try {
+    await api.delete(`/prescriptions/${id}`);
+    toast.success("نسخه حذف شد");
+    loadPrescriptions();
+  } catch (error) {
+    toast.error("خطا در حذف نسخه");
+  }
+};
+   const handleEditPrescription = (pres) => {
+  setSelectedPatientId(pres.patient_id);
+  setSelectedDoctorId(pres.doc_id);
+  setPrescriptionDate(pres.pres_date);
+  setDiscount(pres.discount);
+};
 
-       <div className="main-layout">
-        <div className="background-overlay"></div>
+ return (
+  <MainLayoutjur>
+    <ToastContainer />
 
-        <div className="layout-content">
+    <div className="main-layout">
+      <div className="background-overlay"></div>
 
-          {/* ===== معلومات نسخه ===== */}
-          <div className="form-container">
-            <h1>ثبت نسخه جدید</h1>
+      <div className="layout-content">
 
-            <div className="form-grid">
-              <div>
-                <label>شماره نسخه</label>
-                <input
-                  value={patientInfo.pres_num}
-                  onChange={e =>
-                    setPatientInfo({ ...patientInfo, pres_num: e.target.value })
-                  }
-                />
-              </div>
+        {/* ===== معلومات نسخه ===== */}
+        <div className="form-container">
+          <h1>ثبت نسخه جدید</h1>
 
-              <div>
-                <label>مریض</label>
-                <select
-                  value={selectedPatientId}
-                  onChange={e => setSelectedPatientId(e.target.value)}
-                >
-                  <option value="">انتخاب مریض</option>
-                  {patients.map(p => (
-                    <option key={p.reg_id} value={p.reg_id}>
-                      {p.full_name ?? p.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+          <div className="form-grid">
+            <div>
+              <label>شماره نسخه</label>
+              <input
+                value={patientInfo.pres_num}
+                onChange={e =>
+                  setPatientInfo({ ...patientInfo, pres_num: e.target.value })
+                }
+              />
+            </div>
 
-     <div>
-  <label>سن</label>
-  <input value={patientInfo.age} readOnly />
-</div>
+            <div>
+              <label>مریض</label>
+              <select
+                value={selectedPatientId}
+                onChange={e => setSelectedPatientId(e.target.value)}
+              >
+                <option value="">انتخاب مریض</option>
+                {patients.map(p => (
+                  <option key={p.reg_id} value={p.reg_id}>
+                    {p.full_name ?? p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-<div>
-  <label>جنسیت</label>
-  <input value={patientInfo.gender} readOnly />
-</div>
+            <div>
+              <label>سن</label>
+              <input value={patientInfo.age} readOnly />
+            </div>
 
-<div>
-  <label>شماره تماس</label>
-  <input value={patientInfo.phone} readOnly />
-</div>
+            <div>
+              <label>جنسیت</label>
+              <input value={patientInfo.gender} readOnly />
+            </div>
 
-<div>
-  <label>آی‌دی مریض</label>
-  <input value={patientInfo.reg_id} readOnly />
-</div>
+            <div>
+              <label>شماره تماس</label>
+              <input value={patientInfo.phone} readOnly />
+            </div>
 
-<div>
-  <label>شماره تذکره</label>
-  <input value={patientInfo.tazkira_number} readOnly />
-</div>
+            <div>
+              <label>آی‌دی مریض</label>
+              <input value={patientInfo.reg_id} readOnly />
+            </div>
 
-<div>
-  <label>گروه خون</label>
-  <input value={patientInfo.blood_group} readOnly />
-</div>
+            <div>
+              <label>شماره تذکره</label>
+              <input value={patientInfo.tazkira_number} readOnly />
+            </div>
 
-              <div>
-                <label>داکتر</label>
-                <select
-                  value={selectedDoctorId}
-                  onChange={e => setSelectedDoctorId(e.target.value)}
-                >
-                  <option value="">انتخاب داکتر</option>
-                  {doctors.map(d => (
-                    <option key={d.reg_id} value={d.reg_id}>
-                      {d.full_name ?? d.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div>
+              <label>گروه خون</label>
+              <input value={patientInfo.blood_group} readOnly />
+            </div>
 
-              <div>
-                <label>تاریخ نسخه</label>
-                <input
-                  type="date"
-                  value={prescriptionDate}
-                  onChange={e => setPrescriptionDate(e.target.value)}
-                />
-              </div>
+            <div>
+              <label>داکتر</label>
+              <select
+                value={selectedDoctorId}
+                onChange={e => setSelectedDoctorId(e.target.value)}
+              >
+                <option value="">انتخاب داکتر</option>
+                {doctors.map(d => (
+                  <option key={d.reg_id} value={d.reg_id}>
+                    {d.full_name ?? d.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-              <div>
-                <label>مجموع</label>
-                <input value={totalAmount} readOnly />
-              </div>
+            <div>
+              <label>تاریخ نسخه</label>
+              <input
+                type="date"
+                value={prescriptionDate}
+                onChange={e => setPrescriptionDate(e.target.value)}
+              />
+            </div>
 
-              <div>
-                <label>تخفیف</label>
-                <input
-                  value={discount}
-                  onChange={e => setDiscount(+e.target.value)}
-                />
-              </div>
+            <div>
+              <label>مجموع</label>
+              <input value={totalAmount} readOnly />
+            </div>
 
-              <div>
-                <label>خالص</label>
-                <input value={netAmount} readOnly />
-              </div>
+            <div>
+              <label>تخفیف</label>
+              <input
+                value={discount}
+                onChange={e => setDiscount(+e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label>خالص</label>
+              <input value={netAmount} readOnly />
             </div>
           </div>
+        </div>
 
-          {/* ===== فرم آیتم ===== */}
-          <div className="form-container">
-            <h3>افزودن آیتم</h3>
+        {/* ===== فرم آیتم ===== */}
+        <div className="form-container">
+          <h3>افزودن آیتم</h3>
 
-            <div className="form-grid">
-              <div>
-                <label>کتگوری</label>
-                <select
-                  value={formItem.category_id}
-                  onChange={e => handleChange("category_id", e.target.value)}
-                  onKeyDown={handleKeyDown}
-                >
-                  <option value="">انتخاب</option>
-                  {categories.map(c => (
-                    <option key={c.category_id} value={c.category_id}>
-                      {c.category_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+          <div className="form-grid">
+            <div>
+              <label>کتگوری</label>
+              <select
+                value={formItem.category_id}
+                onChange={e => handleChange("category_id", e.target.value)}
+                onKeyDown={handleKeyDown}
+              >
+                <option value="">انتخاب</option>
+                {categories.map(c => (
+                  <option key={c.category_id} value={c.category_id}>
+                    {c.category_name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-              <div>
-                <label>دوا</label>
-                <select
-                  value={formItem.med_id}
-                  onChange={e => handleChange("med_id", e.target.value)}
-                  onKeyDown={handleKeyDown}
-                >
-                  <option value="">انتخاب</option>
-                  {filteredMedications.map(m => (
-                    <option key={m.med_id} value={m.med_id}>
-                      {m.gen_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div>
+              <label>دوا</label>
+              <select
+                value={formItem.med_id}
+                onChange={e => handleChange("med_id", e.target.value)}
+                onKeyDown={handleKeyDown}
+              >
+                <option value="">انتخاب</option>
+                {filteredMedications.map(m => (
+                  <option key={m.med_id} value={m.med_id}>
+                    {m.gen_name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-              <div>
-                <label>حمایت‌کننده</label>
-                <select
-                  value={formItem.supplier_id}
-                  onChange={e => handleChange("supplier_id", e.target.value)}
-                  onKeyDown={handleKeyDown}
-                >
-                  <option value="">انتخاب</option>
-                  {filteredSuppliers.map(s => (
-                    <option key={s.reg_id} value={s.reg_id}>
-                      {s.full_name ?? s.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div>
+              <label>حمایت‌کننده</label>
+              <select
+                value={formItem.supplier_id}
+                onChange={e => handleChange("supplier_id", e.target.value)}
+                onKeyDown={handleKeyDown}
+              >
+                <option value="">انتخاب</option>
+                {filteredSuppliers.map(s => (
+                  <option key={s.reg_id} value={s.reg_id}>
+                    {s.full_name ?? s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-              <div>
-                <label>نوع دوا</label>
-                <input value={formItem.type} readOnly />
-              </div>
+            <div>
+              <label>نوع دوا</label>
+              <input value={formItem.type} readOnly />
+            </div>
 
-              <div>
-                <label>مقدار مصرف</label>
-                <input
-                  value={formItem.dosage}
-                  onChange={e => handleChange("dosage", e.target.value)}
-                  onKeyDown={handleKeyDown}
-                />
-              </div>
+            <div>
+              <label>مقدار مصرف</label>
+              <input
+                value={formItem.dosage}
+                onChange={e => handleChange("dosage", e.target.value)}
+                onKeyDown={handleKeyDown}
+              />
+            </div>
 
-              <div>
-                <label>تعداد</label>
-                <input
-                  type="number"
-                  value={formItem.quantity}
-                  onChange={e => handleChange("quantity", e.target.value)}
-                  onKeyDown={handleKeyDown}
-                />
-              </div>
+            <div>
+              <label>تعداد</label>
+              <input
+                type="number"
+                value={formItem.quantity}
+                onChange={e => handleChange("quantity", e.target.value)}
+                onKeyDown={handleKeyDown}
+              />
+            </div>
 
-              <div>
-                <label>قیمت واحد</label>
-                <input
-                  type="number"
-                  value={formItem.unit_price}
-                  onChange={e => handleChange("unit_price", e.target.value)}
-                  onKeyDown={handleKeyDown}
-                />
-              </div>
+            <div>
+              <label>قیمت واحد</label>
+              <input
+                type="number"
+                value={formItem.unit_price}
+                onChange={e => handleChange("unit_price", e.target.value)}
+                onKeyDown={handleKeyDown}
+              />
+            </div>
 
-              <div>
-                <label>قیمت مجموعی</label>
-                <input value={formItem.total_price} readOnly />
-              </div>
+            <div>
+              <label>قیمت مجموعی</label>
+              <input value={formItem.total_price} readOnly />
+            </div>
 
-              <div>
-                <label>ملاحظات</label>
-                <input
-                  value={formItem.remarks}
-                  onChange={e => handleChange("remarks", e.target.value)}
-                  onKeyDown={handleKeyDown}
-                />
-              </div>
+            <div>
+              <label>ملاحظات</label>
+              <input
+                value={formItem.remarks}
+                onChange={e => handleChange("remarks", e.target.value)}
+                onKeyDown={handleKeyDown}
+              />
             </div>
           </div>
+        </div>
 
-          {/* ===== جدول آیتم‌ها ===== */}
-          {prescriptionItems.length > 0 && (
-            <div className="table-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th>ردیف</th>
-                    <th>کتگوری</th>
-                    <th>دوا</th>
-                    <th>حمایت‌کننده</th>
-                    <th>نوع دوا</th>
-                    <th>مقدار مصرف</th>
-                    <th>تعداد</th>
-                    <th>قیمت واحد</th>
-                    <th>قیمت مجموعی</th>
-                    <th>ملاحظات</th>
-                    <th>عملیات</th>
-                  </tr>
-                </thead>
+        {/* ===== جدول آیتم‌ها ===== */}
+        {prescriptionItems.length > 0 && (
+          <div className="table-container" style={{ marginTop: "10px" }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>ردیف</th>
+                  <th>کتگوری</th>
+                  <th>دوا</th>
+                  <th>حمایت‌کننده</th>
+                  <th>نوع دوا</th>
+                  <th>مقدار مصرف</th>
+                  <th>تعداد</th>
+                  <th>قیمت واحد</th>
+                  <th>قیمت مجموعی</th>
+                  <th>ملاحظات</th>
+                  <th>عملیات</th>
+                </tr>
+              </thead>
+              <tbody>
+                {prescriptionItems.map((item, idx) => {
+                  const med = medications.find(m => m.med_id == item.med_id);
+                  const cat = categories.find(c => c.category_id == item.category_id);
+                  const sup = suppliers.find(s => s.reg_id == item.supplier_id);
 
-                <tbody>
-                  {prescriptionItems.map((item, idx) => {
-                    const med = medications.find(m => m.med_id == item.med_id);
-                    const cat = categories.find(c => c.category_id == item.category_id);
-                    const sup = suppliers.find(s => s.reg_id == item.supplier_id);
+                  const key = `${item.category_id}-${item.med_id}-${item.supplier_id}-${idx}`;
+                  return (
+                    <tr key={key}>
+                      <td>{idx + 1}</td>
+                      <td>{cat?.category_name}</td>
+                      <td>{med?.gen_name}</td>
+                      <td>{sup?.full_name ?? sup?.name}</td>
+                      <td>{item.type}</td>
+                      <td>{item.dosage}</td>
+                      <td>{item.quantity}</td>
+                      <td>{item.unit_price}</td>
+                      <td>{item.total_price}</td>
+                      <td>{item.remarks}</td>
+                      <td>
+                        <button className="delete" onClick={() => handleRemoveItem(idx)}>حذف</button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-                    return (
-                      <tr key={idx}>
-                        <td>{idx + 1}</td>
-                        <td>{cat?.category_name}</td>
-                        <td>{med?.gen_name}</td>
-                        <td>{sup?.full_name ?? sup?.name}</td>
-                        <td>{item.type}</td>
-                        <td>{item.dosage}</td>
-                        <td>{item.quantity}</td>
-                        <td>{item.unit_price}</td>
-                        <td>{item.total_price}</td>
-                        <td>{item.remarks}</td>
-                        <td>
-                          <button
-                            className="delete"
-                            onClick={() => handleRemoveItem(idx)}
-                          >
-                            حذف
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          <button className="edit" onClick={handleSavePrescription}>
-            ثبت نسخه
-          </button>
-
-  <button className="edit" onClick={() => {
+        <div style={{ marginTop: "10px" }}>
+          <button className="edit" onClick={handleSavePrescription}>ثبت نسخه</button>
+          <button className="edit" onClick={() => {
             if (!prescriptionItems.length) {
               toast.error("آیتمی برای چاپ وجود ندارد");
               return;
             }
             handlePrint();
-          }}>
-            پرنت نسخه
-          </button>
+          }}>پرنت نسخه</button>
         </div>
-        
-                <div style={{ display: "none" }}>
+
+        <div style={{ display: "none" }}>
           <PrescriptionPrint ref={printRef} data={printData} />
         </div>
-        </div>
-    </MainLayoutjur>
-  );
+
+        {/* ===== لیست نسخه ها ===== */}
+        {prescriptionsList.length > 0 && (
+          <div className="table-container" style={{ marginTop: "20px" }}>
+            <h3>نسخه های ثبت شده</h3>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>شماره</th>
+                  <th>شماره نسخه</th>
+                  <th>مریض</th>
+                  <th>داکتر</th>
+                  <th>تاریخ</th>
+                  <th>مجموع</th>
+                  <th>تخفیف</th>
+                  <th>خالص</th>
+                  <th>عملیات</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentPrescriptions.map((p, index) => {
+                  const patient = patients.find(x => x.reg_id == p.patient_id);
+                  const doctor = doctors.find(x => x.reg_id == p.doc_id);
+
+                  const key = `${p.id}-${index}`;
+                  return (
+                    <tr key={key}>
+                      <td>{indexOfFirstItem + index + 1}</td>
+                      <td>{p.pres_num}</td>
+                      <td>{patient?.full_name}</td>
+                      <td>{doctor?.full_name}</td>
+                      <td>{p.pres_date}</td>
+                      <td>{p.total_amount}</td>
+                      <td>{p.discount}</td>
+                      <td>{p.net_amount}</td>
+
+                      <td>
+                        <button className="edit" onClick={() => handleEditPrescription(p)}>تصحیح</button>
+                        <button className="delete" onClick={() => handleDeletePrescription(p.id)}>حذف</button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+
+            {/* ===== Pagination ===== */}
+            {totalPages > 1 && (
+              <div style={{ marginTop: "10px", textAlign: "center" }}>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
+                  <button
+                    key={num}
+                    onClick={() => setCurrentPage(num)}
+                    style={{
+                      margin: "0 5px",
+                      padding: "5px 10px",
+                      backgroundColor: currentPage === num ? "#007bff" : "#f0f0f0",
+                      color: currentPage === num ? "#fff" : "#000",
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: "pointer"
+                    }}
+                  >
+                    {num}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+      </div>
+    </div>
+  </MainLayoutjur>
+);
 
   }        

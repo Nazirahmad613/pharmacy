@@ -12,6 +12,15 @@ use Illuminate\Support\Facades\Auth;
 
 class PrescriptionController extends Controller
 {
+ public function index()
+{
+    $prescriptions = \App\Models\Prescription::with('items')->latest()->get();
+
+    return response()->json([
+        'data' => $prescriptions
+    ]);
+}
+
     public function store(Request $request)
     {
         $request->validate([
@@ -40,15 +49,13 @@ class PrescriptionController extends Controller
                 'patient_gender'      => $patient->gender ?? null,
                 'patient_phone'       => $patient->phone ?? null,
                 'patient_blood_group' => $patient->blood_group ?? null,
-
-                'doc_id'   => $request->doc_id,
-                'doc_name' => $doc->full_name ?? $doc->name ?? null,
-
-                'pres_num'     => $newPresNum,
-                'pres_date'    => $request->pres_date,
-                'total_amount' => $request->total_amount,
-                'discount'     => $request->discount ?? 0,
-                'net_amount'   => $request->net_amount,
+                'doc_id'              => $request->doc_id,
+                'doc_name'            => $doc->full_name ?? $doc->name ?? null,
+                'pres_num'            => $newPresNum,
+                'pres_date'           => $request->pres_date,
+                'total_amount'        => $request->total_amount,
+                'discount'            => $request->discount ?? 0,
+                'net_amount'          => $request->net_amount,
             ]);
 
             foreach ($request->items as $item) {
@@ -67,35 +74,59 @@ class PrescriptionController extends Controller
             }
 
             Journal::create([
-                'journal_date' => $request->pres_date,
-                'entry_type'   => 'debit',
-                'amount'       => $request->net_amount,
-                'description'  => 'بدهکاری مریض بابت نسخه شماره ' . $newPresNum,
-                'ref_type'     => 'patient',
-                'ref_id'       => $request->patient_id,
+                'journal_date'  => $request->pres_date,
+                'entry_type'    => 'debit',
+                'amount'        => $request->net_amount,
+                'description'   => 'بدهکاری مریض بابت نسخه شماره '.$newPresNum,
+                'ref_type'      => 'patient',
+                'ref_id'        => $request->patient_id,
                 'tazkira_number'=> $request->tazkira_number ?? $patient->tazkira_number ?? null,
-                'pres_id'      => $prescription->pres_id,
-                'pres_num'     => $newPresNum,
-                'user_id'      => Auth::id(),
+                'pres_id'       => $prescription->pres_id,
+                'pres_num'      => $newPresNum,
+                'user_id'       => Auth::id(),
             ]);
 
             Journal::create([
-                'journal_date' => $request->pres_date,
-                'entry_type'   => 'credit',
-                'amount'       => $request->net_amount,
-                'description'  => 'فروش دوا بابت نسخه شماره ' . $newPresNum,
-                'ref_type'     => 'patient',
-                'ref_id'       => $request->patient_id,
+                'journal_date'  => $request->pres_date,
+                'entry_type'    => 'credit',
+                'amount'        => $request->net_amount,
+                'description'   => 'فروش دوا بابت نسخه شماره '.$newPresNum,
+                'ref_type'      => 'patient',
+                'ref_id'        => $request->patient_id,
                 'tazkira_number'=> $request->tazkira_number ?? $patient->tazkira_number ?? null,
-                'pres_id'      => $prescription->pres_id,
-                'pres_num'     => $newPresNum,
-                'user_id'      => Auth::id(),
+                'pres_id'       => $prescription->pres_id,
+                'pres_num'      => $newPresNum,
+                'user_id'       => Auth::id(),
             ]);
 
         });
 
-        return response()->json([
-            'message' => 'Prescription & Journal saved successfully'
-        ], 201);
+        return response()->json(['message'=>'Prescription saved'],201);
     }
+
+
+
+    
+
+    public function update(Request $request,$id)
+    {
+        $pres = Prescription::findOrFail($id);
+
+        $pres->update([
+            'discount'=>$request->discount,
+            'net_amount'=>$request->net_amount
+        ]);
+
+        return response()->json(['message'=>'updated']);
+    }
+
+
+    public function destroy($id)
+    {
+        PrescriptionItem::where('pres_id',$id)->delete();
+        Prescription::where('pres_id',$id)->delete();
+
+        return response()->json(['message'=>'deleted']);
+    }
+
 }

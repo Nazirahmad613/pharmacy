@@ -196,3 +196,39 @@ button.edit:hover {
   position: relative;
   z-index: 2;
 }
+
+
+/* ارتفاع فرم‌های ورودی */
+.form-grid input,
+.form-grid select {
+  height: 40px; /* ارتفاع پیش‌فرض */
+  padding: 5px 10px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+/* اگر می‌خواهید ارتفاع نصف شود */
+.form-grid.half-height input,
+.form-grid.half-height select {
+  height: 20px;
+  font-size: 12px;
+}
+
+/* افزایش ارتفاع */
+.form-grid.tall input,
+.form-grid.tall select {
+  height: 60px;
+  font-size: 16px;
+}
+
+/* ارتفاع ردیف جدول */
+.table-container table td,
+.table-container table th {
+  padding: 8px 10px; /* می‌توانید کمتر یا بیشتر کنید */
+}
+
+/* برای نصف کردن ردیف‌ها */
+.table-container.table-half table td,
+.table-container.table-half table th {
+  padding: 4px 5px;
+}
