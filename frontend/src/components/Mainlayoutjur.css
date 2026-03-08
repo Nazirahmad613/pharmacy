@@ -21,47 +21,52 @@ html, body {
   position: absolute;
   inset: 0;
   background: rgba(5, 15, 40, 0.85);
+  z-index: 1;
 }
 
 /* ===== محتوا ===== */
 .layout-content {
   position: relative;
   z-index: 2;
-  max-width: 1300px;
+  max-width: 1200px;
   margin: auto;
 }
 
 /* ================= فرم ================= */
+
 .form-container {
   background: #0b1d3a;
-  padding: 12px 25px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+  padding: 5px 8px;          /* کمتر شد */
+  border-radius: 6px;
+  margin-bottom: 10px;       /* کمتر شد */
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
 }
 
 .form-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 12px;
+  gap: 5px;                  /* فاصله کمتر */
   text-align: center;
 }
 
 .form-container label {
   color: #cfe3ff;
-  font-size: 12px;
+  font-size: 11px;           /* کوچکتر */
 }
+
+/* ===== input ها ===== */
 
 .form-container input,
 .form-container select,
 .form-container textarea {
   width: 100%;
-  padding: 4px 6px;
+  height: 26px;              /* ارتفاع کم شد */
+  padding: 2px 4px;
   background: #122b55;
   border: 1px solid #1e3a8a;
   color: #ffffff;
-  border-radius: 5px;
-  font-size: 12px;
+  border-radius: 4px;
+  font-size: 11px;
 }
 
 .form-container ::placeholder {
@@ -69,11 +74,12 @@ html, body {
   opacity: 0.7;
 }
 
-/* ================= جدول‌ها (عمومی و آیتم‌ها) ================= */
+/* ================= جدول‌ها ================= */
+
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 11px;
+  font-size: 10px;          /* کوچکتر */
   color: #ffffff;
 }
 
@@ -82,17 +88,13 @@ table thead th {
   color: #ffffff;
 }
 
+/* ردیف‌ها فشرده */
 table td,
 table th {
-  padding: 8px 6px;
+  padding: 3px 4px;        /* قبلاً 8px بود */
   text-align: center;
-  font-weight: 600;
+  font-weight: 500;
   border-bottom: 1px solid #2c3e8c;
-}
-
-/* حذف background-color ثابت برای tbody td */
-table tbody td {
-  color: #ffffff;
 }
 
 /* hover */
@@ -101,20 +103,22 @@ table tbody tr:hover td {
 }
 
 /* ================= کانتینر جدول ================= */
+
 .table-container {
   background: #0b1d3a;
-  border-radius: 8px;
+  border-radius: 6px;
   overflow: hidden;
-  box-shadow: 0 8px 15px rgba(0,0,0,0.4);
-  width: 90%;
-  margin: 0 auto 20px auto;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+  width: 95%;
+  margin: 0 auto 10px auto;
 }
 
 /* ================= دکمه‌های جدول ================= */
+
 table td button {
-  padding: 3px 6px;
-  border-radius: 4px;
-  font-size: 10px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 9px;
   font-weight: bold;
   cursor: pointer;
   border: none;
@@ -131,104 +135,31 @@ table td button.delete {
 }
 
 /* ================= دکمه ثبت ================= */
+
 button.edit {
   display: block;
-  margin: 25px auto;
+  margin: 10px auto;
   background-color: #2563eb;
   color: #ffffff;
-  height: 32px;
-  width: 160px;
-  border-radius: 6px;
+  height: 28px;
+  width: 140px;
+  border-radius: 5px;
   font-weight: bold;
   border: none;
   cursor: pointer;
+  font-size: 12px;
 }
 
 button.edit:hover {
   background-color: #1e40af;
 }
 
-/* ================= dark-table ================= */
-.dark-table {
-  width: 100%;
-  border-collapse: collapse;
-  color: #ffffff;
-  font-size: 11px;
-}
+/* ===== Toast ===== */
 
-.dark-table thead th {
-  background-color: #1e3a8a;
-  color: #ffffff;
-}
-
-.dark-table td,
-.dark-table th {
-  padding: 8px 6px;
-  text-align: center;
-  font-weight: 600;
-  border-bottom: 1px solid #2c3e8c;
-}
-
-/* حذف background-color ثابت در tbody */
-.dark-table tbody td {
-  color: #ffffff;
-}
-
-.dark-table tbody tr:hover td {
-  background-color: #123b75;
-}
-
-
-/* ===== اصلاح نمایش Toast ===== */
 .Toastify__toast-container {
   z-index: 999999 !important;
 }
 
 .Toastify__toast {
   z-index: 999999 !important;
-}
-
-.background-overlay {
-  z-index: 1;
-}
-
-.layout-content {
-  position: relative;
-  z-index: 2;
-}
-
-
-/* ارتفاع فرم‌های ورودی */
-.form-grid input,
-.form-grid select {
-  height: 40px; /* ارتفاع پیش‌فرض */
-  padding: 5px 10px;
-  font-size: 14px;
-  box-sizing: border-box;
-}
-
-/* اگر می‌خواهید ارتفاع نصف شود */
-.form-grid.half-height input,
-.form-grid.half-height select {
-  height: 20px;
-  font-size: 12px;
-}
-
-/* افزایش ارتفاع */
-.form-grid.tall input,
-.form-grid.tall select {
-  height: 60px;
-  font-size: 16px;
-}
-
-/* ارتفاع ردیف جدول */
-.table-container table td,
-.table-container table th {
-  padding: 8px 10px; /* می‌توانید کمتر یا بیشتر کنید */
-}
-
-/* برای نصف کردن ردیف‌ها */
-.table-container.table-half table td,
-.table-container.table-half table th {
-  padding: 4px 5px;
 }

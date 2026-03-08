@@ -147,5 +147,86 @@ public function store(Request $request)
         return response()->json(['message'=>'Server Error','error'=>$e->getMessage()], 500);
     }
 }
+
+   public function update(Request $request, $sales_id)
+    {
+        DB::beginTransaction();
+
+        try {
+            $sale = Sales::with('items')->where('sales_id', $sales_id)->firstOrFail();
+
+            $totalSales = collect($request->items)->sum(fn($i) => $i['quantity'] * $i['unit_sales']);
+            $discount = $request->discount ?? 0;
+            $netSales = $totalSales - $discount;
+            $totalPaid = min($request->total_paid ?? 0, $netSales);
+
+            // حذف آیتم‌های قبلی و اضافه کردن آیتم‌های جدید
+            $sale->items()->delete();
+            foreach ($request->items as $item) {
+                $sale->items()->create([
+                    'med_id'      => $item['med_id'],
+                    'supplier_id' => $item['supplier_id'],
+                    'category_id' => $item['category_id'],
+                    'type'        => $item['type'],
+                    'quantity'    => $item['quantity'],
+                    'unit_sales'  => $item['unit_sales'],
+                    'total_sales' => $item['quantity'] * $item['unit_sales'],
+                ]);
+            }
+
+            // آپدیت خود فروش
+            $sale->update([
+                'sales_date'    => $request->sales_date,
+                'cust_id'       => $request->cust_id,
+                'tazkira_number'=> $request->tazkira_number ?? null,
+                'total_sales'   => $totalSales,
+                'discount'      => $discount,
+                'net_sales'     => $netSales,
+                'total_paid'    => $totalPaid,
+            ]);
+
+            DB::commit();
+
+            return response()->json(['message' => 'Sale updated successfully']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Sale update error', [
+                'error' => $e->getMessage(),
+                'request' => $request->all(),
+                'sales_id' => $sales_id,
+            ]);
+            return response()->json(['message' => 'Server Error', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    // ❌ حذف فروش
+    public function destroy($sales_id)
+    {
+        DB::beginTransaction();
+
+        try {
+            $sale = Sales::with('items')->where('sales_id', $sales_id)->firstOrFail();
+
+            // حذف آیتم‌ها
+            $sale->items()->delete();
+
+            // حذف ژورنال مرتبط با فروش
+            Journal::where('ref_type', 'sale')->where('ref_id', $sales_id)->delete();
+
+            // حذف خود فروش
+            $sale->delete();
+
+            DB::commit();
+
+            return response()->json(['message' => 'Sale deleted successfully']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Sale delete error', [
+                'error' => $e->getMessage(),
+                'sales_id' => $sales_id,
+            ]);
+            return response()->json(['message' => 'Server Error', 'error' => $e->getMessage()], 500);
+        }
+    }
  
 }

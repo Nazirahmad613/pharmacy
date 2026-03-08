@@ -51,7 +51,8 @@ const [prescriptionsList, setPrescriptionsList] = useState([]);
   const [formItem, setFormItem] = useState(emptyItem);
   const [prescriptionItems, setPrescriptionItems] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-const itemsPerPage =2; // نمایش 6 نسخه در هر صفحه
+  const [editingId, setEditingId] = useState(null);
+const itemsPerPage =4; // نمایش 6 نسخه در هر صفحه
 const indexOfLastItem = currentPage * itemsPerPage;
 const indexOfFirstItem = indexOfLastItem - itemsPerPage;
 const currentPrescriptions = prescriptionsList.slice(indexOfFirstItem, indexOfLastItem);
@@ -181,38 +182,56 @@ const loadPrescriptions = async () => {
       tazkira_number: ""
     });
   };
+ const handleSavePrescription = async () => {
+  if (!selectedPatientId || !selectedDoctorId || prescriptionItems.length === 0) {
+    toast.error("❌ معلومات نسخه ناقص است");
+    return;
+  }
 
-  const handleSavePrescription = async () => {
-    if (!selectedPatientId || !selectedDoctorId || prescriptionItems.length === 0) {
-      toast.error("❌ معلومات نسخه ناقص است");
-      return;
-    }
+  try {
 
-    try {
-      await api.post("/prescriptions", {
-        patient_id: selectedPatientId,
-        pres_num: patientInfo.pres_num,
-        patient_age: patientInfo.age,
-        patient_gender: patientInfo.gender,
-        patient_phone: patientInfo.phone,
-        patient_reg_id: patientInfo.reg_id,
-        patient_blood_group: patientInfo.blood_group,
-        tazkira_number: patientInfo.tazkira_number,
-        doc_id: selectedDoctorId,
-        pres_date: prescriptionDate || new Date().toISOString().slice(0, 10),
-        total_amount: totalAmount,
-        discount,
-        net_amount: netAmount,
-        items: prescriptionItems,
-      });
+    const payload = {
+      patient_id: selectedPatientId,
+      pres_num: patientInfo.pres_num,
+      patient_age: patientInfo.age,
+      patient_gender: patientInfo.gender,
+      patient_phone: patientInfo.phone,
+      patient_reg_id: patientInfo.reg_id,
+      patient_blood_group: patientInfo.blood_group,
+      tazkira_number: patientInfo.tazkira_number,
+      doc_id: selectedDoctorId,
+      pres_date: prescriptionDate || new Date().toISOString().slice(0, 10),
+      total_amount: totalAmount,
+      discount,
+      net_amount: netAmount,
+      items: prescriptionItems,
+    };
+
+    // حالت تصحیح
+    if (editingId) {
+
+      await api.put(`/prescriptions/${editingId}`, payload);
+
+      toast.success("✅ نسخه موفقانه تصحیح شد");
+
+      setEditingId(null);
+
+    } else {
+
+      // ثبت نسخه جدید
+      await api.post("/prescriptions", payload);
+
       toast.success("✅ نسخه موفقانه ثبت شد");
-      resetForm();
-       loadPrescriptions();  
-    } catch (apiError) {
-      console.error("API error:", apiError);
-      toast.error("❌ خطا در ثبت نسخه");
     }
-  };
+
+    resetForm();
+    loadPrescriptions();
+
+  } catch (apiError) {
+    console.error("API error:", apiError);
+    toast.error("❌ خطا در ثبت نسخه");
+  }
+};
 
   const printData = {
     pres_num: patientInfo.pres_num,
@@ -246,10 +265,18 @@ const loadPrescriptions = async () => {
   }
 };
    const handleEditPrescription = (pres) => {
+  setEditingId(pres.pres_id);
+
   setSelectedPatientId(pres.patient_id);
   setSelectedDoctorId(pres.doc_id);
   setPrescriptionDate(pres.pres_date);
   setDiscount(pres.discount);
+  setTotalAmount(pres.total_amount);
+  setNetAmount(pres.net_amount);
+
+  if (pres.items) {
+    setPrescriptionItems(pres.items);
+  }
 };
 
  return (
@@ -518,7 +545,9 @@ const loadPrescriptions = async () => {
         )}
 
         <div style={{ marginTop: "10px" }}>
-          <button className="edit" onClick={handleSavePrescription}>ثبت نسخه</button>
+         <button className="edit" onClick={handleSavePrescription}>
+  {editingId ? "ثبت تصحیح نسخه" : "ثبت نسخه"}
+</button>
           <button className="edit" onClick={() => {
             if (!prescriptionItems.length) {
               toast.error("آیتمی برای چاپ وجود ندارد");
@@ -556,10 +585,10 @@ const loadPrescriptions = async () => {
                   const patient = patients.find(x => x.reg_id == p.patient_id);
                   const doctor = doctors.find(x => x.reg_id == p.doc_id);
 
-                  const key = `${p.id}-${index}`;
+                  const key = `${p.pres_id}-${index}`;
                   return (
                     <tr key={key}>
-                      <td>{indexOfFirstItem + index + 1}</td>
+                      <td>{indexOfFirstItem + index + 1}</td> 
                       <td>{p.pres_num}</td>
                       <td>{patient?.full_name}</td>
                       <td>{doctor?.full_name}</td>
@@ -570,7 +599,12 @@ const loadPrescriptions = async () => {
 
                       <td>
                         <button className="edit" onClick={() => handleEditPrescription(p)}>تصحیح</button>
-                        <button className="delete" onClick={() => handleDeletePrescription(p.id)}>حذف</button>
+                     <button
+  className="delete"
+  onClick={() => handleDeletePrescription(p.pres_id)}
+>
+  حذف
+</button>
                       </td>
                     </tr>
                   );

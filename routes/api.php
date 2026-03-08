@@ -100,9 +100,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/inventory', [InventoryController::class, 'index']);
     Route::post('/inventory', [InventoryController::class, 'store']);
 
-    // ===== Sales =====
-    Route::get('/sales', [SalesController::class, 'index']);
-    Route::post('/sales', [SalesController::class, 'store']);
+   
 
     // ===== Sales Details =====
     Route::get('/sales-details', [SalesDetailsController::class, 'index']);
@@ -146,6 +144,13 @@ Route::put('/prescriptions/{pres_id}', [PrescriptionController::class,'update'])
 Route::delete('/prescriptions/{pres_id}', [PrescriptionController::class,'destroy']);
 
 
+
+
+// ===== Sales =====
+Route::get('/sales', [SalesController::class, 'index']);          // لیست فروشات
+Route::post('/sales', [SalesController::class, 'store']);         // ثبت فروش جدید
+Route::put('/sales/{sales_id}', [SalesController::class, 'update']);    // ✏️ تصحیح/ویرایش فروش
+Route::delete('/sales/{sales_id}', [SalesController::class, 'destroy']); // ❌ حذف فروش
 
 
 

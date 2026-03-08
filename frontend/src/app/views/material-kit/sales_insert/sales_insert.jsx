@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+ import { useState, useEffect, useRef } from "react";
 import MainLayoutjur from "../../../../components/MainLayoutjur";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -10,6 +10,7 @@ export default function SaleForm() {
   const { api } = useAuth();
   const printRef = useRef(null);
   const [salesId, setSalesId] = useState(null);
+  const [editingId, setEditingId] = useState(null);
 
   const handlePrint = useReactToPrint({
     contentRef: printRef,
@@ -25,6 +26,7 @@ export default function SaleForm() {
   const [medications, setMedications] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [salesList, setSalesList] = useState([]);
 
   const [discount, setDiscount] = useState(0);
   const [totalSale, setTotalSale] = useState(0);
@@ -45,23 +47,39 @@ export default function SaleForm() {
   });
 
   const [saleItems, setSaleItems] = useState([]);
-
-  // ✅ شماره تذکره مشتری
   const [customerNID, setCustomerNID] = useState("");
 
-  // ===== محاسبه مجموع فروش =====
+  // pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 4;
+  const indexOfLast = currentPage * itemsPerPage;
+  const indexOfFirst = indexOfLast - itemsPerPage;
+  const currentSales = salesList.slice(indexOfFirst, indexOfLast);
+  const totalPages = Math.ceil(salesList.length / itemsPerPage);
+
+  useEffect(() => {
+    loadSales();
+  }, []);
+
+  const loadSales = async () => {
+    try {
+      const res = await api.get("/sales");
+      setSalesList(res.data ?? []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
     const sum = saleItems.reduce((t, i) => t + Number(i.total_sales || 0), 0);
     setTotalSale(sum);
   }, [saleItems]);
 
-  // ===== محاسبه فروش خالص =====
   useEffect(() => {
     const net = Number(totalSale) - Number(discount || 0);
     setNetSales(net >= 0 ? net : 0);
   }, [totalSale, discount]);
 
-  // ===== محاسبه باقی‌مانده و وضعیت پرداخت =====
   useEffect(() => {
     const rem = Number(netSales) - Number(totalPaid || 0);
     setRemaining(rem >= 0 ? rem : 0);
@@ -71,36 +89,25 @@ export default function SaleForm() {
     else setPaymentStatus("پرداخت کامل شده");
   }, [netSales, totalPaid]);
 
-  // ===== لود داده‌ها =====
   useEffect(() => {
     api.get("/categories").then(res => setCategories(res.data.data ?? res.data));
     api.get("/medications").then(res => setMedications(res.data.data ?? res.data));
-
-    api.get("/registrations")
-      .then(res => {
-        const data = res.data.data ?? res.data ?? [];
-        setSuppliers(data.filter(r => r.reg_type === "supplier"));
-        setCustomers(data.filter(r => r.reg_type === "customer"));
-      })
-      .catch(err => {
-        console.error("Error loading registrations:", err);
-        setSuppliers([]);
-        setCustomers([]);
-      });
+    api.get("/registrations").then(res => {
+      const data = res.data.data ?? res.data ?? [];
+      setSuppliers(data.filter(r => r.reg_type === "supplier"));
+      setCustomers(data.filter(r => r.reg_type === "customer"));
+    });
   }, [api]);
 
-  // ===== بروزرسانی شماره تذکره هنگام انتخاب مشتری =====
   useEffect(() => {
     if (!formItem.cust_id) {
       setCustomerNID("");
       return;
     }
-
     const cust = customers.find(c => Number(c.reg_id) === Number(formItem.cust_id));
     if (cust) setCustomerNID(cust.tazkira_number ?? "");
   }, [formItem.cust_id, customers]);
 
-  // ===== فیلتر دواها و حمایت‌کننده‌ها =====
   const filteredMedications = medications.filter(
     m => Number(m.category_id) === Number(formItem.category_id)
   );
@@ -119,58 +126,50 @@ export default function SaleForm() {
 
   const handleChange = (field, value) => {
     let updated = { ...formItem, [field]: value };
-
     if (field === "category_id") {
       updated.med_id = "";
       updated.supplier_id = "";
       updated.type = "";
     }
-
     if (field === "med_id") {
       const med = medications.find(m => Number(m.med_id) === Number(value));
       updated.type = med?.type ?? "";
       updated.unit_sales = med?.unit_sales ?? "";
       updated.supplier_id = "";
     }
-
     const qty = Number(field === "quantity" ? value : updated.quantity || 0);
     const price = Number(field === "unit_sales" ? value : updated.unit_sales || 0);
     updated.total_sales = qty * price;
-
     setFormItem(updated);
   };
 
   const handleKeyDown = (e) => {
     if (e.key !== "Enter") return;
     e.preventDefault();
-
     if (
       !formItem.cust_id ||
       !formItem.category_id ||
       !formItem.med_id ||
       !formItem.supplier_id ||
       !formItem.quantity ||
-      !formItem.unit_sales 
+      !formItem.unit_sales
     ) {
       toast.error("❌ لطفاً تمام فیلدها را درست پر کنید");
       return;
     }
-
     const med = medications.find(m => Number(m.med_id) === Number(formItem.med_id));
     const cat = categories.find(c => Number(c.category_id) === Number(formItem.category_id));
     const sup = suppliers.find(s => Number(s.reg_id) === Number(formItem.supplier_id));
-
     setSaleItems([
       ...saleItems,
       {
         ...formItem,
         id: Date.now(),
-        med_name: med?.gen_name ?? "-",
+      gen_name: med?.gen_name ?? "-",
         category_name: cat?.category_name ?? "-",
         supplier_name: sup?.full_name ?? sup?.name ?? "-",
       }
     ]);
-
     setFormItem({
       ...formItem,
       category_id: "",
@@ -192,11 +191,10 @@ export default function SaleForm() {
       toast.error("❌ حداقل یک آیتم اضافه کنید");
       return;
     }
-
     const payload = {
       sales_date: saleDate || new Date().toISOString().split("T")[0],
       cust_id: formItem.cust_id,
-      tazkira_number: customerNID, // ✅ اضافه شد
+      tazkira_number: customerNID,
       discount,
       total_paid: totalPaid,
       items: saleItems.map(item => ({
@@ -209,215 +207,367 @@ export default function SaleForm() {
         total_sales: Number(item.total_sales),
       })),
     };
-
     try {
       const res = await api.post("/sales", payload);
       setSalesId(res.data.sale_id);
       toast.success("✅ فروش با موفقیت ثبت شد");
+      loadSales();
     } catch (err) {
       console.error(err);
       toast.error("❌ خطا در ثبت فروش");
     }
   };
+  const handleEditSale = (sale) => {
+  setEditingId(sale.id);
+  setSaleDate(sale.sales_date);
+  setDiscount(sale.discount);
+  setTotalPaid(sale.total_paid);
 
-  const selectedCustomer = customers.find(
-    c => Number(c.reg_id) === Number(formItem.cust_id)
-  );
+  const items = (sale.items ?? []).map((i) => {
+    // پیدا کردن دوا بر اساس med_id
+    const med = medications.find(m => Number(m.med_id) === Number(i.med_id));
+    // پیدا کردن کتگوری بر اساس category_id
+    const cat = categories.find(c => Number(c.category_id) === Number(i.category_id));
+    // پیدا کردن حمایت‌کننده بر اساس supplier_id
+    const sup = suppliers.find(s => Number(s.reg_id) === Number(i.supplier_id));
 
-  const saleData = {
-    sale_number: salesId ?? "-",
-    date: saleDate || new Date().toLocaleDateString(),
-    customer: selectedCustomer?.full_name ?? "-",
-    tazkira_number: customerNID, // ✅ برای پرینت اضافه شد
-    items: saleItems,
-    totalSale,
+    return {
+      id: i.sales_it_id ?? Date.now() + Math.random(), // id یکتا
+      med_id: i.med_id,
+      category_id: i.category_id,
+      supplier_id: i.supplier_id,
+      type: i.type,
+      quantity: i.quantity,
+      unit_sales: i.unit_sales,
+      total_sales: i.total_sales,
+      gen_name: med?.gen_name ?? "-",
+      category_name: cat?.category_name ?? "-",
+      supplier_name: sup?.full_name ?? sup?.name ?? "-",
+    };
+  });
+
+  setSaleItems(items);
+
+  // پر کردن فرم با آیتم اول (یا خالی)
+  if (items.length > 0) {
+    const firstItem = items[0];
+    setFormItem({
+      cust_id: sale.cust_id,
+      category_id: firstItem.category_id,
+      med_id: firstItem.med_id,
+      supplier_id: firstItem.supplier_id,
+      type: firstItem.type,
+      quantity: firstItem.quantity,
+      unit_sales: firstItem.unit_sales,
+      total_sales: firstItem.total_sales,
+    });
+  } else {
+    setFormItem({ cust_id: sale.cust_id });
+  }
+};
+ const handleDeleteSale = async (id) => {
+  if (!confirm("آیا فروش حذف شود؟")) return;
+  try {
+    await api.delete(`/sales/${id}`);
+    toast.success("فروش حذف شد");
+    loadSales();
+  } catch {
+    toast.error("خطا در حذف فروش");
+  }
+};
+const selectedCustomer = customers.find(
+  c => Number(c.reg_id) === Number(formItem.cust_id)
+);
+
+const saleData = {
+  sale_number: salesId ?? "-",
+  date: saleDate || new Date().toLocaleDateString(),
+  customer: selectedCustomer?.full_name ?? "-",
+  tazkira_number: customerNID,
+  items: saleItems,
+  totalSale,
+  discount,
+  netSales,
+  totalPaid,
+  remaining,
+  paymentStatus,
+};
+
+const handleUpdateSale = async () => {
+  if (!editingId) return;
+
+  const payload = {
+    sales_date: saleDate || new Date().toISOString().split("T")[0],
+    cust_id: formItem.cust_id,
+    tazkira_number: customerNID,
     discount,
-    netSales,
-    totalPaid,
-    remaining,
-    paymentStatus,
+    total_paid: totalPaid,
+    items: saleItems.map(item => ({
+      category_id: item.category_id,
+      med_id: item.med_id,
+      supplier_id: item.supplier_id,
+      type: item.type,
+      quantity: Number(item.quantity),
+      unit_sales: Number(item.unit_sales),
+      total_sales: Number(item.total_sales),
+    })),
   };
 
-  return (
-    <MainLayoutjur>
-      <ToastContainer />
+  try {
+    await api.put(`/sales/${editingId}`, payload);
+    toast.success("✅ فروش با موفقیت بروزرسانی شد");
+    setEditingId(null);
+    setSaleItems([]);
+    setFormItem({ cust_id: "", category_id: "", med_id: "", supplier_id: "", type: "", quantity: "", unit_sales: "", total_sales: 0 });
+    loadSales();
+  } catch (err) {
+    console.error(err);
+    toast.error("❌ خطا در بروزرسانی فروش");
+  }
+};
 
-      <div className="main-layout">
-        <div className="background-overlay"></div>
-        <div className="layout-content">
 
-          {/* ===== اطلاعات فروش ===== */}
-          <div className="form-container">
-            <h2 style={{ textAlign: "center", marginBottom: "20px" }}>ثبت فروشات</h2>
 
-            <div className="form-grid">
-              <div>
-                <label>تاریخ فروش</label>
-                <input type="date" value={saleDate} onChange={e => setSaleDate(e.target.value)} />
-              </div>
+ return (
+   <MainLayoutjur>
+     <ToastContainer />
+ 
+     <div className="main-layout">
+       <div className="background-overlay"></div>
+ 
+       <div className="layout-content">
+ 
+         {/* ===== اطلاعات فروش ===== */}
+         <div className="form-container">
+           <h2 style={{ textAlign: "center", marginBottom: "20px" }}>ثبت فروشات</h2>
+ 
+           <div className="form-grid">
+             <div>
+               <label>تاریخ فروش</label>
+               <input type="date" value={saleDate} onChange={e => setSaleDate(e.target.value)} />
+             </div>
+ 
+             <div>
+               <label>مشتری</label>
+               <select value={formItem.cust_id} onChange={e => handleChange("cust_id", e.target.value)}>
+                 <option value="">-- انتخاب مشتری --</option>
+                 {customers.map((c, index) => (
+                   <option key={c.id ?? c.reg_id ?? `cust-${index}`} value={c.id ?? c.reg_id}>
+                     {c.full_name ?? c.name}
+                   </option>
+                 ))}
+               </select>
+             </div>
+ 
+             {/* ✅ نمایش شماره تذکره */}
+             <div>
+               <label>شماره تذکره مشتری</label>
+               <input type="text" value={customerNID} readOnly />
+             </div>
+ 
+             <div>
+               <label>مجموع فروش</label>
+               <input type="number" value={totalSale} readOnly />
+             </div>
+ 
+             <div>
+               <label>تخفیف</label>
+               <input type="number" value={discount} onChange={e => setDiscount(Number(e.target.value))} />
+             </div>
+ 
+             <div>
+               <label>فروش خالص</label>
+               <input type="number" value={netSales} readOnly />
+             </div>
+ 
+             <div>
+               <label>پرداخت اولیه</label>
+               <input type="number" value={totalPaid} onChange={e => setTotalPaid(Number(e.target.value))} />
+             </div>
+ 
+             <div>
+               <label>باقی‌مانده</label>
+               <input type="number" value={remaining} readOnly />
+             </div>
+ 
+             <div>
+               <label>وضعیت پرداخت</label>
+               <input type="text" value={paymentStatus} readOnly />
+             </div>
+           </div>
+         </div>
+ 
+         {/* ===== فرم آیتم‌ها ===== */}
+         <div className="form-container">
+           <h3>افزودن آیتم</h3>
+           <div className="form-grid" onKeyDown={handleKeyDown}>
+             <div>
+               <label>کتگوری</label>
+               <select value={formItem.category_id} onChange={e => handleChange("category_id", e.target.value)}>
+                 <option value="">-- انتخاب کتگوری --</option>
+                 {categories.map(c => (
+                   <option key={c.category_id} value={c.category_id}>{c.category_name}</option>
+                 ))}
+               </select>
+             </div>
+ 
+             <div>
+               <label>دوا</label>
+               <select value={formItem.med_id} onChange={e => handleChange("med_id", e.target.value)}>
+                 <option value="">-- انتخاب دوا --</option>
+                 {filteredMedications.map(m => (
+                   <option key={m.med_id} value={m.med_id}>{m.gen_name}</option>
+                 ))}
+               </select>
+             </div>
+ 
+             <div>
+               <label>حمایت‌کننده</label>
+               <select value={formItem.supplier_id} onChange={e => handleChange("supplier_id", e.target.value)}>
+                 <option value="">-- انتخاب حمایت‌کننده --</option>
+                 {filteredSuppliers.map((s, index) => (
+                   <option key={s.reg_id ?? `sup-${index}`} value={s.reg_id}>
+                     {s.full_name ?? s.name}
+                   </option>
+                 ))}
+               </select>
+             </div>
+ 
+             <div>
+               <label>نوع دوا</label>
+               <input type="text" value={formItem.type} readOnly />
+             </div>
+ 
+             <div>
+               <label>تعداد</label>
+               <input type="number" value={formItem.quantity} onChange={e => handleChange("quantity", e.target.value)} />
+             </div>
+ 
+             <div>
+               <label>قیمت واحد</label>
+               <input type="number" value={formItem.unit_sales} onChange={e => handleChange("unit_sales", e.target.value)} />
+             </div>
+ 
+             <div>
+               <label>قیمت مجموعی</label>
+               <input type="number" value={formItem.total_sales} readOnly />
+             </div>
+           </div>
+         </div>
+ 
+         {/* ===== جدول آیتم‌ها ===== */}
+         {saleItems.length > 0 && (
+           <div className="table-container">
+             <table className="dark-table">
+               <thead>
+                 <tr>
+                   <th>شماره</th>
+                   <th>کتگوری</th>
+                   <th>نام دوا</th>
+                   <th>حمایت‌کننده</th>
+                   <th>نوع دوا</th>
+                   <th>تعداد</th>
+                   <th>قیمت واحد</th>
+                   <th>قیمت مجموعی</th>
+                   <th>عملیات</th>
+                 </tr>
+               </thead>
+               <tbody>
+                 {saleItems.map((item, idx) => (
+                   <tr key={item.id}>
+                     <td>{idx + 1}</td>
+                     <td>{item.category_name}</td>
+                     <td>{item.gen_name}</td>
+                     <td>{item.supplier_name}</td>
+                     <td>{item.type}</td>
+                     <td>{item.quantity}</td>
+                     <td>{item.unit_sales?.toLocaleString()}</td>
+                     <td>{item.total_sales?.toLocaleString()}</td>
+                     <td>
+                       <button className="delete" onClick={() => handleRemoveItem(item.id)}>حذف</button>
+                     </td>
+                   </tr>
+                 ))}
+               </tbody>
+             </table>
+           </div>
+         )}
+ 
+      <button className="edit" onClick={editingId ? handleUpdateSale : handleSaveSale}>
+  {editingId ? "بروزرسانی فروش" : "ثبت فروش"}
+</button>
+ 
+         <button type="button" className="edit" onClick={handlePrint}>
+           چاپ بل فروش
+         </button>
+ 
+         {/* لیست فروشات */}
+ 
+         {salesList.length > 0 && (
+           <div className="table-container" style={{ marginTop: "20px" }}>
+             <h3>فروشات ثبت شده</h3>
+ 
+             <table className="dark-table">
+               <thead>
+                 <tr>
+                   <th>#</th>
+                   <th>تاریخ</th>
+                   <th>مشتری</th>
+                   <th>مجموع</th>
+                   <th>تخفیف</th>
+                   <th>خالص</th>
+                   <th>پرداخت</th>
+                   <th>باقی</th>
+                   <th>وضعیت</th>
+                   <th>عملیات</th>
+                 </tr>
+               </thead>
+ 
+             <tbody>
+  {currentSales.map((s, i) => (
+    <tr key={s.id}>
+      <td>{indexOfFirst + i + 1}</td> {/* شماره ردیف درست در صفحه‌بندی */}
+      <td>{s.sales_date}</td>
+      <td>{s.customer_name}</td>
+      <td>{s.total_sales}</td>
+      <td>{s.discount}</td>
+      <td>{s.net_sales}</td>
+      <td>{s.total_paid}</td>
+      <td>{s.remaining}</td>
+      <td>{s.payment_status}</td>
 
-              <div>
-                <label>مشتری</label>
-                <select value={formItem.cust_id} onChange={e => handleChange("cust_id", e.target.value)}>
-                  <option value="">-- انتخاب مشتری --</option>
-                  {customers.map((c, index) => (
-                    <option key={c.id ?? c.reg_id ?? `cust-${index}`} value={c.id ?? c.reg_id}>
-                      {c.full_name ?? c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* ✅ نمایش شماره تذکره */}
-              <div>
-                <label>شماره تذکره مشتری</label>
-                <input type="text" value={customerNID} readOnly />
-              </div>
-
-              <div>
-                <label>مجموع فروش</label>
-                <input type="number" value={totalSale} readOnly />
-              </div>
-
-              <div>
-                <label>تخفیف</label>
-                <input type="number" value={discount} onChange={e => setDiscount(Number(e.target.value))} />
-              </div>
-
-              <div>
-                <label>فروش خالص</label>
-                <input type="number" value={netSales} readOnly />
-              </div>
-
-              <div>
-                <label>پرداخت اولیه</label>
-                <input type="number" value={totalPaid} onChange={e => setTotalPaid(Number(e.target.value))} />
-              </div>
-
-              <div>
-                <label>باقی‌مانده</label>
-                <input type="number" value={remaining} readOnly />
-              </div>
-
-              <div>
-                <label>وضعیت پرداخت</label>
-                <input type="text" value={paymentStatus} readOnly />
-              </div>
-            </div>
-          </div>
-
-          {/* ===== فرم آیتم‌ها ===== */}
-          <div className="form-container">
-            <h3>افزودن آیتم</h3>
-            <div className="form-grid" onKeyDown={handleKeyDown}>
-              <div>
-                <label>کتگوری</label>
-                <select value={formItem.category_id} onChange={e => handleChange("category_id", e.target.value)}>
-                  <option value="">-- انتخاب کتگوری --</option>
-                  {categories.map(c => (
-                    <option key={c.category_id} value={c.category_id}>{c.category_name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label>دوا</label>
-                <select value={formItem.med_id} onChange={e => handleChange("med_id", e.target.value)}>
-                  <option value="">-- انتخاب دوا --</option>
-                  {filteredMedications.map(m => (
-                    <option key={m.med_id} value={m.med_id}>{m.gen_name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label>حمایت‌کننده</label>
-                <select value={formItem.supplier_id} onChange={e => handleChange("supplier_id", e.target.value)}>
-                  <option value="">-- انتخاب حمایت‌کننده --</option>
-                  {filteredSuppliers.map((s, index) => (
-                    <option key={s.reg_id ?? `sup-${index}`} value={s.reg_id}>
-                      {s.full_name ?? s.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label>نوع دوا</label>
-                <input type="text" value={formItem.type} readOnly />
-              </div>
-
-              <div>
-                <label>تعداد</label>
-                <input type="number" value={formItem.quantity} onChange={e => handleChange("quantity", e.target.value)} />
-              </div>
-
-              <div>
-                <label>قیمت واحد</label>
-                <input type="number" value={formItem.unit_sales} onChange={e => handleChange("unit_sales", e.target.value)} />
-              </div>
-
-              <div>
-                <label>قیمت مجموعی</label>
-                <input type="number" value={formItem.total_sales} readOnly />
-              </div>
-            </div>
-          </div>
-
-          {/* ===== جدول آیتم‌ها ===== */}
-          {saleItems.length > 0 && (
-            <div className="table-container">
-              <table className="dark-table">
-                <thead>
-                  <tr>
-                    <th>شماره</th>
-                    <th>کتگوری</th>
-                    <th>نام دوا</th>
-                    <th>حمایت‌کننده</th>
-                    <th>نوع دوا</th>
-                    <th>تعداد</th>
-                    <th>قیمت واحد</th>
-                    <th>قیمت مجموعی</th>
-                    <th>عملیات</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {saleItems.map((item, idx) => (
-                    <tr key={item.id}>
-                      <td>{idx + 1}</td>
-                      <td>{item.category_name}</td>
-                      <td>{item.med_name}</td>
-                      <td>{item.supplier_name}</td>
-                      <td>{item.type}</td>
-                      <td>{item.quantity}</td>
-                      <td>{item.unit_sales?.toLocaleString()}</td>
-                      <td>{item.total_sales?.toLocaleString()}</td>
-                      <td>
-                        <button className="delete" onClick={() => handleRemoveItem(item.id)}>حذف</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          <button className="edit" onClick={handleSaveSale}>
-            ثبت فروش
-          </button>
-
-          <button type="button" className="edit" onClick={handlePrint}>
-            چاپ بل فروش
-          </button>
-
-        </div>
-
-        {/* ✅ کامپوننت مخفی برای پرنت */}
+      <td>
+        <button className="edit" onClick={() => handleEditSale(s)}>تصحیح</button>
+        <button className="delete" onClick={() => handleDeleteSale(s.id)}>حذف</button>
+      </td>
+    </tr>
+  ))}
+</tbody>
+             </table>
+                <div style={{ marginTop: 15, textAlign: "center" }}>
+                 <button disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>
+                   قبلی
+                 </button>
+ 
+                 <span style={{ margin: "0 10px" }}>
+                   صفحه {currentPage} از {totalPages}
+                 </span>
+ 
+                 <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(currentPage + 1)}>
+                   بعدی
+                 </button>
+               </div>
+           </div>
+ 
+         )}
+ 
         <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
-          <SalePrint ref={printRef} saleData={saleData} />
-        </div>
-
-      </div>
-    </MainLayoutjur>
-  );
-}
+  <SalePrint ref={printRef} saleData={saleData} />
+</div>
+       </div>
+       
+            
+     </div>
+   </MainLayoutjur>
+ );
+  }
