@@ -217,40 +217,34 @@ export default function SaleForm() {
       toast.error("❌ خطا در ثبت فروش");
     }
   };
-  const handleEditSale = (sale) => {
+ const handleEditSale = (sale) => {
+
   setEditingId(sale.id);
   setSaleDate(sale.sales_date);
   setDiscount(sale.discount);
   setTotalPaid(sale.total_paid);
 
-  const items = (sale.items ?? []).map((i) => {
-    // پیدا کردن دوا بر اساس med_id
-    const med = medications.find(m => Number(m.med_id) === Number(i.med_id));
-    // پیدا کردن کتگوری بر اساس category_id
-    const cat = categories.find(c => Number(c.category_id) === Number(i.category_id));
-    // پیدا کردن حمایت‌کننده بر اساس supplier_id
-    const sup = suppliers.find(s => Number(s.reg_id) === Number(i.supplier_id));
+  const items = (sale.items ?? []).map((i) => ({
+    id: i.sales_it_id,
+    med_id: i.med_id,
+    category_id: i.category_id,
+    supplier_id: i.supplier_id,
 
-    return {
-      id: i.sales_it_id ?? Date.now() + Math.random(), // id یکتا
-      med_id: i.med_id,
-      category_id: i.category_id,
-      supplier_id: i.supplier_id,
-      type: i.type,
-      quantity: i.quantity,
-      unit_sales: i.unit_sales,
-      total_sales: i.total_sales,
-      gen_name: med?.gen_name ?? "-",
-      category_name: cat?.category_name ?? "-",
-      supplier_name: sup?.full_name ?? sup?.name ?? "-",
-    };
-  });
+    type: i.type,
+    quantity: i.quantity,
+    unit_sales: i.unit_sales,
+    total_sales: i.total_sales,
+
+    gen_name: i.med_name,
+    category_name: i.category_name,
+    supplier_name: i.supplier_name,
+  }));
 
   setSaleItems(items);
 
-  // پر کردن فرم با آیتم اول (یا خالی)
   if (items.length > 0) {
     const firstItem = items[0];
+
     setFormItem({
       cust_id: sale.cust_id,
       category_id: firstItem.category_id,
@@ -261,10 +255,12 @@ export default function SaleForm() {
       unit_sales: firstItem.unit_sales,
       total_sales: firstItem.total_sales,
     });
-  } else {
-    setFormItem({ cust_id: sale.cust_id });
   }
 };
+
+
+
+
  const handleDeleteSale = async (id) => {
   if (!confirm("آیا فروش حذف شود؟")) return;
   try {

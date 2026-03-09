@@ -2,16 +2,13 @@
 import MainLayoutjur from "../../../../components/MainLayoutjur";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useAuth } from "app/contexts/AuthContext";
 import { useReactToPrint } from "react-to-print";
 import PrescriptionPrint from "../PrescriptionPrint";
-import { useAuth } from "app/contexts/AuthContext";
 
 export default function PrescriptionForm() {
   const { api } = useAuth();
-
-  useEffect(() => {
-    document.title = ".";
-  }, []);
+  const printRef = useRef(null);
 
   const emptyItem = {
     category_id: "",
@@ -47,18 +44,18 @@ export default function PrescriptionForm() {
   const [categories, setCategories] = useState([]);
   const [medications, setMedications] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
-const [prescriptionsList, setPrescriptionsList] = useState([]);
+  const [prescriptionsList, setPrescriptionsList] = useState([]);
   const [formItem, setFormItem] = useState(emptyItem);
   const [prescriptionItems, setPrescriptionItems] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
   const [editingId, setEditingId] = useState(null);
-const itemsPerPage =4; // نمایش 6 نسخه در هر صفحه
-const indexOfLastItem = currentPage * itemsPerPage;
-const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-const currentPrescriptions = prescriptionsList.slice(indexOfFirstItem, indexOfLastItem);
-const totalPages = Math.ceil(prescriptionsList.length / itemsPerPage);
 
-  const printRef = useRef(null);
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 4;
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentPrescriptions = prescriptionsList.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(prescriptionsList.length / itemsPerPage);
 
   const handlePrint = useReactToPrint({
     content: () => printRef.current,
@@ -66,20 +63,31 @@ const totalPages = Math.ceil(prescriptionsList.length / itemsPerPage);
   });
 
   useEffect(() => {
-  loadPrescriptions();
-}, []);
+    document.title = ".";
+    api.get("/registrations").then(res => {
+      const data = res.data.data ?? res.data ?? [];
+      setPatients(data.filter(r => r.reg_type === "patient"));
+      setDoctors(data.filter(r => r.reg_type === "doctor"));
+      setSuppliers(data.filter(r => r.reg_type === "supplier"));
+    });
+    api.get("/categories").then(res => setCategories(res.data.data ?? res.data));
+    api.get("/medications").then(res => setMedications(res.data.data ?? res.data));
+    loadPrescriptions();
+  }, []);
 
-const loadPrescriptions = async () => {
-  try {
-    const res = await api.get("/prescriptions");
-    setPrescriptionsList(res.data.data ?? res.data ?? []);
-  } catch (error) {
-    console.error(error);
-  }
-};
+  const loadPrescriptions = async () => {
+    try {
+      const res = await api.get("/prescriptions");
+      const list = res.data?.data ?? res.data ?? [];
+      setPrescriptionsList(list);
+    } catch (error) {
+      console.error("Load prescriptions error:", error);
+      toast.error("خطا در دریافت نسخه ها");
+    }
+  };
 
   useEffect(() => {
-    const sum = prescriptionItems.reduce((t, i) => t + Number(i.total_price), 0);
+    const sum = prescriptionItems.reduce((t, i) => t + Number(i.total_price || 0), 0);
     setTotalAmount(sum);
   }, [prescriptionItems]);
 
@@ -88,22 +96,9 @@ const loadPrescriptions = async () => {
   }, [totalAmount, discount]);
 
   useEffect(() => {
-    api.get("/registrations").then(res => {
-      const data = res.data.data ?? res.data ?? [];
-      setPatients(data.filter(r => r.reg_type === "patient"));
-      setDoctors(data.filter(r => r.reg_type === "doctor"));
-      setSuppliers(data.filter(r => r.reg_type === "supplier"));
-    });
-
-    api.get("/categories").then(res => setCategories(res.data.data ?? res.data));
-    api.get("/medications").then(res => setMedications(res.data.data ?? res.data));
-  }, [api]);
-
-  useEffect(() => {
     if (!selectedPatientId) return;
     const p = patients.find(x => x.reg_id == selectedPatientId);
     if (!p) return;
-
     setPatientInfo({
       age: p.age ?? "",
       gender: p.gender ?? "",
@@ -148,47 +143,29 @@ const loadPrescriptions = async () => {
   };
 
   const handleKeyDown = e => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      if (!formItem.category_id || !formItem.med_id || !formItem.supplier_id || Number(formItem.quantity) <= 0) {
-        toast.error("❌ معلومات آیتم کامل نیست");
-        return;
-      }
-      setPrescriptionItems(prev => [...prev, { ...formItem }]);
-      setFormItem({ ...emptyItem });
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    if (!formItem.category_id || !formItem.med_id || !formItem.supplier_id || Number(formItem.quantity) <= 0) {
+      toast.error("❌ اطلاعات آیتم کامل نیست");
+      return;
     }
-  };
 
-  const handleRemoveItem = index => {
-    setPrescriptionItems(prev => prev.filter((_, i) => i !== index));
-  };
+    // آیتم جدید
+    const newItem = { ...formItem, id: Date.now() };
 
-  const resetForm = () => {
-    setSelectedPatientId("");
-    setSelectedDoctorId("");
-    setPrescriptionDate("");
-    setDiscount(0);
-    setTotalAmount(0);
-    setNetAmount(0);
-    setPrescriptionItems([]);
+    setPrescriptionItems(prev => [...prev, newItem]);
     setFormItem({ ...emptyItem });
-    setPatientInfo({
-      age: "",
-      gender: "",
-      phone: "",
-      blood_group: "",
-      reg_id: "",
-      pres_num: "",
-      tazkira_number: ""
-    });
   };
- const handleSavePrescription = async () => {
-  if (!selectedPatientId || !selectedDoctorId || prescriptionItems.length === 0) {
-    toast.error("❌ معلومات نسخه ناقص است");
-    return;
-  }
 
-  try {
+  const handleRemoveItem = id => {
+    setPrescriptionItems(prev => prev.filter(item => item.id !== id));
+  };
+
+  const handleSavePrescription = async () => {
+    if (!selectedPatientId || !selectedDoctorId || prescriptionItems.length === 0) {
+      toast.error("❌ اطلاعات نسخه ناقص است");
+      return;
+    }
 
     const payload = {
       patient_id: selectedPatientId,
@@ -200,38 +177,110 @@ const loadPrescriptions = async () => {
       patient_blood_group: patientInfo.blood_group,
       tazkira_number: patientInfo.tazkira_number,
       doc_id: selectedDoctorId,
-      pres_date: prescriptionDate || new Date().toISOString().slice(0, 10),
+      pres_date: prescriptionDate || new Date().toISOString().slice(0,10),
       total_amount: totalAmount,
       discount,
       net_amount: netAmount,
-      items: prescriptionItems,
+      items: prescriptionItems.map(item => ({
+        category_id: item.category_id,
+        med_id: item.med_id,
+        supplier_id: item.supplier_id,
+        type: item.type,
+        dosage: item.dosage,
+        quantity: Number(item.quantity),
+        unit_price: Number(item.unit_price),
+        total_price: Number(item.total_price),
+        remarks: item.remarks
+      }))
     };
 
-    // حالت تصحیح
-    if (editingId) {
+    try {
+      if (editingId) {
+        await api.put(`/prescriptions/${editingId}`, payload);
+        toast.success("✅ نسخه با موفقیت بروزرسانی شد");
+        setEditingId(null);
+      } else {
+        await api.post("/prescriptions", payload);
+        toast.success("✅ نسخه با موفقیت ثبت شد");
+      }
 
-      await api.put(`/prescriptions/${editingId}`, payload);
+      setPrescriptionItems([]);
+      setFormItem({ ...emptyItem });
+      setSelectedPatientId("");
+      setSelectedDoctorId("");
+      setPrescriptionDate("");
+      setDiscount(0);
+      setTotalAmount(0);
+      setNetAmount(0);
+      setPatientInfo({
+        age: "",
+        gender: "",
+        phone: "",
+        blood_group: "",
+        reg_id: "",
+        pres_num: "",
+        tazkira_number: ""
+      });
 
-      toast.success("✅ نسخه موفقانه تصحیح شد");
-
-      setEditingId(null);
-
-    } else {
-
-      // ثبت نسخه جدید
-      await api.post("/prescriptions", payload);
-
-      toast.success("✅ نسخه موفقانه ثبت شد");
+      loadPrescriptions();
+      setCurrentPage(1);
+    } catch (error) {
+      console.error(error);
+      toast.error("❌ خطا در ذخیره نسخه");
     }
+  };
 
-    resetForm();
-    loadPrescriptions();
+  const handleEditPrescription = (pres) => {
+    setEditingId(pres.pres_id);
+    setSelectedPatientId(pres.patient_id);
+    setSelectedDoctorId(pres.doc_id);
+    setPrescriptionDate(pres.pres_date);
+    setDiscount(pres.discount);
+    setTotalAmount(pres.total_amount);
+    setNetAmount(pres.net_amount);
 
-  } catch (apiError) {
-    console.error("API error:", apiError);
-    toast.error("❌ خطا در ثبت نسخه");
-  }
-};
+    const items = (pres.items ?? []).map(i => ({
+      id: i.pres_it_id,
+      category_id: i.category_id,
+      med_id: i.med_id,
+      supplier_id: i.supplier_id,
+      type: i.type,
+      dosage: i.dosage,
+      quantity: i.quantity,
+      unit_price: i.unit_price,
+      total_price: i.total_price,
+      remarks: i.remarks
+    }));
+    setPrescriptionItems(items);
+
+    if (items.length > 0) {
+      const firstItem = items[0];
+      setFormItem({
+        category_id: firstItem.category_id,
+        med_id: firstItem.med_id,
+        supplier_id: firstItem.supplier_id,
+        type: firstItem.type,
+        dosage: firstItem.dosage,
+        quantity: firstItem.quantity,
+        unit_price: firstItem.unit_price,
+        total_price: firstItem.total_price,
+        remarks: firstItem.remarks
+      });
+    }
+  };
+
+  const handleDeletePrescription = async (id) => {
+    if (!confirm("آیا می‌خواهید این نسخه حذف شود؟")) return;
+    try {
+      await api.delete(`/prescriptions/${id}`);
+      toast.success("نسخه حذف شد");
+      loadPrescriptions();
+      setCurrentPage(1);
+    } catch (error) {
+      console.error(error);
+      toast.error("خطا در حذف نسخه");
+    }
+  };
 
   const printData = {
     pres_num: patientInfo.pres_num,
@@ -252,32 +301,6 @@ const loadPrescriptions = async () => {
       supplier_name: suppliers.find(s => s.reg_id == item.supplier_id)?.full_name ?? "-"
     }))
   };
-
-  const handleDeletePrescription = async (id) => {
-  if (!confirm("آیا میخواهید این نسخه حذف شود؟")) return;
-
-  try {
-    await api.delete(`/prescriptions/${id}`);
-    toast.success("نسخه حذف شد");
-    loadPrescriptions();
-  } catch (error) {
-    toast.error("خطا در حذف نسخه");
-  }
-};
-   const handleEditPrescription = (pres) => {
-  setEditingId(pres.pres_id);
-
-  setSelectedPatientId(pres.patient_id);
-  setSelectedDoctorId(pres.doc_id);
-  setPrescriptionDate(pres.pres_date);
-  setDiscount(pres.discount);
-  setTotalAmount(pres.total_amount);
-  setNetAmount(pres.net_amount);
-
-  if (pres.items) {
-    setPrescriptionItems(pres.items);
-  }
-};
 
  return (
   <MainLayoutjur>
@@ -562,7 +585,7 @@ const loadPrescriptions = async () => {
         </div>
 
         {/* ===== لیست نسخه ها ===== */}
-        {prescriptionsList.length > 0 && (
+        {prescriptionsList && (
           <div className="table-container" style={{ marginTop: "20px" }}>
             <h3>نسخه های ثبت شده</h3>
 

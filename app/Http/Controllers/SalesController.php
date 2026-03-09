@@ -11,42 +11,53 @@ use Illuminate\Support\Facades\Auth;
 
 class SalesController extends Controller
 {
+   
     public function index()
-    {
-        $sales = Sales::with([
-            'customer',
-            'items.supplier',
-            'items.medication',
-            'items.category',
-        ])->get()->map(function ($sale) {
-            return [
-                'id'            => $sale->sales_id, // مهم: id با ref_id در Journal هماهنگ است
-                'sales_date'    => $sale->sales_date,
-                'customer_name' => $sale->customer->full_name ?? '-',
-                'total_sales'   => $sale->total_sales,
-                'discount'      => $sale->discount,
-                'net_sales'     => $sale->net_sales,
-                'total_paid'    => $sale->total_paid,
-                'remaining'     => $sale->remaining_amount,
-                'payment_status'=> $sale->payment_status,
-                'items'         => $sale->items->map(function($item) {
-                    return [
-                        'med_id'        => $item->med_id,
-                        'med_name'      => $item->medication->med_name ?? '-',
-                        'category_name' => $item->category->category_name ?? '-',
-                        'supplier_name' => $item->supplier->full_name ?? '-',
-                        'type'          => $item->type,
-                        'quantity'      => $item->quantity,
-                        'unit_sales'    => $item->unit_sales,
-                        'total_sales'   => $item->total_sales,
-                      
-                    ];
-                }),
-            ];
-        });
+{
+    $sales = Sales::with([
+        'customer',
+        'items.supplier',
+        'items.medication',
+        'items.category',
+    ])->get()->map(function ($sale) {
 
-        return response()->json($sales);
-    }
+        return [
+            'id'            => $sale->sales_id,
+            'sales_date'    => $sale->sales_date,
+            'cust_id'       => $sale->cust_id,
+            'tazkira_number'=> $sale->tazkira_number,
+
+            'customer_name' => $sale->customer->full_name ?? '-',
+
+            'total_sales'   => $sale->total_sales,
+            'discount'      => $sale->discount,
+            'net_sales'     => $sale->net_sales,
+            'total_paid'    => $sale->total_paid,
+            'remaining'     => $sale->remaining_amount,
+            'payment_status'=> $sale->payment_status,
+
+            'items' => $sale->items->map(function ($item) {
+                return [
+                    'sales_it_id'  => $item->sales_it_id, // مهم
+                    'med_id'       => $item->med_id,
+                    'category_id'  => $item->category_id,
+                    'supplier_id'  => $item->supplier_id,
+
+                    'med_name'     => $item->medication->gen_name ?? '-',
+                    'category_name'=> $item->category->category_name ?? '-',
+                    'supplier_name'=> $item->supplier->full_name ?? '-',
+
+                    'type'         => $item->type,
+                    'quantity'     => $item->quantity,
+                    'unit_sales'   => $item->unit_sales,
+                    'total_sales'  => $item->total_sales,
+                ];
+            }),
+        ];
+    });
+
+    return response()->json($sales);
+}
 public function store(Request $request)
 {
     $validated = $request->validate([

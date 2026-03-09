@@ -38,4 +38,10 @@ class PrescriptionItem extends Model
     {
         return $this->belongsTo(Registrations::class, 'supplier_id', 'reg_id');
     }
+
+    // ← اضافه شد
+    public function category()
+    {
+        return $this->belongsTo(Category::class, 'category_id', 'category_id');
+    }
 }
