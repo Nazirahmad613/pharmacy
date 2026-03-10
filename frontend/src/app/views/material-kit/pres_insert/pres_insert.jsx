@@ -1,4 +1,4 @@
- import { useState, useEffect, useRef } from "react";
+  import { useState, useEffect, useRef } from "react";
 import MainLayoutjur from "../../../../components/MainLayoutjur";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -49,7 +49,6 @@ export default function PrescriptionForm() {
   const [prescriptionItems, setPrescriptionItems] = useState([]);
   const [editingId, setEditingId] = useState(null);
 
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 4;
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -110,13 +109,17 @@ export default function PrescriptionForm() {
     });
   }, [selectedPatientId, patients]);
 
-  const filteredMedications = medications.filter(
-    m => Number(m.category_id) === Number(formItem.category_id)
-  );
+  const filteredMedications = editingId && prescriptionItems.length > 0
+    ? medications.filter(m => prescriptionItems.some(item => item.med_id == m.med_id))
+    : medications.filter(m => Number(m.category_id) === Number(formItem.category_id));
+
   const selectedMedication = medications.find(m => Number(m.med_id) === Number(formItem.med_id));
-  const filteredSuppliers = selectedMedication
-    ? suppliers.filter(s => s.reg_id == selectedMedication.supplier_id)
-    : [];
+
+  const filteredSuppliers = editingId && prescriptionItems.length > 0
+    ? suppliers.filter(s => prescriptionItems.some(item => item.supplier_id == s.reg_id))
+    : selectedMedication
+      ? suppliers.filter(s => s.reg_id == selectedMedication.supplier_id)
+      : [];
 
   const handleChange = (field, value) => {
     let updated = { ...formItem, [field]: value };
@@ -150,7 +153,6 @@ export default function PrescriptionForm() {
       return;
     }
 
-    // آیتم جدید
     const newItem = { ...formItem, id: Date.now() };
 
     setPrescriptionItems(prev => [...prev, newItem]);
@@ -301,7 +303,6 @@ export default function PrescriptionForm() {
       supplier_name: suppliers.find(s => s.reg_id == item.supplier_id)?.full_name ?? "-"
     }))
   };
-
  return (
   <MainLayoutjur>
     <ToastContainer />
@@ -538,30 +539,35 @@ export default function PrescriptionForm() {
                 </tr>
               </thead>
               <tbody>
-                {prescriptionItems.map((item, idx) => {
-                  const med = medications.find(m => m.med_id == item.med_id);
-                  const cat = categories.find(c => c.category_id == item.category_id);
-                  const sup = suppliers.find(s => s.reg_id == item.supplier_id);
+          {prescriptionItems.map((item, idx) => {
+  const med = medications.find(m => m.med_id == item.med_id);
+  const cat = categories.find(c => c.category_id == item.category_id);
+  const sup = suppliers.find(s => s.reg_id == item.supplier_id);
 
-                  const key = `${item.category_id}-${item.med_id}-${item.supplier_id}-${idx}`;
-                  return (
-                    <tr key={key}>
-                      <td>{idx + 1}</td>
-                      <td>{cat?.category_name}</td>
-                      <td>{med?.gen_name}</td>
-                      <td>{sup?.full_name ?? sup?.name}</td>
-                      <td>{item.type}</td>
-                      <td>{item.dosage}</td>
-                      <td>{item.quantity}</td>
-                      <td>{item.unit_price}</td>
-                      <td>{item.total_price}</td>
-                      <td>{item.remarks}</td>
-                      <td>
-                        <button className="delete" onClick={() => handleRemoveItem(idx)}>حذف</button>
-                      </td>
-                    </tr>
-                  );
-                })}
+  const key = `${item.category_id}-${item.med_id}-${item.supplier_id}-${idx}`;
+  return (
+    <tr key={key}>
+      <td>{idx + 1}</td>
+      <td>{cat?.category_name}</td>
+      <td>{med?.gen_name}</td>
+      <td>{sup?.full_name ?? sup?.name}</td>
+      <td>{item.type}</td>
+      <td>{item.dosage}</td>
+      <td>{item.quantity}</td>
+      <td>{item.unit_price}</td>
+      <td>{item.total_price}</td>
+      <td>{item.remarks}</td>
+      <td>
+        <button
+          className="delete"
+          onClick={() => handleRemoveItem(item.id)}
+        >
+          حذف
+        </button>
+      </td>
+    </tr>
+  );
+})}
               </tbody>
             </table>
           </div>
@@ -621,13 +627,21 @@ export default function PrescriptionForm() {
                       <td>{p.net_amount}</td>
 
                       <td>
-                        <button className="edit" onClick={() => handleEditPrescription(p)}>تصحیح</button>
-                     <button
-  className="delete"
-  onClick={() => handleDeletePrescription(p.pres_id)}
->
-  حذف
-</button>
+                 <td>
+  <button
+    className="edit"
+    onClick={() => handleEditPrescription(p)}
+  >
+    تصحیح
+  </button>
+
+  <button
+    className="delete"
+    onClick={() => handleDeletePrescription(p.pres_id)}
+  >
+    حذف
+  </button>
+</td>
                       </td>
                     </tr>
                   );

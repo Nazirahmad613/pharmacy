@@ -22,6 +22,10 @@ class Journal extends Model
         'user_id',
         'pres_num',
         'pres_id',
+        'doc_id',
+        'cust_id',
+        'supplier_id',
+        'med_id',
     ];
 
     protected $casts = [
