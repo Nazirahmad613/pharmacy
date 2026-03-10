@@ -26,6 +26,7 @@ class Journal extends Model
         'cust_id',
         'supplier_id',
         'med_id',
+        'parchase_id',
     ];
 
     protected $casts = [

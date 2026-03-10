@@ -254,16 +254,7 @@ export default function JournalPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("آیا از حذف این ژورنال مطمئن هستید؟")) return;
-    try {
-      await api.delete(`/journals/${id}`);
-      toast.success("ژورنال حذف شد");
-      fetchData();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "خطا در حذف");
-    }
-  };
+ 
 
   const handlePrint = (row) => {
     const printWindow = window.open("", "_blank");
@@ -402,7 +393,7 @@ export default function JournalPage() {
                   <tr key={row.id} style={{ backgroundColor: bgColor, transition: "0.2s", color: "#fff" }}>
                     <td className="flex gap-1">
                       <button onClick={() => handleEdit(row.id)} className="bg-yellow-600 px-2 py-1 rounded hover:bg-yellow-700">تصحیح</button>
-                      <button onClick={() => handleDelete(row.id)} className="bg-red-600 px-2 py-1 rounded hover:bg-red-700">حذف</button>
+                      
                       <button onClick={() => handlePrint(row)} className="bg-green-600 px-2 py-1 rounded hover:bg-green-700">پرینت</button>
                     </td>
                     <td>{row.date || "-"}</td>

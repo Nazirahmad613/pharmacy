@@ -112,10 +112,25 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/categories', [CategoryController::class, 'index']);
     Route::post('/categories', [CategoryController::class, 'store']);
 
-    // ===== Purchases =====
-    Route::get('/parchases', [ParchasesController::class, 'index']);
-    Route::post('/parchases', [ParchasesController::class, 'store']);
+ 
+// مسیرهای API خریدها
+Route::prefix('parchases')->group(function () {
+    
+    // نمایش همه خریدها
+    Route::get('/', [ParchasesController::class, 'index']);
 
+    // ثبت خرید جدید
+    Route::post('/', [ParchasesController::class, 'store']);
+
+    // نمایش یک خرید (اختیاری)
+    Route::get('/{parchaseid}', [ParchasesController::class, 'show']);
+
+    // تصحیح خرید
+    Route::put('/{parchaseid}', [ParchasesController::class, 'update']); // یا PATCH
+
+    // حذف خرید
+    Route::delete('/{parchaseid}', [ParchasesController::class, 'destroy']);
+});
     // ===== Notifications =====
     Route::get('/notifications', [NotificationController::class, 'index']);
 
@@ -161,7 +176,7 @@ Route::delete('/sales/{sales_id}', [SalesController::class, 'destroy']); // ❌ 
     Route::get('/journals/{id}', [JournalController::class, 'show']);
     Route::post('/journals', [JournalController::class, 'store']);
     Route::put('/journals/{id}', [JournalController::class, 'update']);
-    Route::delete('/journals/{id}', [JournalController::class, 'destroy']);
+    
 
 Route::put('/registrations/{reg_id}', [RegistrationsController::class, 'update']);
 Route::delete('/registrations/{reg_id}', [RegistrationsController::class, 'destroy']);

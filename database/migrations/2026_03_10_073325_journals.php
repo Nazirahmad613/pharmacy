@@ -42,6 +42,7 @@ return new class extends Migration {
         $table->unsignedBigInteger('supplier_id')->nullable();
         $table->unsignedBigInteger('med_id')->nullable();
         $table->unsignedBigInteger('pres_id')->nullable();
+        $table->unsignedBigInteger('parchase_id')->nullable();
 
         // کاربر ثبت کننده
         $table->unsignedBigInteger('user_id')->nullable();
@@ -91,6 +92,11 @@ return new class extends Migration {
         $table->foreign('pres_num')
               ->references('pres_num')
               ->on('prescriptions')
+              ->nullOnDelete();
+
+        $table->foreign('parchase_id')
+              ->references('parchase_id')
+              ->on('parchases')
               ->nullOnDelete();
     });
 }
