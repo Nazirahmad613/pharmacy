@@ -176,7 +176,7 @@ Route::delete('/sales/{sales_id}', [SalesController::class, 'destroy']); // ❌ 
     Route::get('/journals/{id}', [JournalController::class, 'show']);
     Route::post('/journals', [JournalController::class, 'store']);
     Route::put('/journals/{id}', [JournalController::class, 'update']);
-    
+    Route::post('journals/upsert/{id?}', [JournalController::class, 'upsert']);
 
 Route::put('/registrations/{reg_id}', [RegistrationsController::class, 'update']);
 Route::delete('/registrations/{reg_id}', [RegistrationsController::class, 'destroy']);

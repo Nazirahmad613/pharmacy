@@ -149,8 +149,55 @@ public function destroy($id)
         return response()->json(['message' => 'خطا در حذف ژورنال.'], 500);
     }
 }
+ public function upsert(Request $request, $id = null)
+{
+    $validated = $request->validate([
+        'journal_date' => 'required|date',
+        'description'  => 'nullable|string|max:1000',
+        'entry_type'   => ['required', Rule::in(['debit','credit'])],
+        'amount'       => 'required|numeric|min:0.01',
+        'ref_type'     => 'required|string',
+        'ref_id'       => 'required|integer',
+        'pres_id'      => 'nullable|integer',
+    ]);
 
+    $reg = Registrations::where('reg_type', $validated['ref_type'])
+        ->where('reg_id', $validated['ref_id'])
+        ->first();
 
+    if (! $reg && !in_array($validated['ref_type'], ['sale','parchase'])) {
+        return response()->json(['message' => 'رویداد انتخاب‌شده معتبر نیست.'], 422);
+    }
+
+    if ($id) {
+        // ⚡ آپدیت رکورد موجود
+        $journal = Journal::find($id);
+        if (!$journal) {
+            return response()->json(['message' => 'ژورنال یافت نشد.'], 404);
+        }
+
+        $journal->update([
+            ...$validated,
+            'tazkira_number' => $reg->tazkira_number ?? $journal->tazkira_number,
+            'user_id' => Auth::id(),
+        ]);
+
+        $message = 'ژورنال با موفقیت آپدیت شد.';
+    } else {
+        // ⚡ ایجاد ژورنال جدید
+        $journal = Journal::create([
+            ...$validated,
+            'tazkira_number' => $reg->tazkira_number ?? null,
+            'user_id' => Auth::id(),
+        ]);
+        $message = 'ژورنال با موفقیت ذخیره شد.';
+    }
+
+    return response()->json([
+        'message' => $message,
+        'journal' => $journal
+    ], 200);
+}
 
 
 

@@ -40,7 +40,7 @@ export default function JournalPage() {
   const [journals, setJournals] = useState([]);
   const [registrations, setRegistrations] = useState([]);
   const [transactions, setTransactions] = useState({ sale: [], parchase: [] });
-
+const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({
     journal_date: "",
     description: "",
@@ -211,49 +211,59 @@ export default function JournalPage() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!form.amount || Number(form.amount) <= 0)
-      return toast.error("مبلغ باید بزرگتر از صفر باشد");
-    if (!form.ref_type || !form.ref_id)
-      return toast.error("نوع منبع و نام منبع الزامی است");
+  e.preventDefault();
 
-    try {
-      await api.post("/journals", {
-        ...form,
-        amount: Number(form.amount),
-        ref_id: Number(form.ref_id),
-      });
-      toast.success("ذخیره شد");
-      setForm({
-        journal_date: "",
-        description: "",
-        entry_type: "debit",
-        amount: "",
-        ref_type: "",
-        ref_id: "",
-        tazkira_number: "",
-      });
-      fetchData();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "خطا در ذخیره");
-    }
-  };
+  if (!form.amount || Number(form.amount) <= 0)
+    return toast.error("مبلغ باید بزرگتر از صفر باشد");
+  if (!form.ref_type || !form.ref_id)
+    return toast.error("نوع منبع و نام منبع الزامی است");
 
-  const handleEdit = async (id) => {
-    const journal = journals.find((j) => j.id === id);
-    if (!journal) return;
-    setForm({
-      journal_date: journal.journal_date,
-      description: journal.description,
-      entry_type: journal.entry_type,
-      amount: journal.amount ?? journal.total_amount ?? 0,
-      ref_type: journal.ref_type,
-      ref_id: journal.ref_id,
-      tazkira_number: journal.tazkira_number ?? "",
+  try {
+    const url = editingId ? `/journals/upsert/${editingId}` : "/journals/upsert";
+    const method = "post";
+
+    await api[method](url, {
+      ...form,
+      amount: Number(form.amount),
+      ref_id: Number(form.ref_id),
     });
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
 
+    toast.success(editingId ? "ژورنال آپدیت شد" : "ذخیره شد");
+
+    // پاک کردن فرم و ID بعد از ثبت
+    setForm({
+      journal_date: "",
+      description: "",
+      entry_type: "debit",
+      amount: "",
+      ref_type: "",
+      ref_id: "",
+      tazkira_number: "",
+    });
+    setEditingId(null);
+
+    fetchData();
+  } catch (err) {
+    toast.error(err.response?.data?.message || "خطا در ذخیره");
+  }
+};
+ const handleEdit = (id) => {
+  const journal = journals.find((j) => j.id === id);
+  if (!journal) return;
+
+  setForm({
+    journal_date: journal.journal_date,
+    description: journal.description,
+    entry_type: journal.entry_type,
+    amount: journal.amount ?? journal.total_amount ?? 0,
+    ref_type: journal.ref_type,
+    ref_id: journal.ref_id,
+    tazkira_number: journal.tazkira_number ?? "",
+  });
+
+  setEditingId(id); // ⚡ ست کردن ID برای آپدیت
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
  
 
   const handlePrint = (row) => {
@@ -359,9 +369,12 @@ export default function JournalPage() {
             })}
           </select>
 
-          <button type="submit" className="bg-blue-700 text-white rounded-xl py-2 hover:bg-blue-800">
-            ثبت
-          </button>
+          <button 
+  type="submit" 
+  className="bg-blue-700 text-white rounded-xl py-2 hover:bg-blue-800"
+>
+  {editingId ? "بروزرسانی" : "ثبت"}
+</button>
         </form>
       </div>
 

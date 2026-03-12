@@ -31,7 +31,7 @@ const SalePrint = forwardRef(({ saleData }, ref) => {
           {saleData.items?.map((item, index) => (
             <tr key={index}>
               <td>{index + 1}</td>
-              <td>{item.med_name}</td>
+              <td>{item.gen_name}</td>
               <td>{item.supplier_name}</td>
               <td>{item.quantity}</td>
               <td>{Number(item.unit_sales).toLocaleString()}</td>
