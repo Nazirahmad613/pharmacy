@@ -11,8 +11,8 @@ use Illuminate\Support\Facades\Auth;
 
 class SalesController extends Controller
 {
-   
-    public function index()
+
+public function index()
 {
     $sales = Sales::with([
         'customer',
@@ -38,7 +38,7 @@ class SalesController extends Controller
 
             'items' => $sale->items->map(function ($item) {
                 return [
-                    'sales_it_id'  => $item->sales_it_id, // مهم
+                    'sales_it_id'  => $item->sales_it_id,
                     'med_id'       => $item->med_id,
                     'category_id'  => $item->category_id,
                     'supplier_id'  => $item->supplier_id,
@@ -58,37 +58,24 @@ class SalesController extends Controller
 
     return response()->json($sales);
 }
+
 public function store(Request $request)
 {
-    $validated = $request->validate([
-        'sales_date' => 'required|date',
-        'cust_id' => 'required|exists:registrations,reg_id',
-        'tazkira_number' => 'nullable|string', // ✅ اضافه شد
-        'discount' => 'nullable|numeric|min:0',
-        'total_paid' => 'nullable|numeric|min:0',
-        'items' => 'required|array|min:1',
-        'items.*.med_id' => 'required|exists:medications,med_id',
-        'items.*.supplier_id' => 'required|exists:registrations,reg_id',
-        'items.*.category_id' => 'required|exists:categories,category_id',
-        'items.*.type' => 'required|string',
-        'items.*.quantity' => 'required|integer|min:1',
-        'items.*.unit_sales' => 'required|numeric|min:0',
-    ]);
-
     DB::beginTransaction();
 
     try {
-        $totalSales = collect($validated['items'])->sum(fn($item) => $item['quantity'] * $item['unit_sales']);
-        $discount = $validated['discount'] ?? 0;
-        $netSales = $totalSales - $discount;
-        if ($netSales < 0) throw new \Exception('Net sales cannot be negative');
-        $totalPaid = min($validated['total_paid'] ?? 0, $netSales);
 
-        // 🔹 ذخیره فروش با شماره تذکره مشتری
+        $totalSales = collect($request->items)
+            ->sum(fn($i) => $i['quantity'] * $i['unit_sales']);
+
+        $discount = $request->discount ?? 0;
+        $netSales = $totalSales - $discount;
+        $totalPaid = min($request->total_paid ?? 0, $netSales);
+
         $sale = Sales::create([
-            'sales_date'  => $validated['sales_date'],
-            'cust_id'     => $validated['cust_id'],
-            'tazkira_number'=> $validated['tazkira_number'], // ✅ اضافه شد
+            'sales_date'  => $request->sales_date,
+            'cust_id'     => $request->cust_id,
+            'tazkira_number'=> $request->tazkira_number,
             'total_sales' => $totalSales,
             'discount'    => $discount,
             'net_sales'   => $netSales,
@@ -96,7 +83,8 @@ public function store(Request $request)
             'sales_user'  => Auth::id(),
         ]);
 
-        foreach ($validated['items'] as $item) {
+        foreach ($request->items as $item) {
+
             $sale->items()->create([
                 'med_id'      => $item['med_id'],
                 'supplier_id' => $item['supplier_id'],
@@ -108,136 +96,148 @@ public function store(Request $request)
             ]);
         }
 
-        // 🔹 ثبت ژورنال فروش با شماره تذکره مشتری
-        Journal::create([
-            'journal_date' => $sale->sales_date,
-            'description'  => 'ثبت فروش',
-            'entry_type'   => Journal::ENTRY_CREDIT,
-            'amount'       => $netSales,
-            'ref_type'     => 'sale',
-            'ref_id'       => $sale->sales_id,
-            'user_id'      => Auth::id(),
-            'tazkira_number' => $sale->tazkira_number, // ✅ اضافه شد
-            'customer_name'=> $sale->customer->full_name ?? '-', // نام مشتری
-        ]);
-
-        if ($totalPaid > 0) {
-            Journal::create([
-                'journal_date' => $sale->sales_date,
-                'description'  => 'دریافت وجه فروش',
-                'entry_type'   => Journal::ENTRY_DEBIT,
-                'amount'       => $totalPaid,
-                'ref_type'     => 'sale',
-                'ref_id'       => $sale->sales_id,
-                'user_id'      => Auth::id(),
-                'tazkira_number' => $sale->tazkira_number, // ✅ اضافه شد
-                'customer_name'=> $sale->customer->full_name ?? '-', 
-            ]);
-        }
+        $this->saveJournal($sale->sales_id,$request->cust_id,$netSales,$totalPaid,$request->sales_date);
 
         DB::commit();
 
-        return response()->json([
-            'message'        => 'Sale saved successfully',
-            'sale_id'        => $sale->sales_id,
-            'total_sales'    => $totalSales,
-            'discount'       => $discount,
-            'net_sales'      => $netSales,
-            'total_paid'     => $totalPaid,
-            'remaining'      => $sale->remaining_amount,
-            'payment_status' => $sale->payment_status,
-        ], 201);
+        return response()->json(['message'=>'Sale saved successfully'],201);
 
     } catch (\Exception $e) {
+
         DB::rollBack();
-        Log::error('Sale store error', [
-            'error' => $e->getMessage(),
-            'request' => $request->all(),
-            'user_id' => Auth::id()
-        ]);
-        return response()->json(['message'=>'Server Error','error'=>$e->getMessage()], 500);
+
+        return response()->json([
+            'message'=>'Server Error',
+            'error'=>$e->getMessage()
+        ],500);
     }
 }
 
-   public function update(Request $request, $sales_id)
-    {
-        DB::beginTransaction();
+public function update(Request $request,$sales_id)
+{
+    DB::beginTransaction();
 
-        try {
-            $sale = Sales::with('items')->where('sales_id', $sales_id)->firstOrFail();
+    try {
 
-            $totalSales = collect($request->items)->sum(fn($i) => $i['quantity'] * $i['unit_sales']);
-            $discount = $request->discount ?? 0;
-            $netSales = $totalSales - $discount;
-            $totalPaid = min($request->total_paid ?? 0, $netSales);
+        $sale = Sales::with('items')
+            ->where('sales_id',$sales_id)
+            ->firstOrFail();
 
-            // حذف آیتم‌های قبلی و اضافه کردن آیتم‌های جدید
-            $sale->items()->delete();
-            foreach ($request->items as $item) {
-                $sale->items()->create([
-                    'med_id'      => $item['med_id'],
-                    'supplier_id' => $item['supplier_id'],
-                    'category_id' => $item['category_id'],
-                    'type'        => $item['type'],
-                    'quantity'    => $item['quantity'],
-                    'unit_sales'  => $item['unit_sales'],
-                    'total_sales' => $item['quantity'] * $item['unit_sales'],
-                ]);
-            }
+        $totalSales = collect($request->items)
+            ->sum(fn($i) => $i['quantity'] * $i['unit_sales']);
 
-            // آپدیت خود فروش
-            $sale->update([
-                'sales_date'    => $request->sales_date,
-                'cust_id'       => $request->cust_id,
-                'tazkira_number'=> $request->tazkira_number ?? null,
-                'total_sales'   => $totalSales,
-                'discount'      => $discount,
-                'net_sales'     => $netSales,
-                'total_paid'    => $totalPaid,
+        $discount = $request->discount ?? 0;
+        $netSales = $totalSales - $discount;
+        $totalPaid = min($request->total_paid ?? 0,$netSales);
+
+        $sale->items()->delete();
+
+        foreach ($request->items as $item) {
+
+            $sale->items()->create([
+                'med_id'=>$item['med_id'],
+                'supplier_id'=>$item['supplier_id'],
+                'category_id'=>$item['category_id'],
+                'type'=>$item['type'],
+                'quantity'=>$item['quantity'],
+                'unit_sales'=>$item['unit_sales'],
+                'total_sales'=>$item['quantity']*$item['unit_sales'],
             ]);
-
-            DB::commit();
-
-            return response()->json(['message' => 'Sale updated successfully']);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Sale update error', [
-                'error' => $e->getMessage(),
-                'request' => $request->all(),
-                'sales_id' => $sales_id,
-            ]);
-            return response()->json(['message' => 'Server Error', 'error' => $e->getMessage()], 500);
         }
+
+        $sale->update([
+            'sales_date'=>$request->sales_date,
+            'cust_id'=>$request->cust_id,
+            'tazkira_number'=>$request->tazkira_number,
+            'total_sales'=>$totalSales,
+            'discount'=>$discount,
+            'net_sales'=>$netSales,
+            'total_paid'=>$totalPaid,
+        ]);
+
+        // حذف ژورنال قبلی
+        Journal::where('ref_type','sale')
+            ->where('ref_id',$sales_id)
+            ->delete();
+
+        // ثبت ژورنال جدید
+        $this->saveJournal($sales_id,$request->cust_id,$netSales,$totalPaid,$request->sales_date);
+
+        DB::commit();
+
+        return response()->json(['message'=>'Sale updated successfully']);
+
+    } catch (\Exception $e) {
+
+        DB::rollBack();
+
+        return response()->json([
+            'message'=>'Server Error',
+            'error'=>$e->getMessage()
+        ],500);
     }
+}
 
-    // ❌ حذف فروش
-    public function destroy($sales_id)
-    {
-        DB::beginTransaction();
+public function destroy($sales_id)
+{
+    DB::beginTransaction();
 
-        try {
-            $sale = Sales::with('items')->where('sales_id', $sales_id)->firstOrFail();
+    try {
 
-            // حذف آیتم‌ها
-            $sale->items()->delete();
+        $sale = Sales::with('items')
+            ->where('sales_id',$sales_id)
+            ->firstOrFail();
 
-            // حذف ژورنال مرتبط با فروش
-            Journal::where('ref_type', 'sale')->where('ref_id', $sales_id)->delete();
+        $sale->items()->delete();
 
-            // حذف خود فروش
-            $sale->delete();
+        Journal::where('ref_type','sale')
+            ->where('ref_id',$sales_id)
+            ->delete();
 
-            DB::commit();
+        $sale->delete();
 
-            return response()->json(['message' => 'Sale deleted successfully']);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Sale delete error', [
-                'error' => $e->getMessage(),
-                'sales_id' => $sales_id,
-            ]);
-            return response()->json(['message' => 'Server Error', 'error' => $e->getMessage()], 500);
-        }
+        DB::commit();
+
+        return response()->json(['message'=>'Sale deleted successfully']);
+
+    } catch (\Exception $e) {
+
+        DB::rollBack();
+
+        return response()->json([
+            'message'=>'Server Error',
+            'error'=>$e->getMessage()
+        ],500);
     }
- 
+}
+
+private function saveJournal($saleId,$custId,$netSales,$totalPaid,$date)
+{
+
+    Journal::create([
+        'journal_date'=>$date,
+        'description'=>'ثبت فروش',
+        'entry_type'=>'credit',
+        'amount'=>$netSales,
+        'ref_type'=>'sale',
+        'ref_id'=>$saleId,
+        'cust_id'=>$custId,
+        'user_id'=>Auth::id(),
+    ]);
+
+    if($totalPaid>0){
+
+        Journal::create([
+            'journal_date'=>$date,
+            'description'=>'دریافت وجه فروش',
+            'entry_type'=>'debit',
+            'amount'=>$totalPaid,
+            'ref_type'=>'sale',
+            'ref_id'=>$saleId,
+            'cust_id'=>$custId,
+            'user_id'=>Auth::id(),
+        ]);
+    }
+}
+
 }
