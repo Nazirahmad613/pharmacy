@@ -99,8 +99,10 @@ public function store(Request $request)
         $this->saveJournal($sale->sales_id,$request->cust_id,$netSales,$totalPaid,$request->sales_date);
 
         DB::commit();
-
-        return response()->json(['message'=>'Sale saved successfully'],201);
+return response()->json([
+    'message' => 'Sale saved successfully',
+    'sale_id' => $sale->sales_id
+], 201);
 
     } catch (\Exception $e) {
 

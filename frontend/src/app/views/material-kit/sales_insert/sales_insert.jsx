@@ -34,6 +34,8 @@ export default function SaleForm() {
   const [totalPaid, setTotalPaid] = useState(0);
   const [remaining, setRemaining] = useState(0);
   const [paymentStatus, setPaymentStatus] = useState("پرداخت نشده");
+  const [printSale, setPrintSale] = useState(null);
+ 
 
   const [formItem, setFormItem] = useState({
     cust_id: "",
@@ -271,6 +273,31 @@ export default function SaleForm() {
     toast.error("خطا در حذف فروش");
   }
 };
+
+const handlePrintSale = (sale) => {
+
+  const salePrintData = {
+    sale_number: sale.id,
+    date: sale.sales_date,
+    customer: sale.customer_name,
+    tazkira_number: sale.tazkira_number,
+    items: sale.items,
+    totalSale: sale.total_sales,
+    discount: sale.discount,
+    netSales: sale.net_sales,
+    totalPaid: sale.total_paid,
+    remaining: sale.remaining,
+    paymentStatus: sale.payment_status,
+  };
+
+  setPrintSale(salePrintData);
+
+  setTimeout(() => {
+    handlePrint();
+  }, 200);
+};
+
+
 const selectedCustomer = customers.find(
   c => Number(c.reg_id) === Number(formItem.cust_id)
 );
@@ -533,9 +560,30 @@ const handleUpdateSale = async () => {
       <td>{s.payment_status}</td>
 
       <td>
-        <button className="edit" onClick={() => handleEditSale(s)}>تصحیح</button>
-        <button className="delete" onClick={() => handleDeleteSale(s.id)}>حذف</button>
-      </td>
+  <button 
+   style={{ backgroundColor: "yellow", color: "black", marginRight: "5px" }}
+  onClick={() => handleEditSale(s)}>تصحیح</button>
+
+  <button 
+   style={{ backgroundColor: "red", color: "white", marginRight: "5px" }}
+  
+  onClick={() => handleDeleteSale(s.id)}>حذف</button>
+
+  <button  
+  
+    style={{ backgroundColor: "green", color: "white" }}
+  onClick={() => handlePrintSale(s)}>
+    چاپ
+  </button>
+
+  
+
+
+
+
+
+
+</td>
     </tr>
   ))}
 </tbody>
@@ -558,7 +606,7 @@ const handleUpdateSale = async () => {
          )}
  
         <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
-  <SalePrint ref={printRef} saleData={saleData} />
+ <SalePrint ref={printRef} saleData={printSale ?? saleData} />
 </div>
        </div>
        

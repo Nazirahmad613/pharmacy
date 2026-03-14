@@ -172,7 +172,6 @@ const [editingPurchaseId, setEditingPurchaseId] = useState(null);
       prev.filter(item => item.id !== id)
     );
   };
-
  const handleSavePurchase = async () => {
   if (!selectedSupplier) {
     toast.error("❌ لطفاً حمایت‌کننده را انتخاب کنید");
@@ -200,32 +199,44 @@ const [editingPurchaseId, setEditingPurchaseId] = useState(null);
   };
 
   try {
+
     let res;
+
     if (editingPurchaseId) {
-      // حالت ویرایش: PUT به /parchases/:id
       res = await api.put(`/parchases/${editingPurchaseId}`, payload);
       toast.success("✅ خرید با موفقیت بروزرسانی شد");
     } else {
-      // حالت جدید: POST
       res = await api.post("/parchases", payload);
       toast.success("✅ خرید با موفقیت ثبت شد");
     }
 
-    // بازنشانی فرم بعد از ثبت یا بروزرسانی
+    // ⭐ مهم — ذخیره دیتا برای چاپ
+    setPurchaseData(res.data);
+
     setPurchasedItems([]);
     setParPaid(0);
     setDuePar(0);
     setTotalPurchase(0);
     setParchaseDate("");
     setSelectedSupplier("");
-    setEditingPurchaseId(null); // ← پاک کردن حالت ویرایش
+    setEditingPurchaseId(null);
 
     fetchPurchases();
+
   } catch (err) {
     console.error(err);
     toast.error("❌ خطا در ثبت/بروزرسانی خرید");
   }
 };
+const handlePrintExisting = purchase => {
+  setPurchaseData(purchase);
+
+  setTimeout(() => {
+    handlePrint();
+  }, 300);
+};
+
+
   const handleDeletePurchase = async id => {
     if (!window.confirm("آیا مطمئن هستید که می‌خواهید حذف شود؟")) return;
     try {
@@ -396,17 +407,17 @@ const [editingPurchaseId, setEditingPurchaseId] = useState(null);
   {editingPurchaseId ? "بروزرسانی خرید" : "ثبت خرید"}
 </button>
 
-          <button
-            onClick={() => {
-              if (!printRef.current) {
-                toast.error("چیزی برای پرینت وجود ندارد");
-                return;
-              }
-              handlePrint();
-            }}
-          >
-            چاپ خرید
-          </button>
+         <button
+  onClick={() => {
+    if (!purchaseData) {
+      toast.error("ابتدا خرید را ثبت کنید");
+      return;
+    }
+    handlePrint();
+  }}
+>
+  چاپ خرید
+</button>
 
           {/* نمایش خریدهای ثبت شده */}
           {allPurchases.length > 0 && (
@@ -434,19 +445,28 @@ const [editingPurchaseId, setEditingPurchaseId] = useState(null);
                       <td>{p.par_paid?.toLocaleString()}</td>
                       <td>{(p.totalPurchase - p.par_paid)?.toLocaleString()}</td>
                       <td>
-                        <button
-                          style={{ backgroundColor: "red", color: "white", marginRight: "5px" }}
-                          onClick={() => handleDeletePurchase(p.parchase_id)}
-                        >
-                          حذف
-                        </button>
-                        <button
-                          style={{ backgroundColor: "yellow", color: "black" }}
-                          onClick={() => handleEditPurchase(p)}
-                        >
-                          تصحیح
-                        </button>
-                      </td>
+  <button
+    style={{ backgroundColor: "red", color: "white", marginRight: "5px" }}
+    onClick={() => handleDeletePurchase(p.parchase_id)}
+  >
+    حذف
+  </button>
+
+  <button
+    style={{ backgroundColor: "yellow", color: "black", marginRight: "5px" }}
+    onClick={() => handleEditPurchase(p)}
+  >
+    تصحیح
+  </button>
+
+  <button
+    style={{ backgroundColor: "green", color: "white" }}
+    onClick={() => handlePrintExisting(p)}
+  >
+    چاپ
+  </button>
+</td>
+ 
                     </tr>
                   ))}
                 </tbody>

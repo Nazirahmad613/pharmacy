@@ -48,6 +48,7 @@ export default function PrescriptionForm() {
   const [formItem, setFormItem] = useState(emptyItem);
   const [prescriptionItems, setPrescriptionItems] = useState([]);
   const [editingId, setEditingId] = useState(null);
+  const [prescriptionPrintData, setPrescriptionPrintData] = useState(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 4;
@@ -577,19 +578,45 @@ export default function PrescriptionForm() {
          <button className="edit" onClick={handleSavePrescription}>
   {editingId ? "ثبت تصحیح نسخه" : "ثبت نسخه"}
 </button>
-          <button className="edit" onClick={() => {
-            if (!prescriptionItems.length) {
-              toast.error("آیتمی برای چاپ وجود ندارد");
-              return;
-            }
-            handlePrint();
-          }}>پرنت نسخه</button>
-        </div>
+         </div>
+   <button
+  className="edit"
+  onClick={() => {
+    if (!prescriptionItems.length) {
+      toast.error("آیتمی برای چاپ وجود ندارد");
+      return;
+    }
 
-        <div style={{ display: "none" }}>
-          <PrescriptionPrint ref={printRef} data={printData} />
-        </div>
+    const printData = {
+      pres_num: patientInfo.pres_num,
+      date: prescriptionDate || new Date().toLocaleDateString(),
+      patient: patients.find(p => p.reg_id == selectedPatientId)?.full_name ?? "-",
+      doctor: doctors.find(d => d.reg_id == selectedDoctorId)?.full_name ?? "-",
+      age: patientInfo.age,
+      gender: patientInfo.gender,
+      blood_group: patientInfo.blood_group,
+      tazkira_number: patientInfo.tazkira_number,
+      totalAmount,
+      discount,
+      netAmount,
+      items: prescriptionItems.map(item => ({
+        ...item,
+        category_name: categories.find(c => c.category_id == item.category_id)?.category_name ?? "-",
+        med_name: medications.find(m => m.med_id == item.med_id)?.gen_name ?? "-",
+        supplier_name: suppliers.find(s => s.reg_id == item.supplier_id)?.full_name ?? "-",
+      }))
+    };
 
+    setPrescriptionPrintData(printData);
+
+    setTimeout(() => handlePrint(), 200);
+  }}
+>
+  پرنت نسخه
+</button>
+ <div style={{ display: "none" }}>
+  {prescriptionPrintData && <PrescriptionPrint ref={printRef} data={prescriptionPrintData} />}
+</div>
         {/* ===== لیست نسخه ها ===== */}
         {prescriptionsList && (
           <div className="table-container" style={{ marginTop: "20px" }}>
@@ -627,7 +654,7 @@ export default function PrescriptionForm() {
                       <td>{p.net_amount}</td>
 
                       <td>
-                 <td>
+               
   <button
     className="edit"
     onClick={() => handleEditPrescription(p)}
@@ -641,7 +668,7 @@ export default function PrescriptionForm() {
   >
     حذف
   </button>
-</td>
+ 
                       </td>
                     </tr>
                   );
