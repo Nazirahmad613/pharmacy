@@ -118,7 +118,7 @@ table tbody tr:hover td {
 table td button {
   padding: 2px 5px;
   border-radius: 3px;
-  font-size: 9px;
+  font-size:10px;
   font-weight: bold;
   cursor: pointer;
   border: none;
@@ -162,4 +162,66 @@ button.edit:hover {
 
 .Toastify__toast {
   z-index: 999999 !important;
+}
+
+.custom-toast {
+  background-color: #333 !important;
+  color: white !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+}
+
+.custom-toast-body {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+
+/* در فایل CSS خود اضافه کنید */
+
+.custom-toast-container {
+  z-index: 9999999 !important;
+  position: fixed !important;
+  pointer-events: all !important;
+}
+
+.custom-toast {
+  background-color: #333 !important;
+  color: white !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  font-family: inherit !important;
+  direction: rtl !important;
+  padding: 12px !important;
+  margin: 10px auto !important;
+}
+
+.custom-toast-body {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  text-align: center !important;
+}
+
+/* استایل برای toast موفقیت */
+.Toastify__toast--success.custom-toast {
+  background-color: #10b981 !important;
+}
+
+/* استایل برای toast خطا */
+.Toastify__toast--error.custom-toast {
+  background-color: #ef4444 !important;
+}
+
+/* استایل برای نوار پیشرفت */
+.custom-toast .Toastify__progress-bar {
+  background: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* استایل برای دکمه بستن */
+.custom-toast .Toastify__close-button {
+  color: white !important;
+  opacity: 0.8 !important;
+}
+
+.custom-toast .Toastify__close-button:hover {
+  opacity: 1 !important;
 }

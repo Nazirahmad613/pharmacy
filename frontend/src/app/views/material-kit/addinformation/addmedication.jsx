@@ -107,6 +107,19 @@ const MedicationForm = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // ✅ تابع جدید برای انصراف از ویرایش
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setFormData({
+      category_id: "",
+      supplier_id: "",
+      type: "",
+      gen_name: "",
+      dosage: "",
+    });
+    toast.info("✏️ ویرایش لغو شد");
+  };
+
   const handleDelete = async (id) => {
     if (!window.confirm("آیا مطمئن هستید؟")) return;
 
@@ -129,10 +142,35 @@ const MedicationForm = () => {
 
   return (
     <MainLayoutjur>
-      <ToastContainer position="top-right" autoClose={3000} />
+      {/* ✅ ToastContainer با استایل مناسب */}
+      <ToastContainer 
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={true}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+        limit={5}
+        style={{ 
+          zIndex: 9999999,
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          left: 'auto',
+          width: 'auto',
+          maxWidth: '350px',
+          transform: 'none'
+        }}
+      />
 
       <div className="form-container">
-        <h2 style={{ textAlign: "center" }}>فرم ثبت دوا</h2>
+        <h2 style={{ textAlign: "center" }}>
+          {editingId ? "ویرایش دوا" : "فرم ثبت دوا"}
+        </h2>
 
         <form onSubmit={handleSubmit} className="form-grid">
           <div>
@@ -167,25 +205,26 @@ const MedicationForm = () => {
                 </option>
               ))}
             </select>
-            </div>
+          </div>
 
-            <div>
-           <label>نوعیت</label>
-          <select
-          name="type"
-           value={formData.type}
-           onChange={handleChange}
-            required
-              >
-          <option value="">انتخاب نوع دوا</option>
-          <option value="شربت">شربت</option>
-          <option value="تابلیت">تابلیت</option>
-          <option value="سیروم">سیروم</option>
-          <option value="پودر">پودر</option>
-          <option value="کپسول">کپسول</option>
-          <option value="کریم">کریم</option>
-           </select>
-           </div>
+          <div>
+            <label>نوعیت</label>
+            <select
+              name="type"
+              value={formData.type}
+              onChange={handleChange}
+              required
+            >
+              <option value="">انتخاب نوع دوا</option>
+              <option value="شربت">شربت</option>
+              <option value="تابلیت">تابلیت</option>
+              <option value="سیروم">سیروم</option>
+              <option value="پودر">پودر</option>
+              <option value="کپسول">کپسول</option>
+              <option value="کریم">کریم</option>
+            </select>
+          </div>
+
           <div>
             <label>نام عمومی دوا</label>
             <input
@@ -208,10 +247,36 @@ const MedicationForm = () => {
             />
           </div>
 
-          <div style={{ gridColumn: "1 / span 2", textAlign: "center" }}>
-            <button type="submit" className="edit">
+          <div style={{ gridColumn: "1 / span 2", textAlign: "center", display: "flex", gap: "10px", justifyContent: "center" }}>
+            <button 
+              type="submit" 
+              className="edit"
+              style={{ 
+                backgroundColor: editingId ? "#ffc107" : "#2563eb",
+                margin: 0
+              }}
+            >
               {editingId ? "تصحیح دوا" : "ثبت دوا"}
             </button>
+
+            {/* ✅ دکمه انصراف - فقط در حالت ویرایش نمایش داده می‌شود */}
+            {editingId && (
+              <button 
+                type="button" 
+                onClick={handleCancelEdit}
+                style={{
+                  backgroundColor: "#6c757d",
+                  color: "white",
+                  padding: "10px 20px",
+                  borderRadius: "5px",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: "14px"
+                }}
+              >
+                انصراف
+              </button>
+            )}
           </div>
         </form>
       </div>
@@ -224,13 +289,13 @@ const MedicationForm = () => {
             <tr className="bg-gray-700 text-white">
               <th>نام دوا</th>
               <th>نوع</th>
-               <th>دوز</th>
-                <th>کتگوری</th>
-                 <th>حمایت‌کننده</th>
-                 <th>عملیات</th>
-                  </tr>
-              </thead>
-               <tbody>
+              <th>دوز</th>
+              <th>کتگوری</th>
+              <th>حمایت‌کننده</th>
+              <th>عملیات</th>
+            </tr>
+          </thead>
+          <tbody>
             {currentItems.length ? (
               currentItems.map(m => (
                 <tr key={m.med_id}>
@@ -285,19 +350,35 @@ const MedicationForm = () => {
             <button
               onClick={() => setCurrentPage(prev => prev - 1)}
               disabled={currentPage === 1}
-              style={{ marginRight: "10px" }}
+              style={{ 
+                marginRight: "10px",
+                padding: "5px 15px",
+                backgroundColor: currentPage === 1 ? "#ccc" : "#2563eb",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: currentPage === 1 ? "not-allowed" : "pointer"
+              }}
             >
               قبلی
             </button>
 
-            <span>
+            <span style={{ margin: "0 10px" }}>
               صفحه {currentPage} از {totalPages}
             </span>
 
             <button
               onClick={() => setCurrentPage(prev => prev + 1)}
               disabled={currentPage === totalPages}
-              style={{ marginLeft: "10px" }}
+              style={{ 
+                marginLeft: "10px",
+                padding: "5px 15px",
+                backgroundColor: currentPage === totalPages ? "#ccc" : "#2563eb",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: currentPage === totalPages ? "not-allowed" : "pointer"
+              }}
             >
               بعدی
             </button>

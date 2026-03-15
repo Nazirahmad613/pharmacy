@@ -40,7 +40,7 @@ export default function JournalPage() {
   const [journals, setJournals] = useState([]);
   const [registrations, setRegistrations] = useState([]);
   const [transactions, setTransactions] = useState({ sale: [], parchase: [] });
-const [editingId, setEditingId] = useState(null);
+  const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({
     journal_date: "",
     description: "",
@@ -210,27 +210,9 @@ const [editingId, setEditingId] = useState(null);
     }));
   };
 
-  const handleSubmit = async (e) => {
-  e.preventDefault();
-
-  if (!form.amount || Number(form.amount) <= 0)
-    return toast.error("مبلغ باید بزرگتر از صفر باشد");
-  if (!form.ref_type || !form.ref_id)
-    return toast.error("نوع منبع و نام منبع الزامی است");
-
-  try {
-    const url = editingId ? `/journals/upsert/${editingId}` : "/journals/upsert";
-    const method = "post";
-
-    await api[method](url, {
-      ...form,
-      amount: Number(form.amount),
-      ref_id: Number(form.ref_id),
-    });
-
-    toast.success(editingId ? "ژورنال آپدیت شد" : "ذخیره شد");
-
-    // پاک کردن فرم و ID بعد از ثبت
+  // ✅ تابع جدید برای انصراف از ویرایش
+  const handleCancelEdit = () => {
+    setEditingId(null);
     setForm({
       journal_date: "",
       description: "",
@@ -240,31 +222,64 @@ const [editingId, setEditingId] = useState(null);
       ref_id: "",
       tazkira_number: "",
     });
-    setEditingId(null);
+    toast.info("✏️ ویرایش لغو شد");
+  };
 
-    fetchData();
-  } catch (err) {
-    toast.error(err.response?.data?.message || "خطا در ذخیره");
-  }
-};
- const handleEdit = (id) => {
-  const journal = journals.find((j) => j.id === id);
-  if (!journal) return;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  setForm({
-    journal_date: journal.journal_date,
-    description: journal.description,
-    entry_type: journal.entry_type,
-    amount: journal.amount ?? journal.total_amount ?? 0,
-    ref_type: journal.ref_type,
-    ref_id: journal.ref_id,
-    tazkira_number: journal.tazkira_number ?? "",
-  });
+    if (!form.amount || Number(form.amount) <= 0)
+      return toast.error("مبلغ باید بزرگتر از صفر باشد");
+    if (!form.ref_type || !form.ref_id)
+      return toast.error("نوع منبع و نام منبع الزامی است");
 
-  setEditingId(id); // ⚡ ست کردن ID برای آپدیت
-  window.scrollTo({ top: 0, behavior: "smooth" });
-};
- 
+    try {
+      const url = editingId ? `/journals/upsert/${editingId}` : "/journals/upsert";
+      const method = "post";
+
+      await api[method](url, {
+        ...form,
+        amount: Number(form.amount),
+        ref_id: Number(form.ref_id),
+      });
+
+      toast.success(editingId ? "ژورنال بروز رسانی شد" : "ذخیره شد");
+
+      // پاک کردن فرم و ID بعد از ثبت
+      setForm({
+        journal_date: "",
+        description: "",
+        entry_type: "debit",
+        amount: "",
+        ref_type: "",
+        ref_id: "",
+        tazkira_number: "",
+      });
+      setEditingId(null);
+
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "خطا در ذخیره");
+    }
+  };
+
+  const handleEdit = (id) => {
+    const journal = journals.find((j) => j.id === id);
+    if (!journal) return;
+
+    setForm({
+      journal_date: journal.journal_date,
+      description: journal.description,
+      entry_type: journal.entry_type,
+      amount: journal.amount ?? journal.total_amount ?? 0,
+      ref_type: journal.ref_type,
+      ref_id: journal.ref_id,
+      tazkira_number: journal.tazkira_number ?? "",
+    });
+
+    setEditingId(id); // ⚡ ست کردن ID برای آپدیت
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const handlePrint = (row) => {
     const printWindow = window.open("", "_blank");
@@ -284,7 +299,31 @@ const [editingId, setEditingId] = useState(null);
 
   return (
     <MainLayoutjur>
-      <ToastContainer />
+      {/* ✅ ToastContainer با استایل مناسب */}
+      <ToastContainer 
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={true}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+        limit={5}
+        style={{ 
+          zIndex: 9999999,
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          left: 'auto',
+          width: 'auto',
+          maxWidth: '350px',
+          transform: 'none'
+        }}
+      />
+      
       <h2 style={{ textAlign: "center" }}>ثبت و مدیریت محاسبات</h2>
 
       <div className="form-container mb-6 flex gap-3">
@@ -369,12 +408,35 @@ const [editingId, setEditingId] = useState(null);
             })}
           </select>
 
-          <button 
-  type="submit" 
-  className="bg-blue-700 text-white rounded-xl py-2 hover:bg-blue-800"
->
-  {editingId ? "بروزرسانی" : "ثبت"}
-</button>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button 
+              type="submit" 
+              className="bg-blue-700 text-white rounded-xl py-2 hover:bg-blue-800"
+              style={{ flex: editingId ? "1" : "1" }}
+            >
+              {editingId ? "بروزرسانی" : "ثبت"}
+            </button>
+
+            {/* ✅ دکمه انصراف - فقط در حالت ویرایش نمایش داده می‌شود */}
+            {editingId && (
+              <button 
+                type="button" 
+                onClick={handleCancelEdit}
+                style={{
+                  backgroundColor: "#6c757d",
+                  color: "white",
+                  padding: "10px 20px",
+                  borderRadius: "8px",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  flex: "0.5"
+                }}
+              >
+                انصراف
+              </button>
+            )}
+          </div>
         </form>
       </div>
 
@@ -405,9 +467,42 @@ const [editingId, setEditingId] = useState(null);
                 return (
                   <tr key={row.id} style={{ backgroundColor: bgColor, transition: "0.2s", color: "#fff" }}>
                     <td className="flex gap-1">
-                      <button onClick={() => handleEdit(row.id)} className="bg-yellow-600 px-2 py-1 rounded hover:bg-yellow-700">تصحیح</button>
-                      
-                      <button onClick={() => handlePrint(row)} className="bg-green-600 px-2 py-1 rounded hover:bg-green-700">پرینت</button>
+                      <button 
+  onClick={() => handleEdit(row.id)}  
+  style={{ 
+    backgroundColor: "#dcc215", 
+    color: "#000",
+    padding: "5px 12px",
+    borderRadius: "5px",
+    border: "none",
+    cursor: "pointer",
+    fontSize: "12px",
+    fontWeight: "bold",
+    marginLeft: "5px",
+    transition: "all 0.2s ease",
+    boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
+  }}
+>
+  تصحیح
+</button>
+
+<button 
+  onClick={() => handlePrint(row)}   
+  style={{ 
+    backgroundColor: "#0da62f", 
+    color: "#fff",
+    padding: "5px 12px",
+    borderRadius: "5px",
+    border: "none",
+    cursor: "pointer",
+    fontSize: "12px",
+    fontWeight: "bold",
+    transition: "all 0.2s ease",
+    boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
+  }}
+>
+  پرینت
+</button>
                     </td>
                     <td>{row.date || "-"}</td>
                     <td>{ENTRY_TYPE_FA[row.entry_type] || "-"}</td>

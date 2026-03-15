@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\CheckRole;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -22,7 +23,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // Aliases
         $middleware->alias([
             'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
-            'admin' => AdminMiddleware::class,   // 👈 این را اضافه کردیم
+            'admin' => AdminMiddleware::class,
+             'role' => CheckRole::class,   // 👈 این را اضافه کردیم
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

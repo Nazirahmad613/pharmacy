@@ -21,6 +21,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { FaKey } from "react-icons/fa";
 // import { useAuth } from "app/contexts/AuthContext"; // غیرفعال کردیم برای تست
 import { NavLink } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify"; // ✅ اضافه کردن toast و ToastContainer
+import "react-toastify/dist/ReactToastify.css"; // ✅ اضافه کردن استایل toast
 
 export default function UsersPage() {
   // 🔹 برای تست، یک currentUser موقت تعریف می‌کنیم
@@ -50,6 +52,7 @@ export default function UsersPage() {
       })
       .catch((err) => {
         console.error(err);
+        toast.error("❌ خطا در دریافت لیست کاربران"); // ✅ اضافه کردن پیام toast
         setLoading(false);
       });
   }, []);
@@ -94,33 +97,86 @@ export default function UsersPage() {
   const handleCloseDialog = () => setOpenDialog(false);
 
   const handleSave = () => {
+    // ✅ اعتبارسنجی فرم
+    if (!formData.name.trim()) {
+      toast.error("❌ نام کاربر را وارد کنید");
+      return;
+    }
+    if (!formData.email.trim()) {
+      toast.error("❌ ایمیل کاربر را وارد کنید");
+      return;
+    }
+    if (!editingUser && !formData.password) {
+      toast.error("❌ رمز عبور را وارد کنید");
+      return;
+    }
+
     if (editingUser) {
       api.put(`/users/${editingUser.id}`, formData)
         .then(() => {
           setUsers(users.map(u => (u.id === editingUser.id ? { ...u, ...formData } : u)));
+          toast.success("✅ کاربر با موفقیت ویرایش شد"); // ✅ اضافه کردن پیام toast
           handleCloseDialog();
         })
-        .catch(console.error);
+        .catch(err => {
+          console.error(err);
+          toast.error("❌ خطا در ویرایش کاربر"); // ✅ اضافه کردن پیام toast
+        });
     } else {
       api.post("/users", formData)
         .then(res => {
           setUsers([...users, res.data]);
+          toast.success("✅ کاربر با موفقیت اضافه شد"); // ✅ اضافه کردن پیام toast
           handleCloseDialog();
         })
-        .catch(console.error);
+        .catch(err => {
+          console.error(err);
+          toast.error("❌ خطا در افزودن کاربر"); // ✅ اضافه کردن پیام toast
+        });
     }
   };
 
   const handleDelete = (id) => {
     if (window.confirm("آیا مطمئن هستید می‌خواهید این کاربر را حذف کنید؟")) {
       api.delete(`/users/${id}`)
-        .then(() => setUsers(users.filter(u => u.id !== id)))
-        .catch(console.error);
+        .then(() => {
+          setUsers(users.filter(u => u.id !== id));
+          toast.success("✅ کاربر با موفقیت حذف شد"); // ✅ اضافه کردن پیام toast
+        })
+        .catch(err => {
+          console.error(err);
+          toast.error("❌ خطا در حذف کاربر"); // ✅ اضافه کردن پیام toast
+        });
     }
   };
 
   return (
     <MainLayoutjur>
+      {/* ✅ ToastContainer با استایل مناسب */}
+      <ToastContainer 
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={true}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+        limit={5}
+        style={{ 
+          zIndex: 9999999,
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          left: 'auto',
+          width: 'auto',
+          maxWidth: '350px',
+          transform: 'none'
+        }}
+      />
+
       <h2 style={{ textAlign: "center", marginBottom: 20 }}>مدیریت کاربران</h2>
 
       <table style={{ width: "100%", borderCollapse: "collapse" }}>

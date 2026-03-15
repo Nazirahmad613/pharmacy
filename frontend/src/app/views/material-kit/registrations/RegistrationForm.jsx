@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
-import MainLayoutpur from "../../../../components/MainLayoutpur";
-import { ToastContainer, toast } from "react-toastify";
+import MainLayoutjur from "../../../../components/MainLayoutjur";
+import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useAuth } from "app/contexts/AuthContext";
 
@@ -61,28 +61,74 @@ export default function RegistrationForm() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
  
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  if (!form.reg_type || !form.full_name) {
-    toast.error("❌ نوع راجستریشن و نام الزامی است");
-    return;
-  }
-
-  if (form.tazkira_number && !/^\d{4}-\d{4}-\d{5}$/.test(form.tazkira_number)) {
-    toast.error("❌ فرمت شماره تذکره معتبر نیست");
-    return;
-  }
-
-  try {
-    if (editingId) {
-      await api.put(`/registrations/${editingId}`, form);
-      toast.success("✅ معلومات با موفقیت تصحیح شد");
-    } else {
-      await api.post("/registrations", form);
-      toast.success("✅ ثبت موفقانه انجام شد");
+    if (!form.reg_type || !form.full_name) {
+      toast.error("❌ نوع راجستریشن و نام الزامی است");
+      return;
     }
 
+    if (form.tazkira_number && !/^\d{4}-\d{4}-\d{5}$/.test(form.tazkira_number)) {
+      toast.error("❌ فرمت شماره تذکره معتبر نیست");
+      return;
+    }
+
+    try {
+      if (editingId) {
+        await api.put(`/registrations/${editingId}`, form);
+        toast.success("✅ معلومات با موفقیت تصحیح شد");
+      } else {
+        await api.post("/registrations", form);
+        toast.success("✅ ثبت موفقانه انجام شد");
+      }
+
+      setForm({
+        reg_type: "",
+        full_name: "",
+        tazkira_number: "",
+        father_name: "",
+        phone: "",
+        gender: "",
+        age: "",
+        blood_group: "",
+        address: "",
+        visit_date: "",
+        note: "",
+        status: 1,
+        department_id: "",
+      });
+
+      setEditingId(null);
+      fetchRegistrations();
+    } catch (err) {
+      console.error(err);
+      toast.error("❌ خطا در ذخیره معلومات");
+    }
+  };
+
+  const handleDelete = async (reg_id) => {
+    if (!window.confirm("آیا مطمئن هستید که می‌خواهید این رجستریشن را حذف کنید؟")) return;
+
+    try {
+      await api.delete(`/registrations/${reg_id}`);
+      toast.success("✅ حذف موفقانه انجام شد");
+      fetchRegistrations();
+    } catch (err) {
+      console.error(err);
+      toast.error("❌ خطا در حذف رجستریشن");
+    }
+  };
+
+  const handleEdit = (reg) => {
+    setForm({ ...reg });
+    setEditingId(reg.reg_id);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // ✅ تابع جدید برای انصراف از ویرایش
+  const handleCancelEdit = () => {
+    setEditingId(null);
     setForm({
       reg_type: "",
       full_name: "",
@@ -98,36 +144,8 @@ const handleSubmit = async (e) => {
       status: 1,
       department_id: "",
     });
-
-    setEditingId(null);
-    fetchRegistrations();
-  } catch (err) {
-    console.error(err);
-    toast.error("❌ خطا در ذخیره معلومات");
-  }
-};
-
-
-
-  
-const handleDelete = async (reg_id) => {
-  if (!window.confirm("آیا مطمئن هستید که می‌خواهید این رجستریشن را حذف کنید؟")) return;
-
-  try {
-    await api.delete(`/registrations/${reg_id}`);
-    toast.success("✅ حذف موفقانه انجام شد");
-    fetchRegistrations();
-  } catch (err) {
-    console.error(err);
-    toast.error("❌ خطا در حذف رجستریشن");
-  }
-};
-  const handleEdit = (reg) => {
-  setForm({ ...reg });
-  setEditingId(reg.reg_id);
-  window.scrollTo({ top: 0, behavior: "smooth" });
-};
-
+    toast.info("✏️ ویرایش لغو شد");
+  };
 
   const filteredRows = useMemo(() => {
     if (!searchTerm.trim()) return registrations;
@@ -147,10 +165,36 @@ const handleDelete = async (reg_id) => {
   );
 
   return (
-    <MainLayoutpur>
-      <ToastContainer />
+    <MainLayoutjur>
+      {/* ✅ ToastContainer با استایل مناسب */}
+      <ToastContainer 
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={true}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+        limit={5}
+        style={{ 
+          zIndex: 9999999,
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          left: 'auto',
+          width: 'auto',
+          maxWidth: '350px',
+          transform: 'none'
+        }}
+      />
+
       <div className="form-container">
-        <h2 style={{ textAlign: "center" }}>راجستریشن عمومی شفاخانه</h2>
+        <h2 style={{ textAlign: "center" }}>
+          {editingId ? "ویرایش راجستریشن" : "راجستریشن عمومی شفاخانه"}
+        </h2>
 
         <form onSubmit={handleSubmit} className="form-grid">
           <div>
@@ -333,10 +377,29 @@ const handleDelete = async (reg_id) => {
             />
           </div>
 
-          <div className="full-width center">
-            <button type="submit" className="edit">
-              ثبت راجستریشن
+          <div className="full-width center" style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+            <button type="submit" className="edit" style={{ backgroundColor: editingId ? "#ffc107" : "#2563eb" }}>
+              {editingId ? "تصحیح" : "ثبت راجستریشن"}
             </button>
+            
+            {/* ✅ دکمه انصراف - فقط در حالت ویرایش نمایش داده می‌شود */}
+            {editingId && (
+              <button 
+                type="button" 
+                onClick={handleCancelEdit}
+                style={{
+                  backgroundColor: "#6c757d",
+                  color: "white",
+                  padding: "10px 20px",
+                  borderRadius: "5px",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: "14px"
+                }}
+              >
+                انصراف
+              </button>
+            )}
           </div>
         </form>
       </div>
@@ -363,56 +426,56 @@ const handleDelete = async (reg_id) => {
               <th>عملیات</th>
             </tr>
           </thead>
-         <tbody>
-  {currentRows.length ? (
-    currentRows.map((r) => (
-      <tr key={r.reg_id} className="hover:bg-gray-800 transition-colors">
-        <td>{r.full_name || "-"}</td>
-        <td>{r.tazkira_number || "-"}</td>
-        <td>{r.reg_type || "-"}</td>
-        <td>{r.phone || "-"}</td>
-        <td>
-          {departments.find((d) => d.id === r.department_id)?.name || "-"}
-        </td>
-        <td className="flex gap-1">
-          <button
-            onClick={() => handleEdit(r)}
-            style={{
-              backgroundColor: "#facc15",
-              color: "#000",
-              padding: "5px 10px",
-              borderRadius: "5px",
-              border: "none",
-              cursor: "pointer",
-            }}
-          >
-            تصحیح
-          </button>
+          <tbody>
+            {currentRows.length ? (
+              currentRows.map((r) => (
+                <tr key={r.reg_id} className="hover:bg-gray-800 transition-colors">
+                  <td>{r.full_name || "-"}</td>
+                  <td>{r.tazkira_number || "-"}</td>
+                  <td>{r.reg_type || "-"}</td>
+                  <td>{r.phone || "-"}</td>
+                  <td>
+                    {departments.find((d) => d.id === r.department_id)?.name || "-"}
+                  </td>
+                  <td className="flex gap-1">
+                    <button
+                      onClick={() => handleEdit(r)}
+                      style={{
+                        backgroundColor: "#cba81b",
+                        color: "#000",
+                        padding: "5px 10px",
+                        borderRadius: "5px",
+                        border: "none",
+                        cursor: "pointer",
+                      }}
+                    >
+                      تصحیح
+                    </button>
 
-          <button
-            onClick={() => handleDelete(r.reg_id)}
-            style={{
-              backgroundColor: "#dc2626",
-              color: "#fff",
-              padding: "5px 10px",
-              borderRadius: "5px",
-              border: "none",
-              cursor: "pointer",
-            }}
-          >
-            حذف
-          </button>
-        </td>
-      </tr>
-    ))
-  ) : (
-    <tr>
-      <td colSpan="6" style={{ textAlign: "center" }}>
-        نتیجه‌ای یافت نشد
-      </td>
-    </tr>
-  )}
-</tbody>
+                    <button
+                      onClick={() => handleDelete(r.reg_id)}
+                      style={{
+                        backgroundColor: "#dc2626",
+                        color: "#fff",
+                        padding: "5px 10px",
+                        borderRadius: "5px",
+                        border: "none",
+                        cursor: "pointer",
+                      }}
+                    >
+                      حذف
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="6" style={{ textAlign: "center" }}>
+                  نتیجه‌ای یافت نشد
+                </td>
+              </tr>
+            )}
+          </tbody>
         </table>
         {totalPages > 1 && (
           <div className="flex justify-center gap-3 mt-4">
@@ -436,6 +499,6 @@ const handleDelete = async (reg_id) => {
           </div>
         )}
       </div>
-    </MainLayoutpur>
+    </MainLayoutjur>
   );
 }

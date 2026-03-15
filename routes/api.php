@@ -108,9 +108,26 @@ Route::middleware('auth:sanctum')->group(function () {
     // ===== Customers =====
     Route::get('/customers', [CustomersController::class, 'index']);
 
-    // ===== Categories =====
-    Route::get('/categories', [CategoryController::class, 'index']);
-    Route::post('/categories', [CategoryController::class, 'store']);
+ 
+ 
+
+// ========== CATEGORY ROUTES ==========
+
+// دریافت لیست تمام کتگوری‌ها
+Route::get('/categories', [CategoryController::class, 'index']);
+
+// ثبت کتگوری جدید
+Route::post('/categories', [CategoryController::class, 'store']);
+
+// دریافت اطلاعات یک کتگوری خاص
+Route::get('/categories/{id}', [CategoryController::class, 'show']);
+
+// بروزرسانی یک کتگوری
+Route::put('/categories/{id}', [CategoryController::class, 'update']);
+
+// حذف یک کتگوری
+Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
+
 
  
 // مسیرهای API خریدها
