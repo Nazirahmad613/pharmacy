@@ -28,6 +28,8 @@ use App\Http\Controllers\HospitalReportController;
 use App\Http\Controllers\PrescriptionController;
 use App\Http\Controllers\AccountSummaryController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\DepartementController; // ✅ فقط یک Controller
 
 /*
@@ -62,6 +64,24 @@ Route::middleware('auth:sanctum')->group(function () {
     // ===== Auth =====
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+
+     // ------------------------------
+    // رول‌ها
+    // ------------------------------
+    Route::get('/roles', [RoleController::class, 'index']);
+    Route::post('/roles', [RoleController::class, 'store']);
+    Route::delete('/roles/{id}', [RoleController::class, 'destroy']);
+    Route::post('/roles/{id}/permissions', [RoleController::class, 'assignPermissions']);
+
+// Role Permissions
+Route::post('/roles/{id}/permissions', [RoleController::class, 'assignPermissions']);
+Route::delete('/roles/{id}/permissions/{permissionId}', [RoleController::class, 'removePermission']);
+    // ------------------------------
+    // پرمیشن‌ها
+    // ------------------------------
+    Route::get('/permissions', [PermissionController::class, 'index']);
+    Route::post('/permissions', [PermissionController::class, 'store']);
+    Route::delete('/permissions/{id}', [PermissionController::class, 'destroy']);
 
 
      Route::get('/departments', [DepartementController::class, 'index']);
@@ -194,10 +214,9 @@ Route::delete('/sales/{sales_id}', [SalesController::class, 'destroy']); // ❌ 
     Route::post('/journals', [JournalController::class, 'store']);
     Route::put('/journals/{id}', [JournalController::class, 'update']);
     Route::post('journals/upsert/{id?}', [JournalController::class, 'upsert']);
-
-Route::put('/registrations/{reg_id}', [RegistrationsController::class, 'update']);
+ 
 Route::delete('/registrations/{reg_id}', [RegistrationsController::class, 'destroy']);
-
+Route::put('/registrations/{reg_id}', [RegistrationsController::class, 'update']);
 
 
 

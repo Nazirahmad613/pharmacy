@@ -1,4 +1,4 @@
-import { lazy } from "react";
+ import { lazy } from "react";
 import Loadable from "app/components/Loadable";
 import AdminRoute from "../material-kit/AdminRoute"; // ✅ Route Guard
 
@@ -18,7 +18,8 @@ const AppExpansionPanel = Loadable(lazy(() => import("./expansion-panel/AppExpan
 // ===== Forms & Data Entry =====
 const AppAddcatagory = Loadable(lazy(() => import("./addcatagory/addcatagory")));
 const AppAddmedication = Loadable(lazy(() => import("./addinformation/addmedication")));
-const AppUsersPage = Loadable(lazy(() => import("./users/UsersPage"))); // ✅ مدیریت کاربران
+const AppUsersPage = Loadable(lazy(() => import("./users/UsersPage")));
+const AppRolesPermissionsPage = Loadable(lazy(() => import("./users/RolesPermissionsPage"))); // ✅ صفحه رول و پرمیشن
 const AppAddchanges = Loadable(lazy(() => import("./changes/addchanges")));
 const AppAddprescriptions = Loadable(lazy(() => import("./pres_insert/pres_insert")));
 const AppAddsales = Loadable(lazy(() => import("./sales_insert/sales_insert")));
@@ -54,7 +55,7 @@ const materialRoutes = [
   { path: "/material/hospital-report", element: <AppHospital_report /> },
   { path: "/material/AcountSummaryPage", element: <AppAccountSummaryPage /> },
 
-  // ===== مسیر مدیریت کاربران فقط برای ادمین =====
+  // ===== مسیر مدیریت کاربران فقط برای ادمین و سوپر ادمین =====
   {
     path: "/material/users",
     element: (
@@ -63,6 +64,16 @@ const materialRoutes = [
       </AdminRoute>
     ),
   },
+
+  // ===== مسیر مدیریت رول‌ها و پرمیشن‌ها فقط برای ادمین و سوپر ادمین =====
+   {
+  path: "/material/roles-permissions",
+  element: (
+    <AdminRoute>
+      <AppRolesPermissionsPage />
+    </AdminRoute>
+  ),
+}
 ];
 
 export default materialRoutes;

@@ -106,6 +106,12 @@ const navigations = [
         icon: <PeopleIcon />,
         roles: ["admin", "super_admin"],
       },
+      {
+        name: "مدیریت رول‌ها و پرمیشن‌ها",
+        path: "/material/roles-permissions",
+        icon: <PeopleIcon />,
+        roles: ["admin", "super_admin"], // فقط ادمین و سوپر ادمین
+      },
     ],
   },
 

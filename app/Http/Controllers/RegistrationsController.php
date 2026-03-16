@@ -50,6 +50,46 @@ class RegistrationsController extends Controller
         );
     }
 
+public function update(Request $request, $reg_id)
+{
+    $registration = Registrations::find($reg_id);
+
+    if (! $registration) {
+        return response()->json([
+            'message' => 'رجستریشن یافت نشد.'
+        ], 404);
+    }
+
+    $validated = $request->validate([
+        'reg_type'     => 'sometimes|required|string',
+        'full_name'    => 'sometimes|required|string|max:255',
+        'father_name'  => 'nullable|string|max:255',
+        'phone'        => 'nullable|string|max:50',
+        'gender'       => 'nullable|string',
+        'age'          => 'nullable|integer',
+        'blood_group'  => 'nullable|string|max:10',
+        'address'      => 'nullable|string',
+        'visit_date'   => 'nullable|date',
+        'note'         => 'nullable|string',
+        'department_id'=> 'nullable|exists:departments,id',
+        'tazkira_number' => [
+            'nullable',
+            'regex:/^\d{4}-\d{4}-\d{5}$/'
+        ],
+    ]);
+
+    $registration->update($validated);
+
+    return response()->json([
+        'message' => 'رجستریشن با موفقیت به‌روزرسانی شد',
+        'data' => $registration
+    ]);
+}
+
+
+
+
+
     public function destroy($reg_id)
     {
         $registration = Registrations::find($reg_id);
