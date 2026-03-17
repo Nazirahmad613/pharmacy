@@ -3,27 +3,49 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Role; // استفاده از مدل سفارشی
+use App\Models\Role;
 use App\Models\Permission;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Validation\ValidationException;
 
 class RoleController extends Controller
 {
     // لیست رول‌ها همراه با پرمیشن‌ها
     public function index()
     {
-        $roles = Role::with('permissions')->get();
-        return response()->json($roles);
+        try {
+            $roles = Role::with('permissions')->get();
+            return response()->json($roles);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'خطا در دریافت لیست رول‌ها'], 500);
+        }
     }
 
     // ایجاد رول جدید
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|unique:roles,name',
-        ]);
+        try {
+            $request->validate([
+                'name' => 'required|string|unique:roles,name',
+            ]);
 
-        $role = Role::create(['name' => $request->name, 'guard_name' => 'web']);
-        return response()->json($role, 201);
+            $role = Role::create([
+                'name' => $request->name, 
+                'guard_name' => 'web'
+            ]);
+            
+            // پاک کردن کش
+            app()->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+            
+            return response()->json([
+                'message' => 'رول با موفقیت ایجاد شد',
+                'role' => $role
+            ], 201);
+        } catch (ValidationException $e) {
+            return response()->json(['error' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'خطا در ایجاد رول جدید'], 500);
+        }
     }
 
     // حذف رول
@@ -31,31 +53,70 @@ class RoleController extends Controller
     {
         try {
             $role = Role::findOrFail($id);
+            
+            // بررسی اینکه رول به کاربری متصل نباشد
+            $usersCount = \DB::table(config('permission.table_names.model_has_roles'))
+                ->where('role_id', $id)
+                ->count();
+            
+            if ($usersCount > 0) {
+                return response()->json([
+                    'error' => 'این رول به کاربرانی متصل است و قابل حذف نیست'
+                ], 400);
+            }
+            
             $role->delete();
-            return response()->json(['message' => 'Role deleted successfully']);
+            
+            // پاک کردن کش
+            app()->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+            
+            return response()->json([
+                'message' => 'رول با موفقیت حذف شد'
+            ]);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['error' => 'رول یافت نشد'], 404);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Error deleting role'], 500);
+            return response()->json(['error' => 'خطا در حذف رول'], 500);
         }
     }
 
-    // اختصاص پرمیشن به رول
+    // اختصاص پرمیشن به رول (بدون حذف پرمیشن‌های قبلی)
     public function assignPermissions(Request $request, $id)
     {
         try {
             $role = Role::findOrFail($id);
-
-            // اگر پرمیشن‌ها موجود نیستند، آرایه خالی قرار می‌دهیم
-            $permissionIds = $request->permissions ?? [];
-
-            // دریافت پرمیشن‌های معتبر
-            $validPermissions = Permission::whereIn('id', $permissionIds)->get();
-
-            // همگام‌سازی پرمیشن‌ها
-            $role->syncPermissions($validPermissions);
-
-            return response()->json(['message' => 'Permissions assigned successfully']);
+            
+            // اعتبارسنجی ورودی
+            $request->validate([
+                'permissions' => 'required|array',
+                'permissions.*' => 'exists:permissions,id'
+            ]);
+            
+            $permissionIds = $request->permissions;
+            
+            // اضافه کردن پرمیشن‌های جدید (بدون حذف قبلی‌ها)
+            foreach ($permissionIds as $permissionId) {
+                if (!$role->hasPermissionTo($permissionId)) {
+                    $role->givePermissionTo($permissionId);
+                }
+            }
+            
+            // پاک کردن کش
+            app()->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+            
+            // بازگردانی رول با پرمیشن‌های به‌روز شده
+            $role->load('permissions');
+            
+            return response()->json([
+                'message' => 'پرمیشن‌ها با موفقیت به رول اضافه شدند',
+                'role' => $role
+            ]);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['error' => 'رول یافت نشد'], 404);
+        } catch (ValidationException $e) {
+            return response()->json(['error' => $e->errors()], 422);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Error assigning permissions'], 500);
+            return response()->json(['error' => 'خطا در اختصاص پرمیشن‌ها: ' . $e->getMessage()], 500);
         }
     }
 
@@ -68,9 +129,16 @@ class RoleController extends Controller
             
             $role->revokePermissionTo($permission);
             
-            return response()->json(['message' => 'Permission removed from role successfully']);
+            // پاک کردن کش
+            app()->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+            
+            return response()->json([
+                'message' => 'پرمیشن با موفقیت از رول حذف شد'
+            ]);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['error' => 'رول یا پرمیشن یافت نشد'], 404);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Error removing permission from role'], 500);
+            return response()->json(['error' => 'خطا در حذف پرمیشن از رول'], 500);
         }
     }
 }

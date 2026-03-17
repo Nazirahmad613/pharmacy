@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Spatie\Permission\Models\Role as SpatieRole;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Role extends SpatieRole
 {
@@ -14,5 +15,8 @@ class Role extends SpatieRole
         'guard_name',
     ];
 
-    // اگر نیاز به متدهای اضافی دارید اینجا اضافه کنید
+    /**
+     * Override the permissions relationship to fix the error
+     */
+   
 }

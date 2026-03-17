@@ -30,7 +30,7 @@ use App\Http\Controllers\AccountSummaryController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PermissionController;
-use App\Http\Controllers\DepartementController; // ✅ فقط یک Controller
+use App\Http\Controllers\DepartementController;
 
 /*
 |--------------------------------------------------------------------------
@@ -49,9 +49,6 @@ Route::get('/test', function () {
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
-// ===== Departments بدون توکن (برای React select) =====
-
-
 /*
 |--------------------------------------------------------------------------
 | Protected Routes (Token-based)
@@ -65,17 +62,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
-     // ------------------------------
+    // ==================== Role & Permission Routes (تعریف صحیح) ====================
+    
+    // ------------------------------
     // رول‌ها
     // ------------------------------
     Route::get('/roles', [RoleController::class, 'index']);
     Route::post('/roles', [RoleController::class, 'store']);
     Route::delete('/roles/{id}', [RoleController::class, 'destroy']);
+    
+    // اختصاص پرمیشن به رول - فقط یک بار تعریف شود
     Route::post('/roles/{id}/permissions', [RoleController::class, 'assignPermissions']);
+    
+    // حذف یک پرمیشن خاص از رول
+    Route::delete('/roles/{id}/permissions/{permissionId}', [RoleController::class, 'removePermission']);
 
-// Role Permissions
-Route::post('/roles/{id}/permissions', [RoleController::class, 'assignPermissions']);
-Route::delete('/roles/{id}/permissions/{permissionId}', [RoleController::class, 'removePermission']);
     // ------------------------------
     // پرمیشن‌ها
     // ------------------------------
@@ -83,8 +84,8 @@ Route::delete('/roles/{id}/permissions/{permissionId}', [RoleController::class, 
     Route::post('/permissions', [PermissionController::class, 'store']);
     Route::delete('/permissions/{id}', [PermissionController::class, 'destroy']);
 
-
-     Route::get('/departments', [DepartementController::class, 'index']);
+    // ===== Departments =====
+    Route::get('/departments', [DepartementController::class, 'index']);
 
     // ===== Registrations =====
     Route::post('/registrations', [RegistrationsController::class, 'store']);
@@ -120,93 +121,48 @@ Route::delete('/roles/{id}/permissions/{permissionId}', [RoleController::class, 
     Route::get('/inventory', [InventoryController::class, 'index']);
     Route::post('/inventory', [InventoryController::class, 'store']);
 
-   
-
     // ===== Sales Details =====
     Route::get('/sales-details', [SalesDetailsController::class, 'index']);
 
     // ===== Customers =====
     Route::get('/customers', [CustomersController::class, 'index']);
 
- 
- 
+    // ===== CATEGORY ROUTES =====
+    Route::get('/categories', [CategoryController::class, 'index']);
+    Route::post('/categories', [CategoryController::class, 'store']);
+    Route::get('/categories/{id}', [CategoryController::class, 'show']);
+    Route::put('/categories/{id}', [CategoryController::class, 'update']);
+    Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
 
-// ========== CATEGORY ROUTES ==========
+    // ===== PURCHASES ROUTES =====
+    Route::prefix('parchases')->group(function () {
+        Route::get('/', [ParchasesController::class, 'index']);
+        Route::post('/', [ParchasesController::class, 'store']);
+        Route::get('/{parchaseid}', [ParchasesController::class, 'show']);
+        Route::put('/{parchaseid}', [ParchasesController::class, 'update']);
+        Route::delete('/{parchaseid}', [ParchasesController::class, 'destroy']);
+    });
 
-// دریافت لیست تمام کتگوری‌ها
-Route::get('/categories', [CategoryController::class, 'index']);
-
-// ثبت کتگوری جدید
-Route::post('/categories', [CategoryController::class, 'store']);
-
-// دریافت اطلاعات یک کتگوری خاص
-Route::get('/categories/{id}', [CategoryController::class, 'show']);
-
-// بروزرسانی یک کتگوری
-Route::put('/categories/{id}', [CategoryController::class, 'update']);
-
-// حذف یک کتگوری
-Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
-
-
- 
-// مسیرهای API خریدها
-Route::prefix('parchases')->group(function () {
-    
-    // نمایش همه خریدها
-    Route::get('/', [ParchasesController::class, 'index']);
-
-    // ثبت خرید جدید
-    Route::post('/', [ParchasesController::class, 'store']);
-
-    // نمایش یک خرید (اختیاری)
-    Route::get('/{parchaseid}', [ParchasesController::class, 'show']);
-
-    // تصحیح خرید
-    Route::put('/{parchaseid}', [ParchasesController::class, 'update']); // یا PATCH
-
-    // حذف خرید
-    Route::delete('/{parchaseid}', [ParchasesController::class, 'destroy']);
-});
     // ===== Notifications =====
     Route::get('/notifications', [NotificationController::class, 'index']);
 
+    // ===== Medications CRUD =====
+    Route::get('/medications', [MedicationController::class, 'index']);
+    Route::post('/medications', [MedicationController::class, 'store']);
+    Route::get('/medications/{med_id}', [MedicationController::class, 'show']);
+    Route::put('/medications/{med_id}', [MedicationController::class, 'update']);
+    Route::delete('/medications/{med_id}', [MedicationController::class, 'destroy']);
 
-// لیست دواها
-Route::get('/medications', [MedicationController::class, 'index']);
+    // ===== Prescriptions CRUD =====
+    Route::get('/prescriptions', [PrescriptionController::class,'index']);
+    Route::put('/prescriptions/{pres_id}', [PrescriptionController::class,'update']);
+    Route::delete('/prescriptions/{pres_id}', [PrescriptionController::class,'destroy']);
 
-// ثبت دوا
-Route::post('/medications', [MedicationController::class, 'store']);
-
-// نمایش یک دوا
-Route::get('/medications/{med_id}', [MedicationController::class, 'show']);
-
-// ✏️ تصحیح دوا
-Route::put('/medications/{med_id}', [MedicationController::class, 'update']);
-
-// ❌ حذف دوا
-Route::delete('/medications/{med_id}', [MedicationController::class, 'destroy']);
-
-
-
-// روت های مربوطه به تصیح و حزف و نمایش نسخه 
-
-Route::get('/prescriptions', [PrescriptionController::class,'index']);
-Route::put('/prescriptions/{pres_id}', [PrescriptionController::class,'update']);
-Route::delete('/prescriptions/{pres_id}', [PrescriptionController::class,'destroy']);
-
-
-
-
-// ===== Sales =====
-Route::get('/sales', [SalesController::class, 'index']);          // لیست فروشات
-Route::post('/sales', [SalesController::class, 'store']);         // ثبت فروش جدید
-Route::put('/sales/{sales_id}', [SalesController::class, 'update']);    // ✏️ تصحیح/ویرایش فروش
-Route::delete('/sales/{sales_id}', [SalesController::class, 'destroy']); // ❌ حذف فروش
-
-
-
-
+    // ===== Sales CRUD =====
+    Route::get('/sales', [SalesController::class, 'index']);
+    Route::post('/sales', [SalesController::class, 'store']);
+    Route::put('/sales/{sales_id}', [SalesController::class, 'update']);
+    Route::delete('/sales/{sales_id}', [SalesController::class, 'destroy']);
 
     // ===== Journals =====
     Route::get('/journals', [JournalController::class, 'index']);
@@ -214,12 +170,10 @@ Route::delete('/sales/{sales_id}', [SalesController::class, 'destroy']); // ❌ 
     Route::post('/journals', [JournalController::class, 'store']);
     Route::put('/journals/{id}', [JournalController::class, 'update']);
     Route::post('journals/upsert/{id?}', [JournalController::class, 'upsert']);
- 
-Route::delete('/registrations/{reg_id}', [RegistrationsController::class, 'destroy']);
-Route::put('/registrations/{reg_id}', [RegistrationsController::class, 'update']);
 
-
-
+    // ===== Registrations CRUD =====
+    Route::delete('/registrations/{reg_id}', [RegistrationsController::class, 'destroy']);
+    Route::put('/registrations/{reg_id}', [RegistrationsController::class, 'update']);
 
     // ===== Reports / Views =====
     Route::get('/view-inventory', [ViewInventoryController::class, 'index']);
