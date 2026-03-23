@@ -16,7 +16,7 @@ class Role extends SpatieRole
     ];
 
     /**
-     * Override the permissions relationship to fix the error
+     * رابطه با مدل Permission - تعریف مجدد برای اطمینان از عملکرد صحیح
      */
-   
+  
 }

@@ -1,15 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import api from "../../../../api";
 import MainLayoutjur from "../../../../components/MainLayoutjur";
+import { useAuth } from "../../../contexts/AuthContext";
 
 const MedicationForm = () => {
+  const { user, loading } = useAuth(); // دریافت اطلاعات کاربر و وضعیت لودینگ
+
   const [categories, setCategories] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [medications, setMedications] = useState([]);
   const [editingId, setEditingId] = useState(null);
-
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
 
@@ -21,11 +23,30 @@ const MedicationForm = () => {
     dosage: "",
   });
 
+  // نمایش لودینگ تا زمانی که اطلاعات کاربر دریافت نشده
+  if (loading) {
+    return <div>در حال بارگذاری...</div>;
+  }
+
+ const hasAccess = (() => {
+  if (!user) return false;
+  // اگر role مستقیماً یک رشته باشد
+  if (user.role === "user") return true;
+  // اگر roles آرایه‌ای از نام‌ها باشد
+  if (Array.isArray(user.roles) && user.roles.includes("user")) return true;
+  // اگر roles آرایه‌ای از اشیاء دارای name باشد
+  if (Array.isArray(user.roles) && user.roles.some(r => r.name === "user")) return true;
+  return false;
+})();
+ 
+
   useEffect(() => {
-    loadCategories();
-    loadSuppliers();
-    loadMedications();
-  }, []);
+    if (hasAccess) {
+      loadCategories();
+      loadSuppliers();
+      loadMedications();
+    }
+  }, [hasAccess]);
 
   const loadCategories = async () => {
     try {
@@ -107,7 +128,6 @@ const MedicationForm = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // ✅ تابع جدید برای انصراف از ویرایش
   const handleCancelEdit = () => {
     setEditingId(null);
     setFormData({
@@ -140,10 +160,19 @@ const MedicationForm = () => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentItems = medications.slice(startIndex, startIndex + itemsPerPage);
 
+  if (!hasAccess) {
+    return (
+      <MainLayoutjur>
+        <div style={{ textAlign: "center", padding: "50px", fontSize: "18px", color: "red" }}>
+          ⛔ شما دسترسی لازم برای مشاهده این صفحه را ندارید.
+        </div>
+      </MainLayoutjur>
+    );
+  }
+
   return (
     <MainLayoutjur>
-      {/* ✅ ToastContainer با استایل مناسب */}
-      <ToastContainer 
+      <ToastContainer
         position="top-right"
         autoClose={3000}
         hideProgressBar={false}
@@ -155,7 +184,7 @@ const MedicationForm = () => {
         pauseOnHover
         theme="colored"
         limit={5}
-        style={{ 
+        style={{
           zIndex: 9999999,
           position: 'fixed',
           top: '20px',
@@ -259,7 +288,6 @@ const MedicationForm = () => {
               {editingId ? "تصحیح دوا" : "ثبت دوا"}
             </button>
 
-            {/* ✅ دکمه انصراف - فقط در حالت ویرایش نمایش داده می‌شود */}
             {editingId && (
               <button 
                 type="button" 
@@ -293,7 +321,7 @@ const MedicationForm = () => {
               <th>کتگوری</th>
               <th>حمایت‌کننده</th>
               <th>عملیات</th>
-            </tr>
+             </tr>
           </thead>
           <tbody>
             {currentItems.length ? (

@@ -7,21 +7,23 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
     /**
-     * تعریف ثابت‌های نقش‌ها
+     * تعریف ثابت‌های نقش‌ها - هماهنگ با نام‌های موجود در Spatie
      */
-    const ROLE_SUPER_ADMIN = 'super_admin';
+    const ROLE_SUPER_ADMIN = 'super-admin';
     const ROLE_ADMIN = 'admin';
-    const ROLE_HOSPITAL_HEAD = 'hospital_head';
+    const ROLE_HOSPITAL_HEAD = 'head-of-hospital';
     const ROLE_DOCTOR = 'doctor';
     const ROLE_PHARMACIST = 'pharmacist';
     const ROLE_NURSE = 'nurse';
     const ROLE_USER = 'user';
+    const ROLE_EMPLOYEES = 'کارمندان';
 
     /**
      * Mass assignable attributes
@@ -30,7 +32,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role', // اضافه شد
+        'role',
     ];
 
     /**
@@ -42,26 +44,25 @@ class User extends Authenticatable
     ];
 
     /**
-     * Casts
+     * The attributes that should be cast.
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'password' => 'hashed', // مهم: اضافه کردن این خط
     ];
 
-    /**
-     * Mutator: وقتی پسورد ست می‌شود، خودکار هش شود
-     */
-    public function setPasswordAttribute($value)
-    {
-        if ($value) {
-            // اگر قبلاً هش نشده باشد، هش کن
-            if (!str_starts_with($value, '$2y$')) {
-                $this->attributes['password'] = Hash::make($value);
-            } else {
-                $this->attributes['password'] = $value;
-            }
-        }
-    }
+    // حذف یا کامنت کردن متد setPasswordAttribute
+    // لاراول 11 به صورت خودکار پسورد را هش می‌کند
+    // public function setPasswordAttribute($value)
+    // {
+    //     if ($value) {
+    //         if (!str_starts_with($value, '$2y$')) {
+    //             $this->attributes['password'] = Hash::make($value);
+    //         } else {
+    //             $this->attributes['password'] = $value;
+    //         }
+    //     }
+    // }
 
     /**
      * 🔹 دریافت لیست تمام نقش‌ها با عنوان فارسی
@@ -76,6 +77,7 @@ class User extends Authenticatable
             self::ROLE_PHARMACIST => 'مسئول دواخانه',
             self::ROLE_NURSE => 'نرس',
             self::ROLE_USER => 'کاربر عادی',
+            self::ROLE_EMPLOYEES => 'کارمندان',
         ];
     }
 
@@ -84,6 +86,15 @@ class User extends Authenticatable
      */
     public function getRoleNameAttribute(): string
     {
+        if ($this->roles->isNotEmpty()) {
+            $roleNames = $this->roles->pluck('name')->toArray();
+            $persianRoles = [];
+            foreach ($roleNames as $roleName) {
+                $persianRoles[] = self::getRoles()[$roleName] ?? $roleName;
+            }
+            return implode('، ', $persianRoles);
+        }
+        
         return self::getRoles()[$this->role] ?? $this->role;
     }
 
@@ -92,6 +103,15 @@ class User extends Authenticatable
      */
     public function hasRole($role): bool
     {
+        if (is_array($role)) {
+            return $this->roles()->whereIn('name', $role)->exists();
+        }
+        
+        if ($this->roles()->where('name', $role)->exists()) {
+            return true;
+        }
+        
+        // Fallback به فیلد role قدیمی
         if (is_array($role)) {
             return in_array($this->role, $role);
         }
@@ -103,7 +123,12 @@ class User extends Authenticatable
      */
     public function hasAnyRole(array $roles): bool
     {
-        return in_array($this->role, $roles);
+        foreach ($roles as $role) {
+            if ($this->hasRole($role)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -111,7 +136,7 @@ class User extends Authenticatable
      */
     public function isSuperAdmin(): bool
     {
-        return $this->role === self::ROLE_SUPER_ADMIN;
+        return $this->hasRole(self::ROLE_SUPER_ADMIN);
     }
 
     /**
@@ -119,7 +144,7 @@ class User extends Authenticatable
      */
     public function isAdmin(): bool
     {
-        return in_array($this->role, [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN]);
+        return $this->hasAnyRole([self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN]);
     }
 
     /**
@@ -127,7 +152,7 @@ class User extends Authenticatable
      */
     public function isHospitalHead(): bool
     {
-        return $this->role === self::ROLE_HOSPITAL_HEAD;
+        return $this->hasRole(self::ROLE_HOSPITAL_HEAD);
     }
 
     /**
@@ -135,7 +160,7 @@ class User extends Authenticatable
      */
     public function isDoctor(): bool
     {
-        return $this->role === self::ROLE_DOCTOR;
+        return $this->hasRole(self::ROLE_DOCTOR);
     }
 
     /**
@@ -143,7 +168,7 @@ class User extends Authenticatable
      */
     public function isPharmacist(): bool
     {
-        return $this->role === self::ROLE_PHARMACIST;
+        return $this->hasRole(self::ROLE_PHARMACIST);
     }
 
     /**
@@ -151,25 +176,11 @@ class User extends Authenticatable
      */
     public function isNurse(): bool
     {
-        return $this->role === self::ROLE_NURSE;
+        return $this->hasRole(self::ROLE_NURSE);
     }
 
     /**
-     * 🔹 متد کمکی برای هش کردن تمام پسوردهای قبلی
-     */
-    public static function hashOldPasswords()
-    {
-        $users = self::all();
-        foreach ($users as $user) {
-            if (!str_starts_with($user->password, '$2y$')) {
-                $user->password = $user->password; // با Mutator هش می‌شود
-                $user->save();
-            }
-        }
-    }
-
-    /**
-     * 🔹 رابطه با نسخه‌ها (اگر کاربر داکتر باشد)
+     * 🔹 رابطه با نسخه‌ها
      */
     public function prescriptions()
     {
@@ -177,7 +188,7 @@ class User extends Authenticatable
     }
 
     /**
-     * 🔹 رابطه با فروش‌ها (اگر کاربر مسئول دواخانه باشد)
+     * 🔹 رابطه با فروش‌ها
      */
     public function sales()
     {

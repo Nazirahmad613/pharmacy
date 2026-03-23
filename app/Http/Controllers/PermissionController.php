@@ -16,7 +16,7 @@ class PermissionController extends Controller
             $permissions = Permission::all();
             return response()->json($permissions);
         } catch (\Exception $e) {
-            return response()->json(['error' => ' ' . $e->getMessage()], 500);
+            return response()->json(['error' => 'خطا در دریافت لیست پرمیشن‌ها: ' . $e->getMessage()], 500);
         }
     }
 
@@ -34,13 +34,13 @@ class PermissionController extends Controller
             ]);
             
             return response()->json([
-                'message' => '',
+                'message' => 'پرمیشن با موفقیت ایجاد شد',
                 'permission' => $permission
             ], 201);
         } catch (ValidationException $e) {
             return response()->json(['error' => $e->errors()], 422);
         } catch (\Exception $e) {
-            return response()->json(['error' => '  ' . $e->getMessage()], 500);
+            return response()->json(['error' => 'خطا در ایجاد پرمیشن جدید: ' . $e->getMessage()], 500);
         }
     }
 
