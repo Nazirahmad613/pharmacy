@@ -40,7 +40,9 @@ class AuthController extends Controller
                 'role' => $user->role,
                 'role_name' => $user->role_name,
             ],
-            'token' => $token
+            'token' => $token,
+            // برای ثبت‌نام هم پرمیشن‌ها را برگردانید (ممکن است خالی باشند)
+            'permissions_list' => $user->getAllPermissions()->pluck('name')->toArray(),
         ], 201);
     }
 
@@ -61,9 +63,6 @@ class AuthController extends Controller
 
         $user = Auth::user();
 
-        // حذف توکن‌های قبلی (اختیاری - اگر می‌خواهید هر بار توکن جدید بگیرد)
-        // $user->tokens()->delete();
-
         // ایجاد Personal Access Token
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -77,7 +76,9 @@ class AuthController extends Controller
                 'role' => $user->role,
                 'role_name' => $user->role_name,
             ],
-            'token' => $token
+            'token' => $token,
+            // لیست پرمیشن‌های واقعی کاربر
+            'permissions_list' => $user->getAllPermissions()->pluck('name')->toArray(),
         ], 200);
     }
 
@@ -107,11 +108,14 @@ class AuthController extends Controller
                 'role' => $user->role,
                 'role_name' => $user->role_name,
             ],
+            // ساختار قدیمی (برای سازگاری با بخش‌های قبلی)
             'permissions' => $this->getUserPermissions($user),
+            // ساختار جدید: آرایه‌ای از پرمیشن‌ها (برای استفاده در شرط‌های داینامیک)
+            'permissions_list' => $user->getAllPermissions()->pluck('name')->toArray(),
         ], 200);
     }
 
-    // دریافت دسترسی‌های کاربر بر اساس نقش
+    // دریافت دسترسی‌های کاربر بر اساس نقش (قدیمی)
     private function getUserPermissions($user)
     {
         return [

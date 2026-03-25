@@ -10,7 +10,7 @@ export default function MatxLogo({ className }) {
       <img 
   src="/images/Logo.png"  
   alt="New Logo"  
-  width="60"  
+  width="150px"  
   height="auto"
   style={{ display: "block", margin: "0 auto" }}  
 />

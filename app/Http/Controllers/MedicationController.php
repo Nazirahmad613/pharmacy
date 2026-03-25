@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Registrations;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Services\LogService;
 
 class MedicationController extends Controller
 {
@@ -47,6 +48,14 @@ class MedicationController extends Controller
         try {
 
             $medication = Medication::create($validated);
+          // ✅ لاگ
+        LogService::create(
+            'create',
+            'medications',
+            $medication->med_id,
+            'Medication created',
+            $medication->toArray()
+        );
 
             return response()->json([
                 'message' => '✅ دوا با موفقیت ثبت شد',
@@ -70,6 +79,7 @@ class MedicationController extends Controller
     {
         $medication = Medication::with(['category', 'supplier'])
             ->find($med_id);
+            
 
         if (!$medication) {
             return response()->json(['error' => 'دوا پیدا نشد'], 404);
@@ -102,9 +112,27 @@ class MedicationController extends Controller
 
         $medication = Medication::find($med_id);
 
+
+        
         if (!$medication) {
             return response()->json(['error' => 'دوا پیدا نشد'], 404);
         }
+          // ✅ گرفتن اطلاعات قبل از تغییر
+    $oldData = $medication->toArray();
+
+    $medication->update($validated);
+
+    // ✅ لاگ
+    LogService::create(
+        'update',
+        'medications',
+        $medication->med_id,
+        'Medication updated',
+        [
+            'old' => $oldData,
+            'new' => $medication->toArray()
+        ]
+    );
 
         $medication->update($validated);
 
@@ -121,10 +149,34 @@ class MedicationController extends Controller
     public function destroy($med_id)
     {
         $medication = Medication::find($med_id);
+            // ✅ لاگ
+            LogService::create(
+                'delete',
+                'medications',
+                $medication->med_id,
+                'Medication deleted',
+                $medication->toArray()
+            );
 
         if (!$medication) {
             return response()->json(['error' => 'دوا پیدا نشد'], 404);
         }
+
+    // ✅ ذخیره اطلاعات قبل از حذف
+    $data = $medication->toArray();
+
+    $medication->delete();
+
+    // ✅ لاگ
+    LogService::create(
+        'delete',
+        'medications',
+        $med_id,
+        'Medication deleted',
+        $data
+    );
+
+
 
         $medication->delete();
 

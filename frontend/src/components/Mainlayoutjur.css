@@ -8,18 +8,23 @@ html, body {
 
 /* ===== لایه اصلی ===== */
 .main-layout {
-  min-height: 100vh;
+ min-height: 100vh;
   width: 100%;
   position: relative;
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
   color: #ffffff;
 }
 
 /* ===== لایه آبی ===== */
-.background-overlay {
+ /* ===== لایه آبی ===== */
+ .background-overlay {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  height: 100%;   /* به جای min-height */
+  width: 100%;
   background: rgba(5, 15, 40, 0.85);
   z-index: 1;
 }
@@ -30,8 +35,8 @@ html, body {
   z-index: 2;
   max-width: 1200px;
   margin: auto;
+  padding-bottom: 20px;   /* 🔥 برای نفس کشیدن پایین صفحه */
 }
-
 /* ================= فرم ================= */
 
 .form-container {

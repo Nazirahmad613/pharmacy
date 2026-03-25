@@ -1,8 +1,10 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use Illuminate\Http\Request;
 use App\Models\Category;
+use App\Services\LogService; // اضافه شده
 
 class CategoryController extends Controller
 {
@@ -33,6 +35,15 @@ class CategoryController extends Controller
             $category = Category::create([
                 'category_name' => $request->category_name,
             ]);
+
+            // ✅ لاگ ثبت کتگوری
+            LogService::create(
+                'create',
+                'categories',
+                $category->category_id,
+                'Category created',
+                $category->toArray()
+            );
 
             return response()->json([
                 'message' => 'کتگوری با موفقیت ثبت شد',
@@ -69,7 +80,23 @@ class CategoryController extends Controller
 
         try {
             $category = Category::findOrFail($id);
+            
+            // ✅ گرفتن اطلاعات قبل از تغییر
+            $oldData = $category->toArray();
+
             $category->update($request->only('category_name'));
+
+            // ✅ لاگ ویرایش کتگوری
+            LogService::create(
+                'update',
+                'categories',
+                $category->category_id,
+                'Category updated',
+                [
+                    'old' => $oldData,
+                    'new' => $category->toArray()
+                ]
+            );
 
             return response()->json([
                 'message' => 'کتگوری با موفقیت بروزرسانی شد',
@@ -88,7 +115,20 @@ class CategoryController extends Controller
     {
         try {
             $category = Category::findOrFail($id);
+            
+            // ✅ ذخیره اطلاعات قبل از حذف
+            $data = $category->toArray();
+
             $category->delete();
+
+            // ✅ لاگ حذف کتگوری
+            LogService::create(
+                'delete',
+                'categories',
+                $id,
+                'Category deleted',
+                $data
+            );
 
             return response()->json([
                 'message' => 'کتگوری با موفقیت حذف شد'

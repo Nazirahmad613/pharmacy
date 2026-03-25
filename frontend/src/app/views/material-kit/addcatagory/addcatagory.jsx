@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import MainLayoutjur from "../../../../components/Mainlayoutjur";
-import { toast, ToastContainer } from "react-toastify"; // اضافه کردن ToastContainer
+import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useAuth } from "../../../contexts/AuthContext";
 
 export default function CategoryForm() {
-  const { api } = useAuth();
+  // ✅ دریافت api, permissions, permissionsList و user از context
+  const { api, permissions, permissionsList, user } = useAuth();
+
   const [categories, setCategories] = useState([]);
   const [categoryName, setCategoryName] = useState("");
   const [editingId, setEditingId] = useState(null);
@@ -46,14 +48,12 @@ export default function CategoryForm() {
 
     try {
       if (editingId) {
-        // Update existing category
         await api.put(`/categories/${editingId}`, {
           category_name: categoryName
         });
         toast.success("کتگوری با موفقیت بروزرسانی شد");
         setEditingId(null);
       } else {
-        // Create new category
         await api.post("/categories", {
           category_name: categoryName
         });
@@ -108,7 +108,6 @@ export default function CategoryForm() {
     setCategoryName("");
   };
 
-  // تابع فرمت تاریخ
   const formatDate = (dateString) => {
     if (!dateString) return "-";
     try {
@@ -118,9 +117,13 @@ export default function CategoryForm() {
     }
   };
 
+  // ✅ شرط نمایش دکمه حذف:
+  // - نقش ادمین باشد
+  // - یا آرایه permissionsList شامل پرمیشن 'delete-category' باشد
+  const canDelete = user?.role === 'admin' || (permissionsList && permissionsList.includes('delete-category'));
+
   return (
     <MainLayoutjur>
-      {/* ✅ ToastContainer مستقیم - بدون نیاز به ToastPortal */}
       <ToastContainer 
         position="top-right"
         autoClose={3000}
@@ -149,7 +152,6 @@ export default function CategoryForm() {
         <div className="background-overlay"></div>
 
         <div className="layout-content">
-          {/* فرم ثبت کتگوری */}
           <div className="form-container">
             <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
               {editingId ? "ویرایش کتگوری" : "ثبت کتگوری جدید"}
@@ -209,7 +211,6 @@ export default function CategoryForm() {
             </form>
           </div>
 
-          {/* لیست کتگوری‌ها */}
           {categories.length > 0 && (
             <div className="table-container" style={{ marginTop: "20px" }}>
               <h3>لیست کتگوری‌ها</h3>
@@ -221,7 +222,7 @@ export default function CategoryForm() {
                     <th style={{ padding: "12px", textAlign: "center" }}>نام کتگوری</th>
                     <th style={{ padding: "12px", textAlign: "center" }}>تاریخ ایجاد</th>
                     <th style={{ padding: "12px", textAlign: "center" }}>عملیات</th>
-                  </tr>
+                   </tr>
                 </thead>
                 <tbody>
                   {currentCategories.map((category, index) => (
@@ -251,27 +252,29 @@ export default function CategoryForm() {
                         >
                           تصحیح
                         </button>
-                        <button
-                          onClick={() => handleDelete(category.category_id)}
-                          style={{
-                            backgroundColor: "#dc3545",
-                            color: "white",
-                            border: "none",
-                            padding: "5px 15px",
-                            borderRadius: "4px",
-                            cursor: "pointer",
-                            fontSize: "13px"
-                          }}
-                        >
-                          حذف
-                        </button>
+                        {/* ✅ دکمه حذف فقط برای ادمین یا کاربرانی که پرمیشن delete-category را دارند نمایش داده شود */}
+                        {canDelete && (
+                          <button
+                            onClick={() => handleDelete(category.category_id)}
+                            style={{
+                              backgroundColor: "#dc3545",
+                              color: "white",
+                              border: "none",
+                              padding: "5px 15px",
+                              borderRadius: "4px",
+                              cursor: "pointer",
+                              fontSize: "13px"
+                            }}
+                          >
+                            حذف
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
 
-              {/* Pagination */}
               {totalPages > 1 && (
                 <div style={{ marginTop: "20px", textAlign: "center" }}>
                   <button
@@ -314,7 +317,6 @@ export default function CategoryForm() {
             </div>
           )}
 
-          {/* پیغام وقتی لیست خالی است */}
           {categories.length === 0 && !loading && (
             <div style={{ 
               textAlign: "center", 

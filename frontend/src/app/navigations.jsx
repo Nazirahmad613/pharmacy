@@ -85,6 +85,12 @@ const navigations = [
         roles: ["admin", "user", "super_admin"],
       },
       {
+        name: "logs",
+        path: "/material/logs",
+        icon: <logsIcon />,
+        roles: ["admin", "user", "super_admin"],
+      },
+      {
         name: "PaymentForm",
         path: "/material/payment",
         icon: <PaymentIcon />,

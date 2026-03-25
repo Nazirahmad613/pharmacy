@@ -29,6 +29,7 @@ const AppRegistrationForm = Loadable(lazy(() => import("./registrations/Registra
 // ===== Reports =====
 const AppHospital_report = Loadable(lazy(() => import("./reports/Hospital_Report")));
 const AppAccountSummaryPage = Loadable(lazy(() => import("./reports/AccountSummaryPage.jsx")));  
+const AppAddlogs = Loadable(lazy(() => import("./logs/logs")));
 
 // ===== Routes =====
 const materialRoutes = [
@@ -51,6 +52,7 @@ const materialRoutes = [
   { path: "/material/parchases", element: <AppAddparchases /> },
   { path: "/material/addcatagory", element: <AppAddcatagory /> },
   { path: "/material/registrations", element: <AppRegistrationForm /> },
+  { path: "/material/logs", element: <AppAddlogs /> },
 
   { path: "/material/hospital-report", element: <AppHospital_report /> },
   { path: "/material/AcountSummaryPage", element: <AppAccountSummaryPage /> },
