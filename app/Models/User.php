@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
@@ -48,21 +47,8 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'password' => 'hashed', // مهم: اضافه کردن این خط
+        'password' => 'hashed', // لاراول 11 به صورت خودکار پسورد را هش می‌کند
     ];
-
-    // حذف یا کامنت کردن متد setPasswordAttribute
-    // لاراول 11 به صورت خودکار پسورد را هش می‌کند
-    // public function setPasswordAttribute($value)
-    // {
-    //     if ($value) {
-    //         if (!str_starts_with($value, '$2y$')) {
-    //             $this->attributes['password'] = Hash::make($value);
-    //         } else {
-    //             $this->attributes['password'] = $value;
-    //         }
-    //     }
-    // }
 
     /**
      * 🔹 دریافت لیست تمام نقش‌ها با عنوان فارسی
@@ -94,89 +80,8 @@ class User extends Authenticatable
             }
             return implode('، ', $persianRoles);
         }
-        
+
         return self::getRoles()[$this->role] ?? $this->role;
-    }
-
-    /**
-     * 🔹 بررسی اینکه کاربر نقش مشخصی دارد یا خیر
-     */
-    public function hasRole($role): bool
-    {
-        if (is_array($role)) {
-            return $this->roles()->whereIn('name', $role)->exists();
-        }
-        
-        if ($this->roles()->where('name', $role)->exists()) {
-            return true;
-        }
-        
-        // Fallback به فیلد role قدیمی
-        if (is_array($role)) {
-            return in_array($this->role, $role);
-        }
-        return $this->role === $role;
-    }
-
-    /**
-     * 🔹 بررسی اینکه کاربر حداقل یکی از نقش‌های مشخص شده را دارد
-     */
-    public function hasAnyRole(array $roles): bool
-    {
-        foreach ($roles as $role) {
-            if ($this->hasRole($role)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * 🔹 بررسی اینکه کاربر سوپر ادمین است
-     */
-    public function isSuperAdmin(): bool
-    {
-        return $this->hasRole(self::ROLE_SUPER_ADMIN);
-    }
-
-    /**
-     * 🔹 بررسی اینکه کاربر ادمین است (شامل سوپر ادمین هم می‌شود)
-     */
-    public function isAdmin(): bool
-    {
-        return $this->hasAnyRole([self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN]);
-    }
-
-    /**
-     * 🔹 بررسی اینکه کاربر رئیس شفاخانه است
-     */
-    public function isHospitalHead(): bool
-    {
-        return $this->hasRole(self::ROLE_HOSPITAL_HEAD);
-    }
-
-    /**
-     * 🔹 بررسی اینکه کاربر داکتر است
-     */
-    public function isDoctor(): bool
-    {
-        return $this->hasRole(self::ROLE_DOCTOR);
-    }
-
-    /**
-     * 🔹 بررسی اینکه کاربر مسئول دواخانه است
-     */
-    public function isPharmacist(): bool
-    {
-        return $this->hasRole(self::ROLE_PHARMACIST);
-    }
-
-    /**
-     * 🔹 بررسی اینکه کاربر نرس است
-     */
-    public function isNurse(): bool
-    {
-        return $this->hasRole(self::ROLE_NURSE);
     }
 
     /**

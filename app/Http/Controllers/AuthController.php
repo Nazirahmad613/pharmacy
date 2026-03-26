@@ -41,8 +41,7 @@ class AuthController extends Controller
                 'role_name' => $user->role_name,
             ],
             'token' => $token,
-            // برای ثبت‌نام هم پرمیشن‌ها را برگردانید (ممکن است خالی باشند)
-            'permissions_list' => $user->getAllPermissions()->pluck('name')->toArray(),
+            'permissions' => $this->getUserPermissions($user), // اضافه کردن دسترسی‌ها
         ], 201);
     }
 
@@ -63,6 +62,9 @@ class AuthController extends Controller
 
         $user = Auth::user();
 
+        // حذف توکن‌های قبلی (اختیاری - اگر می‌خواهید هر بار توکن جدید بگیرد)
+        // $user->tokens()->delete();
+
         // ایجاد Personal Access Token
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -77,8 +79,7 @@ class AuthController extends Controller
                 'role_name' => $user->role_name,
             ],
             'token' => $token,
-            // لیست پرمیشن‌های واقعی کاربر
-            'permissions_list' => $user->getAllPermissions()->pluck('name')->toArray(),
+            'permissions' => $this->getUserPermissions($user), // اضافه کردن دسترسی‌ها
         ], 200);
     }
 
@@ -108,52 +109,19 @@ class AuthController extends Controller
                 'role' => $user->role,
                 'role_name' => $user->role_name,
             ],
-            // ساختار قدیمی (برای سازگاری با بخش‌های قبلی)
             'permissions' => $this->getUserPermissions($user),
-            // ساختار جدید: آرایه‌ای از پرمیشن‌ها (برای استفاده در شرط‌های داینامیک)
-            'permissions_list' => $user->getAllPermissions()->pluck('name')->toArray(),
         ], 200);
     }
 
-    // دریافت دسترسی‌های کاربر بر اساس نقش (قدیمی)
+    /**
+     * دریافت دسترسی‌های کاربر بر اساس نقش
+     * این متد مستقل از متدهای کمکی مدل است و فقط از فیلد role استفاده می‌کند
+     */
     private function getUserPermissions($user)
-    {
-        return [
-            'users' => [
-                'view' => $user->isAdmin(),
-                'create' => $user->isAdmin(),
-                'edit' => $user->isAdmin(),
-                'delete' => $user->isSuperAdmin(),
-            ],
-            'medications' => [
-                'view' => true,
-                'create' => $user->isAdmin() || $user->isPharmacist(),
-                'edit' => $user->isAdmin() || $user->isPharmacist(),
-                'delete' => $user->isAdmin(),
-            ],
-            'reports' => [
-                'view' => true,
-                'export' => $user->isAdmin() || $user->isHospitalHead(),
-            ],
-            'prescriptions' => [
-                'view' => true,
-                'create' => $user->isDoctor() || $user->isAdmin(),
-                'edit' => $user->isDoctor() || $user->isAdmin(),
-                'delete' => $user->isAdmin(),
-            ],
-            'sales' => [
-                'view' => true,
-                'create' => $user->isPharmacist() || $user->isAdmin(),
-                'edit' => $user->isAdmin(),
-                'delete' => $user->isAdmin(),
-            ],
-            'dashboard' => [
-                'view' => true,
-                'analytics' => $user->isAdmin() || $user->isHospitalHead(),
-            ],
-        ];
-    }
-
+{
+    // گرفتن تمام permission های کاربر از Spatie
+    return $user->getAllPermissions()->pluck('name');
+}
     // دریافت لیست نقش‌ها
     public function getRoles()
     {

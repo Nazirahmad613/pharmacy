@@ -152,7 +152,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/categories', [CategoryController::class, 'store']);
     Route::get('/categories/{id}', [CategoryController::class, 'show']);
     Route::put('/categories/{id}', [CategoryController::class, 'update']);
-    Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])->middleware('admin');
+    Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])
+    ->middleware('admin:delete-category');
 
     // ===== PURCHASES ROUTES =====
     Route::prefix('parchases')->group(function () {
