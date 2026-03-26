@@ -5,7 +5,7 @@ export default function MatxLogo({ className }) {
   return (
     <div className={className}>
     
-      <h2 style={{ textAlign: "center", marginBottom: "10px" }}>   دواخانه الفلاح  </h2>
+      <h2 style={{ textAlign: "center", marginBottom: "10px" }}> شفاخانه معالجوی الفلاح </h2>
  
       <img 
   src="/images/Logo.png"  

@@ -7,6 +7,7 @@ use App\Models\Role;
 use App\Models\Permission;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
+use App\Services\LogService; // ✅ اضافه شد
 
 class RoleController extends Controller
 {
@@ -36,6 +37,15 @@ class RoleController extends Controller
             
             // پاک کردن کش
             app()->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+
+            // ✅ لاگ ایجاد
+            LogService::create(
+                'create',
+                'roles',
+                $role->id,
+                'Role created',
+                $role->toArray()
+            );
             
             return response()->json([
                 'message' => 'رول با موفقیت ایجاد شد',
@@ -65,10 +75,22 @@ class RoleController extends Controller
                 ], 400);
             }
             
+            // ✅ ذخیره اطلاعات قبل از حذف
+            $data = $role->toArray();
+
             $role->delete();
             
             // پاک کردن کش
             app()->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+
+            // ✅ لاگ حذف
+            LogService::create(
+                'delete',
+                'roles',
+                $id,
+                'Role deleted',
+                $data
+            );
             
             return response()->json([
                 'message' => 'رول با موفقیت حذف شد'
@@ -93,16 +115,34 @@ class RoleController extends Controller
             ]);
             
             $permissionIds = $request->permissions;
+            $addedPermissions = [];
             
             // اضافه کردن پرمیشن‌های جدید (بدون حذف قبلی‌ها)
             foreach ($permissionIds as $permissionId) {
                 if (!$role->hasPermissionTo($permissionId)) {
                     $role->givePermissionTo($permissionId);
+                    $addedPermissions[] = $permissionId;
                 }
             }
             
             // پاک کردن کش
             app()->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+            
+            // ✅ لاگ اختصاص پرمیشن‌ها
+            if (!empty($addedPermissions)) {
+                $permissions = Permission::whereIn('id', $addedPermissions)->pluck('name')->toArray();
+                LogService::create(
+                    'assign',
+                    'roles',
+                    $role->id,
+                    'Permissions assigned to role',
+                    [
+                        'role' => $role->toArray(),
+                        'added_permissions' => $permissions,
+                        'added_permission_ids' => $addedPermissions
+                    ]
+                );
+            }
             
             // بازگردانی رول با پرمیشن‌های به‌روز شده
             $role->load('permissions');
@@ -127,10 +167,27 @@ class RoleController extends Controller
             $role = Role::findOrFail($id);
             $permission = Permission::findOrFail($permissionId);
             
+            // ✅ ذخیره اطلاعات قبل از حذف
+            $oldPermissions = $role->permissions()->pluck('name')->toArray();
+            
             $role->revokePermissionTo($permission);
             
             // پاک کردن کش
             app()->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+
+            // ✅ لاگ حذف پرمیشن
+            LogService::create(
+                'remove',
+                'roles',
+                $role->id,
+                'Permission removed from role',
+                [
+                    'role' => $role->toArray(),
+                    'removed_permission' => $permission->toArray(),
+                    'previous_permissions' => $oldPermissions,
+                    'current_permissions' => $role->permissions()->pluck('name')->toArray()
+                ]
+            );
             
             return response()->json([
                 'message' => 'پرمیشن با موفقیت از رول حذف شد'

@@ -10,6 +10,7 @@ use App\Models\Prescription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use App\Services\LogService; // ✅ اضافه شد
 
 class JournalController extends Controller
 {
@@ -124,9 +125,18 @@ class JournalController extends Controller
 
         $journal = Journal::create([
             ...$validated,
-            'tazkira_number' => $reg->tazkira_number ?? null, // ✅ ثبت شماره تذکره
+            'tazkira_number' => $reg->tazkira_number ?? null,
             'user_id' => Auth::id(),
         ]);
+
+        // ✅ لاگ با LogService
+        LogService::create(
+            'create',
+            'journals',
+            $journal->id,
+            'Journal created',
+            $journal->toArray()
+        );
 
         return response()->json([
             'message' => 'ژورنال با موفقیت ذخیره شد.',
@@ -134,71 +144,113 @@ class JournalController extends Controller
         ], 201);
     }
 
-public function destroy($id)
-{
-    $journal = Journal::find($id);
-
-    if (!$journal) {
-        return response()->json(['message' => 'ژورنال یافت نشد.'], 404);
-    }
-
-    try {
-        $journal->delete();
-        return response()->json(['message' => 'ژورنال با موفقیت حذف شد.']);
-    } catch (\Exception $e) {
-        return response()->json(['message' => 'خطا در حذف ژورنال.'], 500);
-    }
-}
- public function upsert(Request $request, $id = null)
-{
-    $validated = $request->validate([
-        'journal_date' => 'required|date',
-        'description'  => 'nullable|string|max:1000',
-        'entry_type'   => ['required', Rule::in(['debit','credit'])],
-        'amount'       => 'required|numeric|min:0.01',
-        'ref_type'     => 'required|string',
-        'ref_id'       => 'required|integer',
-        'pres_id'      => 'nullable|integer',
-    ]);
-
-    $reg = Registrations::where('reg_type', $validated['ref_type'])
-        ->where('reg_id', $validated['ref_id'])
-        ->first();
-
-    if (! $reg && !in_array($validated['ref_type'], ['sale','parchase'])) {
-        return response()->json(['message' => 'رویداد انتخاب‌شده معتبر نیست.'], 422);
-    }
-
-    if ($id) {
-        // ⚡ آپدیت رکورد موجود
+    public function destroy($id)
+    {
         $journal = Journal::find($id);
+
         if (!$journal) {
             return response()->json(['message' => 'ژورنال یافت نشد.'], 404);
         }
 
-        $journal->update([
-            ...$validated,
-            'tazkira_number' => $reg->tazkira_number ?? $journal->tazkira_number,
-            'user_id' => Auth::id(),
-        ]);
+        // ✅ ذخیره اطلاعات قبل از حذف برای لاگ
+        $journalData = $journal->toArray();
 
-        $message = 'ژورنال با موفقیت آپدیت شد.';
-    } else {
-        // ⚡ ایجاد ژورنال جدید
-        $journal = Journal::create([
-            ...$validated,
-            'tazkira_number' => $reg->tazkira_number ?? null,
-            'user_id' => Auth::id(),
-        ]);
-        $message = 'ژورنال با موفقیت ذخیره شد.';
+        try {
+            $journal->delete();
+
+            // ✅ لاگ با LogService
+            LogService::create(
+                'delete',
+                'journals',
+                $journalData['id'],
+                'Journal deleted',
+                $journalData
+            );
+
+            return response()->json(['message' => 'ژورنال با موفقیت حذف شد.']);
+        } catch (\Exception $e) {
+            LogService::create(
+                'error',
+                'journals',
+                $id,
+                'Error deleting journal',
+                ['error' => $e->getMessage()]
+            );
+            return response()->json(['message' => 'خطا در حذف ژورنال.'], 500);
+        }
     }
 
-    return response()->json([
-        'message' => $message,
-        'journal' => $journal
-    ], 200);
-}
+    public function upsert(Request $request, $id = null)
+    {
+        $validated = $request->validate([
+            'journal_date' => 'required|date',
+            'description'  => 'nullable|string|max:1000',
+            'entry_type'   => ['required', Rule::in(['debit','credit'])],
+            'amount'       => 'required|numeric|min:0.01',
+            'ref_type'     => 'required|string',
+            'ref_id'       => 'required|integer',
+            'pres_id'      => 'nullable|integer',
+        ]);
 
+        $reg = Registrations::where('reg_type', $validated['ref_type'])
+            ->where('reg_id', $validated['ref_id'])
+            ->first();
 
+        if (! $reg && !in_array($validated['ref_type'], ['sale','parchase'])) {
+            return response()->json(['message' => 'رویداد انتخاب‌شده معتبر نیست.'], 422);
+        }
 
+        if ($id) {
+            // ⚡ آپدیت رکورد موجود
+            $journal = Journal::find($id);
+            if (!$journal) {
+                return response()->json(['message' => 'ژورنال یافت نشد.'], 404);
+            }
+
+            $oldData = $journal->toArray(); // ✅ ذخیره داده‌های قبلی برای لاگ
+
+            $journal->update([
+                ...$validated,
+                'tazkira_number' => $reg->tazkira_number ?? $journal->tazkira_number,
+                'user_id' => Auth::id(),
+            ]);
+
+            // ✅ لاگ آپدیت با LogService
+            LogService::create(
+                'update',
+                'journals',
+                $journal->id,
+                'Journal updated',
+                [
+                    'old' => $oldData,
+                    'new' => $journal->toArray()
+                ]
+            );
+
+            $message = 'ژورنال با موفقیت آپدیت شد.';
+        } else {
+            // ⚡ ایجاد ژورنال جدید
+            $journal = Journal::create([
+                ...$validated,
+                'tazkira_number' => $reg->tazkira_number ?? null,
+                'user_id' => Auth::id(),
+            ]);
+
+            // ✅ لاگ با LogService
+            LogService::create(
+                'create',
+                'journals',
+                $journal->id,
+                'Journal created',
+                $journal->toArray()
+            );
+
+            $message = 'ژورنال با موفقیت ذخیره شد.';
+        }
+
+        return response()->json([
+            'message' => $message,
+            'journal' => $journal
+        ], 200);
+    }
 }

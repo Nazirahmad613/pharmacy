@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Registrations;
 use Illuminate\Http\Request;
+use App\Services\LogService; // ✅ اضافه شد
 
 class RegistrationsController extends Controller
 {
@@ -25,10 +26,19 @@ class RegistrationsController extends Controller
             'tazkira_number'   => [
                 'nullable',
                 'regex:/^\d{4}-\d{4}-\d{5}$/'
-            ], // ✅ شماره تذکره با فرمت صحیح
+            ],
         ]);
 
         $data = Registrations::create($validated);
+
+        // ✅ لاگ ایجاد
+        LogService::create(
+            'create',
+            'registrations',
+            $data->reg_id,
+            'Registration created',
+            $data->toArray()
+        );
 
         return response()->json([
             'message' => 'ثبت موفقانه انجام شد',
@@ -50,45 +60,56 @@ class RegistrationsController extends Controller
         );
     }
 
-public function update(Request $request, $reg_id)
-{
-    $registration = Registrations::find($reg_id);
+    public function update(Request $request, $reg_id)
+    {
+        $registration = Registrations::find($reg_id);
 
-    if (! $registration) {
+        if (! $registration) {
+            return response()->json([
+                'message' => 'رجستریشن یافت نشد.'
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'reg_type'     => 'sometimes|required|string',
+            'full_name'    => 'sometimes|required|string|max:255',
+            'father_name'  => 'nullable|string|max:255',
+            'phone'        => 'nullable|string|max:50',
+            'gender'       => 'nullable|string',
+            'age'          => 'nullable|integer',
+            'blood_group'  => 'nullable|string|max:10',
+            'address'      => 'nullable|string',
+            'visit_date'   => 'nullable|date',
+            'note'         => 'nullable|string',
+            'department_id'=> 'nullable|exists:departments,id',
+            'tazkira_number' => [
+                'nullable',
+                'regex:/^\d{4}-\d{4}-\d{5}$/'
+            ],
+        ]);
+
+        // ✅ ذخیره داده‌های قبلی
+        $oldData = $registration->toArray();
+
+        $registration->update($validated);
+
+        // ✅ لاگ آپدیت
+        LogService::create(
+            'update',
+            'registrations',
+            $registration->reg_id,
+            'Registration updated',
+            [
+                'old' => $oldData,
+                'new' => $registration->toArray()
+            ]
+        );
+
         return response()->json([
-            'message' => 'رجستریشن یافت نشد.'
-        ], 404);
+            'message' => 'رجستریشن با موفقیت به‌روزرسانی شد',
+            'data' => $registration
+        ]);
     }
-
-    $validated = $request->validate([
-        'reg_type'     => 'sometimes|required|string',
-        'full_name'    => 'sometimes|required|string|max:255',
-        'father_name'  => 'nullable|string|max:255',
-        'phone'        => 'nullable|string|max:50',
-        'gender'       => 'nullable|string',
-        'age'          => 'nullable|integer',
-        'blood_group'  => 'nullable|string|max:10',
-        'address'      => 'nullable|string',
-        'visit_date'   => 'nullable|date',
-        'note'         => 'nullable|string',
-        'department_id'=> 'nullable|exists:departments,id',
-        'tazkira_number' => [
-            'nullable',
-            'regex:/^\d{4}-\d{4}-\d{5}$/'
-        ],
-    ]);
-
-    $registration->update($validated);
-
-    return response()->json([
-        'message' => 'رجستریشن با موفقیت به‌روزرسانی شد',
-        'data' => $registration
-    ]);
-}
-
-
-
-
 
     public function destroy($reg_id)
     {
@@ -100,14 +121,22 @@ public function update(Request $request, $reg_id)
             ], 404);
         }
 
+        // ✅ ذخیره اطلاعات قبل از حذف
+        $data = $registration->toArray();
+
         $registration->delete();
+
+        // ✅ لاگ حذف
+        LogService::create(
+            'delete',
+            'registrations',
+            $reg_id,
+            'Registration deleted',
+            $data
+        );
 
         return response()->json([
             'message' => 'رجستریشن با موفقیت حذف شد.'
         ], 200);
     }
-
-
-
 }
-

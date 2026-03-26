@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Permission;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
+use App\Services\LogService; // ✅ اضافه شد
 
 class PermissionController extends Controller
 {
@@ -33,6 +34,15 @@ class PermissionController extends Controller
                 'guard_name' => 'web'
             ]);
             
+            // ✅ لاگ ایجاد
+            LogService::create(
+                'create',
+                'permissions',
+                $permission->id,
+                'Permission created',
+                $permission->toArray()
+            );
+
             return response()->json([
                 'message' => 'پرمیشن با موفقیت ایجاد شد',
                 'permission' => $permission
@@ -71,11 +81,23 @@ class PermissionController extends Controller
                 ], 400);
             }
             
+            // ✅ ذخیره اطلاعات قبل از حذف
+            $data = $permission->toArray();
+
             // حذف پرمیشن
             $permission->delete();
             
             // پاک کردن کش
             app()->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+
+            // ✅ لاگ حذف
+            LogService::create(
+                'delete',
+                'permissions',
+                $id,
+                'Permission deleted',
+                $data
+            );
             
             return response()->json([
                 'message' => 'پرمیشن با موفقیت حذف شد'
@@ -111,11 +133,23 @@ class PermissionController extends Controller
                 ], 400);
             }
             
+            // ✅ ذخیره اطلاعات قبل از حذف
+            $data = $permission->toArray();
+
             // حذف پرمیشن
             $permission->delete();
             
             // پاک کردن کش
             app()->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+
+            // ✅ لاگ حذف
+            LogService::create(
+                'delete',
+                'permissions',
+                $id,
+                'Permission deleted',
+                $data
+            );
             
             return response()->json([
                 'message' => 'پرمیشن با موفقیت حذف شد'

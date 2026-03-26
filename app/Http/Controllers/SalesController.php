@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use App\Services\LogService; // ✅ اضافه شد
 
 class SalesController extends Controller
 {
@@ -99,10 +100,20 @@ public function store(Request $request)
         $this->saveJournal($sale->sales_id,$request->cust_id,$netSales,$totalPaid,$request->sales_date);
 
         DB::commit();
-return response()->json([
-    'message' => 'Sale saved successfully',
-    'sale_id' => $sale->sales_id
-], 201);
+
+        // ✅ لاگ ثبت فروش
+        LogService::create(
+            'create',
+            'sales',
+            $sale->sales_id,
+            'Sale created',
+            $sale->load('items')->toArray()
+        );
+
+        return response()->json([
+            'message' => 'Sale saved successfully',
+            'sale_id' => $sale->sales_id
+        ], 201);
 
     } catch (\Exception $e) {
 
@@ -124,6 +135,8 @@ public function update(Request $request,$sales_id)
         $sale = Sales::with('items')
             ->where('sales_id',$sales_id)
             ->firstOrFail();
+
+        $oldData = $sale->load('items')->toArray(); // ✅ ذخیره داده‌های قبلی
 
         $totalSales = collect($request->items)
             ->sum(fn($i) => $i['quantity'] * $i['unit_sales']);
@@ -167,6 +180,18 @@ public function update(Request $request,$sales_id)
 
         DB::commit();
 
+        // ✅ لاگ بروزرسانی
+        LogService::create(
+            'update',
+            'sales',
+            $sale->sales_id,
+            'Sale updated',
+            [
+                'old' => $oldData,
+                'new' => $sale->load('items')->toArray()
+            ]
+        );
+
         return response()->json(['message'=>'Sale updated successfully']);
 
     } catch (\Exception $e) {
@@ -190,6 +215,8 @@ public function destroy($sales_id)
             ->where('sales_id',$sales_id)
             ->firstOrFail();
 
+        $data = $sale->load('items')->toArray(); // ✅ ذخیره اطلاعات قبل از حذف
+
         $sale->items()->delete();
 
         Journal::where('ref_type','sale')
@@ -199,6 +226,15 @@ public function destroy($sales_id)
         $sale->delete();
 
         DB::commit();
+
+        // ✅ لاگ حذف
+        LogService::create(
+            'delete',
+            'sales',
+            $sales_id,
+            'Sale deleted',
+            $data
+        );
 
         return response()->json(['message'=>'Sale deleted successfully']);
 

@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use App\Services\LogService; // ✅ اضافه شد
 
 class ParchasesController extends Controller
 {
@@ -68,6 +69,16 @@ class ParchasesController extends Controller
             $this->syncJournal($parchase);
 
             DB::commit();
+
+            // ✅ لاگ ثبت خرید
+            LogService::create(
+                'create',
+                'parchases',
+                $parchase->parchase_id,
+                'Parchase created',
+                $parchase->load('items')->toArray()
+            );
+
             return response()->json($parchase->load(['items.medication','items.category','items.supplier','supplier']), 201);
 
         } catch (\Exception $e) {
@@ -95,6 +106,7 @@ class ParchasesController extends Controller
         DB::beginTransaction();
         try {
             $parchase = Parchase::findOrFail($id);
+            $oldData = $parchase->load('items')->toArray(); // ✅ داده‌های قبلی
 
             // حذف آیتم‌ها و ژورنال قبلی
             $parchase->items()->delete();
@@ -126,6 +138,19 @@ class ParchasesController extends Controller
             $this->syncJournal($parchase);
 
             DB::commit();
+
+            // ✅ لاگ بروزرسانی
+            LogService::create(
+                'update',
+                'parchases',
+                $parchase->parchase_id,
+                'Parchase updated',
+                [
+                    'old' => $oldData,
+                    'new' => $parchase->load('items')->toArray()
+                ]
+            );
+
             return response()->json($parchase->load(['items.medication','items.category','items.supplier','supplier']), 200);
 
         } catch (\Exception $e) {
@@ -140,6 +165,7 @@ class ParchasesController extends Controller
         DB::beginTransaction();
         try {
             $parchase = Parchase::findOrFail($id);
+            $data = $parchase->load('items')->toArray(); // ✅ ذخیره اطلاعات قبل از حذف
 
             // حذف ژورنال و آیتم‌ها
             Journal::where('ref_type','parchase')->where('ref_id',$parchase->parchase_id)->delete();
@@ -147,6 +173,16 @@ class ParchasesController extends Controller
             $parchase->delete();
 
             DB::commit();
+
+            // ✅ لاگ حذف
+            LogService::create(
+                'delete',
+                'parchases',
+                $id,
+                'Parchase deleted',
+                $data
+            );
+
             return response()->json(['message'=>'خرید حذف شد'], 200);
 
         } catch (\Exception $e) {

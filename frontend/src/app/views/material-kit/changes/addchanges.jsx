@@ -115,19 +115,18 @@ export default function JournalPage() {
   }, [registrations]);
 
   const getRef = (type, id) => registrationMap[`${type}_${id}`] ?? null;
+const filteredRefs = useMemo(() => {
+  if (!form.ref_type) return [];
 
-  const filteredRefs = useMemo(() => {
-    if (!form.ref_type) return [];
+  // برای sale و parchase از transactions استفاده کن
+  if (form.ref_type === 'sale' || form.ref_type === 'parchase') {
+    return Array.isArray(transactions[form.ref_type]) ? transactions[form.ref_type] : [];
+  }
 
-    if (["doctor", "patient", "customer", "supplier", "staff", "visitor"].includes(form.ref_type)) {
-      return registrations.filter((r) => r.reg_type === form.ref_type);
-    }
-
-    return Array.isArray(transactions[form.ref_type])
-      ? transactions[form.ref_type]
-      : [];
-  }, [form.ref_type, registrations, transactions]);
-
+  // بقیه موارد (اشخاص و مصارف) از registrations
+  return registrations.filter((r) => r.reg_type === form.ref_type);
+}, [form.ref_type, registrations, transactions]);
+ 
   const combinedRows = useMemo(() => {
     if (!journals.length) return [];
 
