@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\DB;
 
 // ==================== Controllers ====================
 use App\Http\Controllers\AuthController;
@@ -38,6 +39,23 @@ use App\Http\Controllers\DepartementController;
 | API Test
 |--------------------------------------------------------------------------
 */
+
+ 
+Route::get('/sales-report', function (Request $request) {
+    $type = $request->get('type', 'daily');
+
+    $query = DB::table('view_sales_summary');
+
+    if ($type) {
+        $query->where('report_type', $type);
+    }
+
+    return $query->get();
+});
+
+
+
+
 Route::get('/test', function () {
     return response()->json(['message' => 'API is working']);
 });
@@ -189,6 +207,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/view-profit-loss', [ViewProfitLossController::class, 'index']);
     Route::get('/view-supplier-purchases', [ViewSupplierPurchasesController::class, 'index']);
     Route::get('/hospital-reports', [HospitalReportController::class, 'index']);
+    Route::get('/reports/medication-stock', function () {
+    return DB::table('view_medication_stock_advanced')->get();
+});
+
+Route::get('/reports/medication-stock', function () {
+    return response()->json(
+        DB::table('view_medication_stock_advanced')->get()
+    );
+});
 
 
 

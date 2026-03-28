@@ -2,35 +2,26 @@ import { Fragment } from "react";
 import { useTranslation } from 'react-i18next'; 
 import Card from "@mui/material/Card";
 import Grid from "@mui/material/Grid";
-import { styled, useTheme } from "@mui/material/styles";  
+import { styled, useTheme } from "@mui/material/styles";
+import { Link } from "react-router-dom";
+import Button from "@mui/material/Button";
+import Box from "@mui/material/Box";
+ 
 
 import RowCards from "./shared/RowCards";
 import StatCards from "./shared/StatCards";
 import Campaigns from "./shared/Campaigns";
 import StatCards2 from "./shared/StatCards2";
-import DoughnutChart from "./shared/Doughnut";
 import UpgradeCard from "./shared/UpgradeCard";
-import TopSellingTable from "./shared/TopSellingTable";
+// import TopSellingTable from "./shared/TopSellingTable"; // حذف شد
 import MainLayoutjur from "../../../components/Mainlayoutjur";
+import MedicationStockChart from "../material-kit/reports/medication-stock/MedicationStockChart";
+import SalesTable from "../material-kit/reports/sales/SalesTable";
 
-// STYLED COMPONENTS
 const ContentBox = styled("div")(({ theme }) => ({
-  margin: "2rem",
+  margin: "2rem", 
   [theme.breakpoints.down("sm")]: { margin: "1rem" }
 }));
-
-const changeLanguage = (lng) => {
-  i18n.changeLanguage(lng);  // تغییر زبان
-  localStorage.setItem("i18nextLng", lng);  // ذخیره زبان در localStorage
-
-  // تغییر جهت صفحه بر اساس زبان
-  if (lng === "fa") {
-    document.documentElement.setAttribute("dir", "rtl");
-  } else {
-    document.documentElement.setAttribute("dir", "ltr");
-  }
-};
-
 
 const Title = styled("span")(() => ({
   fontSize: "1rem",
@@ -52,13 +43,12 @@ const H4 = styled("h4")(({ theme }) => ({
   color: theme.palette.text.secondary
 }));
 
-// کامپوننت LanguageSwitcher برای تغییر زبان
 const LanguageSwitcher = () => {
   const { i18n } = useTranslation();
 
   const changeLanguage = (lng) => {
-    i18n.changeLanguage(lng); // تغییر زبان
-    localStorage.setItem("i18nextLng", lng); // ذخیره زبان در localStorage
+    i18n.changeLanguage(lng);
+    localStorage.setItem("i18nextLng", lng);
   };
 
   return (
@@ -71,42 +61,55 @@ const LanguageSwitcher = () => {
 
 export default function Analytics() {
   const theme = useTheme();
-  const { t, i18n } = useTranslation(); // استفاده از useTranslation برای ترجمه‌ها
+  const { t } = useTranslation();
 
   return (
     <MainLayoutjur>
-    <Fragment>
-      {/* اضافه کردن دکمه تغییر زبان */}
-      <LanguageSwitcher />
+      <Fragment>
+        <LanguageSwitcher />
 
-      <ContentBox className="analytics">
-        <Grid container spacing={3}>
-          <Grid item md={8} xs={12}>
-            <StatCards />
-            <TopSellingTable />
-            <StatCards2 />
+        <ContentBox className="analytics">
+          <Grid container spacing={3}>
+            <Grid item md={8} xs={12}>
+              <StatCards />
+              {/* جایگزینی پرفروش‌ترین محصولات با گزارش فروش */}
+              <SalesTable />
+              <StatCards2 />
 
-            <H4>{t("ongoing_projects")}</H4> {/* ترجمه عنوان */}
-            <RowCards />
+              <H4>{t("ongoing_projects")}</H4>
+              <RowCards />
+            </Grid>
+
+            <Grid item md={4} xs={12}>
+              {/* کارت نمودار با دکمه ثابت در پایین */}
+              <Card
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  maxHeight: 500,
+                  px: 3,
+                  py: 2,
+                  mb: 3
+                }}
+              >
+                <Box sx={{ flex: 1, overflow: 'auto' }}>
+                  <MedicationStockChart />
+                </Box>
+                <Box mt={2} textAlign="center">
+              <Link to="/reports/MedicationStockTable" style={{ textDecoration: "none" }}>
+  <Button variant="outlined" color="prima" size="small">
+    دیدن جزئیات
+  </Button>
+</Link>
+                </Box>
+              </Card>
+
+              <UpgradeCard />
+              <Campaigns />
+            </Grid>
           </Grid>
-
-          <Grid item md={4} xs={12}>
-            <Card sx={{ px: 3, py: 2, mb: 3 }}>
-              <Title>{t("traffic_sources")}</Title>
-              <SubTitle>{t("last_30_days")}</SubTitle>
-
-              <DoughnutChart
-                height="300px"
-                color={[theme.palette.primary.dark, theme.palette.primary.main, theme.palette.primary.light]}
-              />
-            </Card>
-
-            <UpgradeCard />
-            <Campaigns />
-          </Grid>
-        </Grid>
-      </ContentBox>
-    </Fragment>
+        </ContentBox>
+      </Fragment>
     </MainLayoutjur>
   );
 }

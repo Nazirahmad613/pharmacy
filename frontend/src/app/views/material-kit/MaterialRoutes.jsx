@@ -30,6 +30,10 @@ const AppRegistrationForm = Loadable(lazy(() => import("./registrations/Registra
 const AppHospital_report = Loadable(lazy(() => import("./reports/Hospital_Report")));
 const AppAccountSummaryPage = Loadable(lazy(() => import("./reports/AccountSummaryPage.jsx")));  
 const AppAddlogs = Loadable(lazy(() => import("./logs/logs")));
+const AppMedicationStockTable = Loadable(lazy(() => import("./reports/medication-stock/MedicationStockTable")));
+const AppMedicationStockChart = Loadable(lazy(() => import("./reports/medication-stock/MedicationStockChart")));
+const AppSalesTable = Loadable(lazy(() => import("./reports/sales/SalesTable")));
+const AppSalesChart = Loadable(lazy(() => import("./reports/sales/SalesChart")));
 
 // ===== Routes =====
 const materialRoutes = [
@@ -56,6 +60,10 @@ const materialRoutes = [
 
   { path: "/material/hospital-report", element: <AppHospital_report /> },
   { path: "/material/AcountSummaryPage", element: <AppAccountSummaryPage /> },
+  { path: "/material/MedicationStockTable", element: <AppMedicationStockTable /> },
+  { path: "/material/MedicationStockChart", element: <AppMedicationStockChart /> },
+  { path: "/material/SalesTable", element: <AppSalesTable /> },
+  { path: "/material/SalesChart", element: <AppSalesChart /> },
 
   // ===== مسیر مدیریت کاربران فقط برای ادمین و سوپر ادمین =====
   {

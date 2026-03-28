@@ -9,16 +9,19 @@ import MatxLayout from "./components/MatxLayout/MatxLayout";
 import sessionRoutes from "./views/sessions/session-routes";
 import materialRoutes from "app/views/material-kit/MaterialRoutes";
 
-// E-CHART PAGE
+// Pages
 const AppEchart = Loadable(lazy(() => import("app/views/charts/echarts/AppEchart")));
-// DASHBOARD PAGE
 const Analytics = Loadable(lazy(() => import("app/views/dashboard/Analytics")));
-
-// USERS PAGE
 const UsersPage = Loadable(lazy(() => import("../app/views/material-kit/users/UsersPage")));
 
+// ✅ اضافه شد (صفحه استاک دوا)
+const MedicationStockTable = Loadable(
+  lazy(() =>
+    import("app/views/material-kit/reports/medication-stock/MedicationStockTable")
+  )
+);
+
 const routes = [
-  // 🔹 ریدایرکت اصلی اصلاح شد (مسیر مطلق)
   { path: "/", element: <Navigate to="/dashboard/default" replace /> },
 
   {
@@ -30,18 +33,21 @@ const routes = [
     children: [
       ...materialRoutes,
 
-      // Dashboard
       { path: "dashboard/default", element: <Analytics />, auth: authRoles.admin },
 
-      // E-Chart
       { path: "charts/echarts", element: <AppEchart />, auth: authRoles.editor },
 
-      // Users Page (فقط admin)
-      { path: "users", element: <UsersPage />, auth: authRoles.admin }
+      { path: "users", element: <UsersPage />, auth: authRoles.admin },
+
+      // 🔥 مسیر جدید استاک دوا
+      {
+        path: "reports/MedicationStockTable",
+        element: <MedicationStockTable />,
+        auth: authRoles.admin
+      }
     ]
   },
 
-  // session pages route
   ...sessionRoutes
 ];
 

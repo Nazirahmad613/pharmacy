@@ -96,6 +96,7 @@ const navigations = [
         icon: <PaymentIcon />,
         roles: ["admin", "user", "super_admin"],
       },
+     
     ],
   },
 
@@ -140,6 +141,31 @@ const navigations = [
         icon: <AccountBalanceIcon />,
         roles: ["user", "admin", "super_admin"],
       },
+
+       {
+  name: "MedicationStockChart",
+  path: "/material/MedicationStockChart",
+  icon: <BarChartIcon />,
+},
+{
+  name: "MedicationStockTable",
+  path: "/material/MedicationStockTable",
+  icon: <BarChartIcon />,
+},
+{
+  name: "SalesTable",
+  path: "/material/SalesTable",
+  icon: <BarChartIcon />,
+},
+{
+  name: "SalesChart",
+  path: "/material/SalesChart",
+  icon: <BarChartIcon />,
+}
+
+
+
+
     ],
   },
 
