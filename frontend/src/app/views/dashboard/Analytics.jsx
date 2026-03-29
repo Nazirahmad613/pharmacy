@@ -6,7 +6,7 @@ import { styled, useTheme } from "@mui/material/styles";
 import { Link } from "react-router-dom";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography"; // added for styling link
+import Typography from "@mui/material/Typography";
 
 import MainLayoutjur from "../../../components/Mainlayoutjur";
 import MedicationStockChart from "../material-kit/reports/medication-stock/MedicationStockChart";
@@ -27,10 +27,12 @@ const LanguageSwitcher = () => {
   };
 
   return (
+      
     <div style={{ textAlign: "right", marginBottom: "1rem" }}>
       <button onClick={() => changeLanguage('en')}>English</button>
       <button onClick={() => changeLanguage('fa')}>فارسی</button>
     </div>
+    
   );
 };
 
@@ -44,19 +46,18 @@ export default function Analytics() {
 
         <ContentBox className="analytics">
           <Grid container spacing={3}>
-            {/* Left column */}
-            <Grid item md={8} xs={12}>
-              {/* Daily chart card with link at bottom */}
+            {/* Left column - عرض کاهش یافته به md=7 */}
+            <Grid item md={7} xs={12}>
+              {/* Daily chart card با فاصله پایین کم‌تر */}
               <Card
                 sx={{
-                  maxHeight:400,
+                  maxHeight: 400,
                   overflow: 'auto',
                   px: 3,
                   py: 2,
-                  mb: 3,
+                  mb: 1,        // ← فاصله با جدول فروش بسیار کم شد
                   ml: 'auto',
                   width: '100%',
-                 
                 }}
               >
                 <DashboardDailyChart />
@@ -65,7 +66,7 @@ export default function Analytics() {
                     to="/reports/DashboardDailyTable" 
                     style={{ 
                       textDecoration: "none",
-                      color: "#0b3d5f", // dark blue
+                      color: "#0b3d5f",
                       fontWeight: 500,
                       fontSize: "0.875rem"
                     }}
@@ -75,20 +76,22 @@ export default function Analytics() {
                 </Box>
               </Card>
 
-              {/* Sales table */}
+              {/* SalesTable بدون تغییر محتوا */}
               <SalesTable />
             </Grid>
 
-            {/* Right column */}
-            <Grid item md={4} xs={12}>
+            {/* Right column - عرض افزایش یافته به md=5 */}
+            <Grid item md={5} xs={12}>
               <Card
                 sx={{
                   display: 'flex',
                   flexDirection: 'column',
-                  maxHeight: 500,
+                  maxHeight: 600,
                   px: 3,
                   py: 2,
-                  mb: 3
+                  mb: 3,
+                   width: '140%',
+
                 }}
               >
                 <Box sx={{ flex: 1, overflow: 'auto' }}>
@@ -96,7 +99,7 @@ export default function Analytics() {
                 </Box>
                 <Box mt={2} textAlign="center">
                   <Link to="/reports/MedicationStockTable" style={{ textDecoration: "none" }}>
-                    <Button variant="outlined" color="prima" size="small">
+                    <Button variant="outlined" color="primary" size="small">   {/* اصلاح رنگ دکمه */}
                       دیدن جزئیات
                     </Button>
                   </Link>
