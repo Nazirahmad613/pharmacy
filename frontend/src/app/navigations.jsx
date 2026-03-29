@@ -161,8 +161,18 @@ const navigations = [
   name: "SalesChart",
   path: "/material/SalesChart",
   icon: <BarChartIcon />,
-}
+},
+{
+  name: "گزارش روزانه (چارت)",
+  path: "/material/dashboard-daily-chart",
+  icon: <BarChartIcon />,
+},
 
+{
+  name: "گزارش روزانه (جدول)",
+  path: "/material/dashboard-daily-table",
+  icon: <BarChartIcon />,
+},
 
 
 

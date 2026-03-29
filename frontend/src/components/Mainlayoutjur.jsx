@@ -22,38 +22,45 @@ export default function MainLayoutjur({ children, title }) {
 
   return (
     <>
-      {/* ✅ ToastContainer در سطح بالا و خارج از main-layout */}
       <ToastContainer 
         position="top-right"
         autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
         rtl={true}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
         theme="colored"
         limit={5}
         style={{ 
           zIndex: 9999999,
           position: 'fixed',
           top: '20px',
-          right: '20px',
-          left: 'auto',
-          width: 'auto',
-          maxWidth: '350px',
-          transform: 'none'
+          right: '20px'
         }}
       />
 
       <div
         className="main-layout"
-        style={{ backgroundImage: `url(${backgrounds[index]})` }}
+        style={{ 
+          backgroundImage: `url(${backgrounds[index]})`,
+          minHeight: "100vh",
+          overflowY: "auto"   // ✅ مهم (فعال کردن اسکرول)
+        }}
       >
-        <div className="background-overlay">
+        <div 
+          className="background-overlay"
+          style={{
+            minHeight: "100vh",
+            overflowY: "auto"   // ✅ مهم
+          }}
+        >
           {title && <h1 className="layout-title">{title}</h1>}
-          <div className="layout-content">{children}</div>
+
+          <div 
+            className="layout-content"
+            style={{
+              paddingBottom: "50px"  // ✅ جلوگیری از چسبیدن آخر صفحه
+            }}
+          >
+            {children}
+          </div>
         </div>
       </div>
     </>

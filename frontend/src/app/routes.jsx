@@ -14,10 +14,17 @@ const AppEchart = Loadable(lazy(() => import("app/views/charts/echarts/AppEchart
 const Analytics = Loadable(lazy(() => import("app/views/dashboard/Analytics")));
 const UsersPage = Loadable(lazy(() => import("../app/views/material-kit/users/UsersPage")));
 
-// ✅ اضافه شد (صفحه استاک دوا)
+// ✅ موجود (صفحه استاک دوا)
 const MedicationStockTable = Loadable(
   lazy(() =>
     import("app/views/material-kit/reports/medication-stock/MedicationStockTable")
+  )
+);
+
+// ✅ جدید (صفحه جدول روزانه)
+const DashboardDailyTable = Loadable(
+  lazy(() =>
+    import("app/views/material-kit/reports/dashboard/DashboardDailyTable")
   )
 );
 
@@ -39,10 +46,17 @@ const routes = [
 
       { path: "users", element: <UsersPage />, auth: authRoles.admin },
 
-      // 🔥 مسیر جدید استاک دوا
+      // مسیر استاک دوا
       {
         path: "reports/MedicationStockTable",
         element: <MedicationStockTable />,
+        auth: authRoles.admin
+      },
+
+      // مسیر جدید جدول روزانه
+      {
+        path: "reports/DashboardDailyTable",
+        element: <DashboardDailyTable />,
         auth: authRoles.admin
       }
     ]

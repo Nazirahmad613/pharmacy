@@ -6,41 +6,16 @@ import { styled, useTheme } from "@mui/material/styles";
 import { Link } from "react-router-dom";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
- 
+import Typography from "@mui/material/Typography"; // added for styling link
 
-import RowCards from "./shared/RowCards";
-import StatCards from "./shared/StatCards";
-import Campaigns from "./shared/Campaigns";
-import StatCards2 from "./shared/StatCards2";
-import UpgradeCard from "./shared/UpgradeCard";
-// import TopSellingTable from "./shared/TopSellingTable"; // حذف شد
 import MainLayoutjur from "../../../components/Mainlayoutjur";
 import MedicationStockChart from "../material-kit/reports/medication-stock/MedicationStockChart";
 import SalesTable from "../material-kit/reports/sales/SalesTable";
+import DashboardDailyChart from "../material-kit/reports/dashboard/DashboardDailyChart";
 
 const ContentBox = styled("div")(({ theme }) => ({
   margin: "2rem", 
   [theme.breakpoints.down("sm")]: { margin: "1rem" }
-}));
-
-const Title = styled("span")(() => ({
-  fontSize: "1rem",
-  fontWeight: "500",
-  marginRight: ".5rem",
-  textTransform: "capitalize"
-}));
-
-const SubTitle = styled("span")(({ theme }) => ({
-  fontSize: "0.875rem",
-  color: theme.palette.text.secondary
-}));
-
-const H4 = styled("h4")(({ theme }) => ({
-  fontSize: "1rem",
-  fontWeight: "500",
-  marginBottom: "1rem",
-  textTransform: "capitalize",
-  color: theme.palette.text.secondary
 }));
 
 const LanguageSwitcher = () => {
@@ -60,7 +35,6 @@ const LanguageSwitcher = () => {
 };
 
 export default function Analytics() {
-  const theme = useTheme();
   const { t } = useTranslation();
 
   return (
@@ -70,18 +44,43 @@ export default function Analytics() {
 
         <ContentBox className="analytics">
           <Grid container spacing={3}>
+            {/* Left column */}
             <Grid item md={8} xs={12}>
-              <StatCards />
-              {/* جایگزینی پرفروش‌ترین محصولات با گزارش فروش */}
-              <SalesTable />
-              <StatCards2 />
+              {/* Daily chart card with link at bottom */}
+              <Card
+                sx={{
+                  maxHeight:400,
+                  overflow: 'auto',
+                  px: 3,
+                  py: 2,
+                  mb: 3,
+                  ml: 'auto',
+                  width: '100%',
+                 
+                }}
+              >
+                <DashboardDailyChart />
+                <Box mt={2} textAlign="center">
+                  <Link 
+                    to="/reports/DashboardDailyTable" 
+                    style={{ 
+                      textDecoration: "none",
+                      color: "#0b3d5f", // dark blue
+                      fontWeight: 500,
+                      fontSize: "0.875rem"
+                    }}
+                  >
+                    مشاهده جزئیات گزارش روزانه
+                  </Link>
+                </Box>
+              </Card>
 
-              <H4>{t("ongoing_projects")}</H4>
-              <RowCards />
+              {/* Sales table */}
+              <SalesTable />
             </Grid>
 
+            {/* Right column */}
             <Grid item md={4} xs={12}>
-              {/* کارت نمودار با دکمه ثابت در پایین */}
               <Card
                 sx={{
                   display: 'flex',
@@ -96,16 +95,13 @@ export default function Analytics() {
                   <MedicationStockChart />
                 </Box>
                 <Box mt={2} textAlign="center">
-              <Link to="/reports/MedicationStockTable" style={{ textDecoration: "none" }}>
-  <Button variant="outlined" color="prima" size="small">
-    دیدن جزئیات
-  </Button>
-</Link>
+                  <Link to="/reports/MedicationStockTable" style={{ textDecoration: "none" }}>
+                    <Button variant="outlined" color="prima" size="small">
+                      دیدن جزئیات
+                    </Button>
+                  </Link>
                 </Box>
               </Card>
-
-              <UpgradeCard />
-              <Campaigns />
             </Grid>
           </Grid>
         </ContentBox>

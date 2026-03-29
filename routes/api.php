@@ -217,8 +217,11 @@ Route::get('/reports/medication-stock', function () {
     );
 });
 
-
-
-    // ===== Logs =====
+// این مسیر برای تست گزارش فروش روزانه است
+Route::get('/dashboard-daily', function () {
+    return DB::table('view_dashboard_daily')->get();
+});
+ 
+   
    
 });

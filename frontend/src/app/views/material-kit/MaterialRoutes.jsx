@@ -34,6 +34,9 @@ const AppMedicationStockTable = Loadable(lazy(() => import("./reports/medication
 const AppMedicationStockChart = Loadable(lazy(() => import("./reports/medication-stock/MedicationStockChart")));
 const AppSalesTable = Loadable(lazy(() => import("./reports/sales/SalesTable")));
 const AppSalesChart = Loadable(lazy(() => import("./reports/sales/SalesChart")));
+const AppDashboardDailyChart = Loadable(
+  lazy(() => import("./reports/dashboard/DashboardDailyChart")));
+const AppDashboardDailyTable = Loadable(lazy(() => import("./reports/dashboard/DashboardDailyTable")));
 
 // ===== Routes =====
 const materialRoutes = [
@@ -64,6 +67,8 @@ const materialRoutes = [
   { path: "/material/MedicationStockChart", element: <AppMedicationStockChart /> },
   { path: "/material/SalesTable", element: <AppSalesTable /> },
   { path: "/material/SalesChart", element: <AppSalesChart /> },
+{ path: "/material/dashboard-daily-chart", element: <AppDashboardDailyChart /> },
+{ path: "/material/dashboard-daily-table", element: <AppDashboardDailyTable /> },
 
   // ===== مسیر مدیریت کاربران فقط برای ادمین و سوپر ادمین =====
   {
