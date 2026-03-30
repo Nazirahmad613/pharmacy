@@ -156,7 +156,7 @@ export default function DashboardDailyChart() {
   return (
     <Box p={3}>
       <Typography variant="h5" textAlign="center" gutterBottom>
-        گزارش گرافیکی روزانه
+        گزارش گرافیکی وضعیت روزانه شفاخانه
       </Typography>
       <Bar data={chartData} options={chartOptions} aria-label="Daily sales and patients chart" />
     </Box>

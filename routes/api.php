@@ -33,6 +33,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\DepartementController;
+use App\Http\Controllers\BenefitController;
 
 /*
 |--------------------------------------------------------------------------
@@ -51,15 +52,15 @@ Route::get('/sales-report', function (Request $request) {
     }
 
     return $query->get();
+
 });
 
-
-
+ Route::get('/benefits-chart', [BenefitController::class, 'chart']);
 
 Route::get('/test', function () {
     return response()->json(['message' => 'API is working']);
 });
-
+ Route::get('/benefits-chart', [BenefitController::class, 'chart']);
 /*
 |--------------------------------------------------------------------------
 | Authentication (PUBLIC)
@@ -221,6 +222,10 @@ Route::get('/reports/medication-stock', function () {
 Route::get('/dashboard-daily', function () {
     return DB::table('view_dashboard_daily')->get();
 });
+ Route::get('/benefits', [BenefitController::class, 'index']);
+
+Route::get('/sales', [SalesController::class, 'view']);
+Route::get('/sales/chart', [SalesController::class, 'chart']);
  
    
    

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Sales;
+use App\Models\SalesView;
 use App\Models\Journal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -277,5 +278,27 @@ private function saveJournal($saleId,$custId,$netSales,$totalPaid,$date)
         ]);
     }
 }
+
+ 
+ 
+    // 📊 لیست فروشات
+    public function view()
+    {
+        return SalesView::orderBy('journal_date', 'desc')->get();
+    }
+
+    // 📈 داده برای چارت (گروپ بر اساس تاریخ)
+    public function chart()
+    {
+        return SalesView::selectRaw("
+                DATE(journal_date) as date,
+                SUM(amount) as total
+            ")
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+    }
+    
+
 
 }

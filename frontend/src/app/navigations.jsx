@@ -174,6 +174,21 @@ const navigations = [
   icon: <BarChartIcon />,
 },
 
+ {
+  name: "گزارشات مالی",
+  icon: "bar_chart",
+  children: [
+    {
+      name: "فواید (جدول)",
+      path: "/reports/benefits"
+    },
+    {
+      name: "فواید (گراف)",
+      path: "/reports/benefits-chart"
+    }
+  ]
+}
+
 
 
     ],
