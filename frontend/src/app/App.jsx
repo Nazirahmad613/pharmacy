@@ -7,6 +7,7 @@ import SettingsProvider from "./contexts/SettingsContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+
 import {
   BrowserRouter,
   useRoutes,
@@ -86,9 +87,14 @@ export default function App() {
             <ToastContainer />
 
             <div style={{ direction: i18n.language === "fa" ? "rtl" : "ltr" }}>
-              <AnimatedBackground>
-                <AppRouter />
+              <AnimatedBackground> 
+          <AppRouter />
+       
               </AnimatedBackground>
+            </div>
+            <div>
+
+
             </div>
           </MatxTheme>
         </AuthProvider>
