@@ -31,6 +31,7 @@ const DashboardDailyTable = Loadable(
 // ✅ جدید (صفحه گزارش فواید) - با Loadable برای نمایش fallback
 const BenefitsReport = Loadable(lazy(() => import("./views/material-kit/reports/BenefitsReport")));
 const BenefitsChart = Loadable(lazy(() => import("./views/material-kit/reports/BenefitsChart")));
+const SalesTable = Loadable(lazy(() => import("./views/material-kit/reports/sales/SalesTable")));
 
 const routes = [
   { path: "/", element: <Navigate to="/dashboard/default" replace /> },
@@ -73,6 +74,21 @@ const routes = [
       {
         path: "reports/benefits-chart",
         element: <BenefitsChart />,
+        auth: authRoles.admin
+      },
+      {
+        path: "reports/benefits-Report",
+        element: <BenefitsChart />,
+        auth: authRoles.admin
+      },
+      {
+        path: "reports/benefits-Report",
+        element: <BenefitsChart />,
+        auth: authRoles.admin
+      },
+      {
+        path: "reports/sales-table",
+        element: <SalesTable />,
         auth: authRoles.admin
       },
     ]

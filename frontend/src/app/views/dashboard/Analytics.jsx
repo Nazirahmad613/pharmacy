@@ -44,99 +44,79 @@ export default function Analytics() {
         <LanguageSwitcher />
 
         <ContentBox className="analytics">
-          <Grid container spacing={3}>
-            
-            {/* ستون سمت چپ */}
-            <Grid item md={7} xs={12}>
-              
-              {/* نمودار روزانه */}
-              <Card
-                sx={{
-                  maxHeight: 400,
-                  overflow: 'auto',
-                  px: 3,
-                  py: 2,
-                  mb: 1,
-                  width: '91%',
-                }}
-              >
-                <DashboardDailyChart />
-                <Box mt={2} textAlign="center">
-                  <Link 
-                    to="/reports/DashboardDailyTable" 
-                    style={{ 
-                      textDecoration: "none",
-                      color: "#0b3d5f",
-                      fontWeight: 500,
-                      fontSize: "0.875rem"
-                    }}
-                  >
-                    مشاهده جزئیات گزارش روزانه
-                  </Link>
-                </Box>
-              </Card>
+      <Grid container spacing={3}>
 
-            {/* ردیف اصلاح‌شده: فواید + فروش (فروش در سمت چپ) */}
-<Grid container spacing={2} sx={{ mb: 1 }}>
-  {/* نمودار فواید (عرض بیشتر) */}
-  <Grid item xs={12} md={10}>
-    <Card sx={{ px: 3, py: 2, height: '100%',width:'110%' }}>
-      <BenefitsChart />
+  {/* سطر اول - دو بخش مساوی */}
+  <Grid item xs={12} md={6}>
+    <Card
+      sx={{
+        height: 400,
+        overflow: "auto",
+        px: 3,
+        py: 2,
+      }}
+    >
+      <DashboardDailyChart />
       <Box mt={2} textAlign="center">
-        <Link 
-          to="/reports/BenefitsReport" 
-          style={{ 
-            textDecoration: "none",
-            color: "#0b3d5f",
-            fontWeight: 400,
-            fontSize: "0.875rem"
-          }}
-        >
-          مشاهده جزئیات گزارش فواید
+        <Link to="/reports/DashboardDailyTable" style={{ textDecoration: "none" }}>
+          مشاهده جزئیات گزارش روزانه
         </Link>
       </Box>
     </Card>
   </Grid>
 
-  {/* جدول فروش (عرض کمتر، در سمت چپ قرار می‌گیرد) */}
-  <Grid item xs={12} md={2}>
-    <Card sx={{ px: 3, py: 3, height: '100%', maxHeight: 400,width:'600%',marginLeft:'50%' }}>
-      <SalesChart />
+  <Grid item xs={12} md={6}>
+    <Card
+      sx={{
+        height: 400,
+        display: "flex",
+        flexDirection: "column",
+        px: 3,
+        py: 2,
+      }}
+    >
+      <Box sx={{ flex: 1, overflow: "auto" }}>
+        <MedicationStockChart />
+      </Box>
+
+      <Box mt={2} textAlign="center">
+        <Link to="/reports/MedicationStockTable">
+          <Button variant="outlined">دیدن جزئیات</Button>
+        </Link>
+      </Box>
     </Card>
   </Grid>
+
+  {/* سطر دوم - فواید + فروش */}
+  <Grid item xs={12}>
+    <Grid container spacing={2}>
+      
+      <Grid item xs={12} md={6}>
+        <Card sx={{ px: 3, py: 2, height: "100%" }}>
+          <BenefitsChart />
+          <Box mt={2} textAlign="center">
+            <Link to="/reports/benefits" style={{ textDecoration: "none" }}>
+              مشاهده جزئیات گزارش فواید
+            </Link>
+          </Box>
+        </Card>
+      </Grid>
+
+      <Grid item xs={12} md={6}>
+        <Card sx={{ px: 2, py: 2, height: "100%" }}>
+          <SalesChart />
+          <Box mt={2} textAlign="center">
+          <Link to="/reports/sales-table" style={{ textDecoration: "none" }}>
+            جزئیات بشتر فروش
+          </Link>
+        </Box>
+        </Card>
+      </Grid>
+
+    </Grid>
+  </Grid>
+
 </Grid>
-            </Grid>
-
-            {/* ستون سمت راست */}
-            <Grid item md={5} xs={12}>
-              <Card
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  maxHeight: 400,
-                  px: 3,
-                  py: 2,
-                  mb: 3,
-                  width: '125%',
-                  marginLeft:'-15%'
-                 
-                }}
-              >
-                <Box sx={{ flex: 1, overflow: 'auto' }}>
-                  <MedicationStockChart />
-                </Box>
-
-                <Box mt={2} textAlign="center">
-                  <Link to="/reports/MedicationStockTable" style={{ textDecoration: "none" }}>
-                    <Button variant="outlined" color="primary" size="small">
-                      دیدن جزئیات
-                    </Button>
-                  </Link>
-                </Box>
-              </Card>
-            </Grid>
-
-          </Grid>
         </ContentBox>
       </Fragment>
     </MainLayoutjur>

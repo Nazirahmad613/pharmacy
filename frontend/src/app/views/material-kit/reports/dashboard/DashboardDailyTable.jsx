@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "app/contexts/AuthContext";
-import MainLayoutjur from "../../../../../components/Mainlayoutjur";
+import ReportLayout from "../style/ReportLayout";
 import {
   Box,
   TextField,
@@ -17,6 +17,7 @@ import {
   Alert,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
+ 
 
 const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
   marginTop: theme.spacing(2),
@@ -132,24 +133,24 @@ export default function DashboardDailyTable() {
 
   if (authLoading || loading) {
     return (
-      <MainLayoutjur>
+      <ReportLayout>
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="300px">
           <CircularProgress />
         </Box>
-      </MainLayoutjur>
+      </ReportLayout>
     );
   }
 
   if (error) {
     return (
-      <MainLayoutjur>
+      <ReportLayout>
         <Alert severity="error">{error}</Alert>
-      </MainLayoutjur>
+      </ReportLayout>
     );
   }
 
   return (
-    <MainLayoutjur>
+    <ReportLayout>
       <Box p={3}>
         <h2 style={{ textAlign: "center", marginBottom: "1rem" }}>گزارش روزانه</h2>
 
@@ -239,6 +240,6 @@ export default function DashboardDailyTable() {
           </Box>
         )}
       </Box>
-    </MainLayoutjur>
+    </ReportLayout>
   );
 }

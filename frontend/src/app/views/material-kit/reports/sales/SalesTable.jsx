@@ -5,7 +5,7 @@ export default function SalesTable() {
   const [data, setData] = useState([]);
 
   useEffect(() => {
-    axios.get("http://localhost:8000/api/sales")
+    axios.get("http://localhost:8000/api/sales-view")
       .then(res => setData(res.data))
       .catch(err => console.error(err));
   }, []);
@@ -31,7 +31,7 @@ export default function SalesTable() {
               <td>{item.journal_date}</td>
               <td>{item.customer_name}</td>
               <td>{item.doctor_name}</td>
-              <td>{item.med_name}</td>
+              <td>{item.gen_name}</td>
               <td>{item.amount}</td>
             </tr>
           ))}

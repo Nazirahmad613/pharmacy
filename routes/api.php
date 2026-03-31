@@ -42,25 +42,6 @@ use App\Http\Controllers\BenefitController;
 */
 
  
-Route::get('/sales-report', function (Request $request) {
-    $type = $request->get('type', 'daily');
-
-    $query = DB::table('view_sales_summary');
-
-    if ($type) {
-        $query->where('report_type', $type);
-    }
-
-    return $query->get();
-
-});
-
- Route::get('/benefits-chart', [BenefitController::class, 'chart']);
-
-Route::get('/test', function () {
-    return response()->json(['message' => 'API is working']);
-});
- Route::get('/benefits-chart', [BenefitController::class, 'chart']);
 /*
 |--------------------------------------------------------------------------
 | Authentication (PUBLIC)
@@ -69,7 +50,8 @@ Route::get('/test', function () {
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
-
+Route::get('/sales-view', [SalesController::class, 'view']); // View
+Route::get('/sales/chart', [SalesController::class, 'chart']);
 /*
 |--------------------------------------------------------------------------
 | Protected Routes (Token-based)
@@ -190,7 +172,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/sales', [SalesController::class, 'index']);
     Route::post('/sales', [SalesController::class, 'store']);
     Route::put('/sales/{sales_id}', [SalesController::class, 'update']);
-    Route::delete('/sales/{sales_id}', [SalesController::class, 'destroy'])->middleware('admin');
+    Route::delete('/sales/{sales_id}', [SalesController::class, 'destroy'])->middleware('admin'); // CRUD
 
     // ===== Journals =====
     Route::get('/journals', [JournalController::class, 'index']);
@@ -224,9 +206,29 @@ Route::get('/dashboard-daily', function () {
 });
  Route::get('/benefits', [BenefitController::class, 'index']);
 
-Route::get('/sales', [SalesController::class, 'view']);
-Route::get('/sales/chart', [SalesController::class, 'chart']);
  
    
    
 });
+
+
+
+Route::get('/sales-report', function (Request $request) {
+    $type = $request->get('type', 'daily');
+
+    $query = DB::table('view_sales_summary');
+
+    if ($type) {
+        $query->where('report_type', $type);
+    }
+
+    return $query->get();
+
+});
+
+ Route::get('/benefits-chart', [BenefitController::class, 'chart']);
+
+Route::get('/test', function () {
+    return response()->json(['message' => 'API is working']);
+});
+ Route::get('/benefits-chart', [BenefitController::class, 'chart']);
