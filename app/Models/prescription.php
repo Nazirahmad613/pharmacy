@@ -27,7 +27,13 @@ class Prescription extends Model
         'total_amount',
         'discount',
         'net_amount',
-    ];
+          'diagnosis',
+         'weight',
+         'blood_pressure',
+         'temperature',
+         'oxygen',
+];
+    
 
     public function items()
     {

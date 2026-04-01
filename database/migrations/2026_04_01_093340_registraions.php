@@ -56,6 +56,13 @@ return new class extends Migration
 
             // ===== ستون جدید: nid_number =====
             $table->string('tazkira_number', 25)->nullable()->comment('شماره تذکره شخص (فرمت: 1399-1102-30366)');
+            // Add after the 'tazkira_number' column
+
+$table->text('diagnosis')->nullable()->comment('تشخیص (برای مریض)');
+$table->decimal('weight', 5, 2)->nullable()->comment('وزن به کیلوگرم');
+$table->string('blood_pressure', 20)->nullable()->comment('فشار خون (مثلاً 120/80)');
+$table->decimal('temperature', 4, 1)->nullable()->comment('دمای بدن (درجه سانتی‌گراد)');
+$table->tinyInteger('oxygen')->nullable()->comment('درصد اکسیژن خون');
 
             $table->tinyInteger('status')->default(1);
             $table->timestamps();

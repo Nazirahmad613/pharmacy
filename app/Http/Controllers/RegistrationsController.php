@@ -23,6 +23,11 @@ class RegistrationsController extends Controller
             'visit_date'   => 'nullable|date',
             'note'         => 'nullable|string',
             'department_id'=> 'nullable|exists:departments,id',
+            'diagnosis'       => 'nullable|string',
+'weight'          => 'nullable|numeric|min:0|max:300',
+'blood_pressure'  => 'nullable|string|max:20',
+'temperature'     => 'nullable|numeric|min:30|max:45',
+'oxygen'          => 'nullable|integer|min:0|max:100',
             'tazkira_number'   => [
                 'nullable',
                 'regex:/^\d{4}-\d{4}-\d{5}$/'
@@ -82,10 +87,16 @@ class RegistrationsController extends Controller
             'visit_date'   => 'nullable|date',
             'note'         => 'nullable|string',
             'department_id'=> 'nullable|exists:departments,id',
+            'diagnosis'       => 'nullable|string',
+'weight'          => 'nullable|numeric|min:0|max:300',
+'blood_pressure'  => 'nullable|string|max:20',
+'temperature'     => 'nullable|numeric|min:30|max:45',
+'oxygen'          => 'nullable|integer|min:0|max:100',
             'tazkira_number' => [
                 'nullable',
                 'regex:/^\d{4}-\d{4}-\d{5}$/'
             ],
+            
         ]);
 
         // ✅ ذخیره داده‌های قبلی

@@ -15,23 +15,27 @@ class Registrations extends Model
     protected $primaryKey = 'reg_id';
     public $incrementing = true;
     protected $keyType = 'int';
-
-    protected $fillable = [
-        'reg_type',
-        'full_name',
-        'father_name',
-        'phone',
-        'gender',
-        'department_id',
-        'age',
-        'blood_group',
-        'address',
-        'visit_date',
-        'note',
-        'tazkira_number',  // ✅ اضافه شد
-        'status',
-    ];
-
+ protected $fillable = [
+    'reg_type',
+    'full_name',
+    'father_name',
+    'phone',
+    'gender',
+    'department_id',
+    'age',
+    'blood_group',
+    'address',
+    'visit_date',
+    'note',
+    'tazkira_number',
+    'status',
+    // === NEW PATIENT FIELDS ===
+    'diagnosis',
+    'weight',
+    'blood_pressure',
+    'temperature',
+    'oxygen',
+];
 
     public function department()
     {

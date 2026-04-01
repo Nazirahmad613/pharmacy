@@ -17,6 +17,11 @@ return new class extends Migration {
             $table->string('patient_gender')->nullable();
             $table->string('patient_phone')->nullable();
             $table->string('patient_blood_group')->nullable();
+        $table->text('diagnosis')->nullable()->comment('تشخیص (برای مریض)');
+        $table->decimal('weight', 5, 2)->nullable()->comment('وزن به کیلوگرم');
+        $table->string('blood_pressure', 20)->nullable()->comment('فشار خون (مثلاً 120/80)');
+        $table->decimal('temperature', 4, 1)->nullable()->comment('دمای بدن (درجه سانتی‌گراد)');
+        $table->tinyInteger('oxygen')->nullable()->comment('درصد اکسیژن خون');
 
             $table->unsignedBigInteger('doc_id');
             $table->string('doc_name')->nullable();
@@ -39,4 +44,4 @@ return new class extends Migration {
     {
         Schema::dropIfExists('prescriptions');
     }
-};
+}; 

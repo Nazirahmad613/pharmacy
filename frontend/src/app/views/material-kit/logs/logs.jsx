@@ -22,9 +22,7 @@ export default function LogsPage() {
   // دریافت لیست کاربران برای نمایش نام
   const fetchUsers = async () => {
     try {
-      // فرض بر این است که endpoint /users لیست کاربران را برمی‌گرداند
       const res = await api.get("/users");
-      // ساختار پاسخ ممکن است در پروژه شما متفاوت باشد
       const usersArray = res.data.data || res.data;
       const map = {};
       usersArray.forEach((user) => {
@@ -60,7 +58,7 @@ export default function LogsPage() {
 
   useEffect(() => {
     fetchLogs(1);
-    fetchUsers(); // دریافت یکباره کاربران
+    fetchUsers();
   }, []);
 
   const handleFilterChange = (e) => {
@@ -74,39 +72,66 @@ export default function LogsPage() {
     fetchLogs(1);
   };
 
+  const resetFilters = () => {
+    setFilters({
+      action: "",
+      user_id: "",
+    });
+    // پس از ریست، دوباره لاگ‌ها را دریافت کن
+    fetchLogs(1);
+  };
+
   return (
     <MainLayoutjur>
       <div className="p-6">
         <h2 className="text-2xl font-bold mb-4">📜 لاگ‌ها</h2>
 
         {/* فیلترها */}
-        <div className="flex gap-4 mb-4">
-          <select
-            name="action"
-            value={filters.action}
-            onChange={handleFilterChange}
-            className="border p-2 rounded"
-          >
-            <option value="">همه عملیات</option>
-            <option value="create">ایجاد</option>
-            <option value="update">ویرایش</option>
-            <option value="delete">حذف</option>
-          </select>
+        <div className="flex flex-wrap gap-4 mb-4 items-end">
+          <div>
+            <label className="block text-sm font-medium mb-1">عملیات</label>
+            <select
+              name="action"
+              value={filters.action}
+              onChange={handleFilterChange}
+              className="border p-2 rounded"
+            >
+              <option value="">همه عملیات</option>
+              <option value="create">ایجاد</option>
+              <option value="update">ویرایش</option>
+              <option value="delete">حذف</option>
+            </select>
+          </div>
 
-          <input
-            type="text"
-            name="user_id"
-            placeholder="شناسه کاربر"
-            value={filters.user_id}
-            onChange={handleFilterChange}
-            className="border p-2 rounded"
-          />
+          <div>
+            <label className="block text-sm font-medium mb-1">کاربر</label>
+            <select
+              name="user_id"
+              value={filters.user_id}
+              onChange={handleFilterChange}
+              className="border p-2 rounded min-w-[150px]"
+            >
+              <option value="">همه کاربران</option>
+              {Object.entries(usersMap).map(([id, name]) => (
+                <option key={id} value={id}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <button
             onClick={applyFilters}
             className="bg-blue-500 text-white px-4 py-2 rounded"
           >
             فیلتر
+          </button>
+
+          <button
+            onClick={resetFilters}
+            className="bg-gray-300 text-gray-800 px-4 py-2 rounded"
+          >
+            پاک کردن فیلترها
           </button>
         </div>
 
@@ -143,7 +168,6 @@ export default function LogsPage() {
                   <tr key={log.id} className="text-center border-t">
                     <td className="p-2 border">{log.id}</td>
                     <td className="p-2 border">
-                      {/* نمایش نام کاربر به جای شناسه */}
                       {usersMap[log.user_id] || log.user_id}
                     </td>
                     <td className="p-2 border">{log.action}</td>

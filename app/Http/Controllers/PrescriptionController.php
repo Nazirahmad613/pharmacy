@@ -34,6 +34,11 @@ class PrescriptionController extends Controller
             'total_amount'    => 'required|numeric',
             'net_amount'      => 'required|numeric',
             'tazkira_number'  => 'nullable|string',
+            'diagnosis'       => 'nullable|string',
+'weight'          => 'nullable|numeric|min:0|max:300',
+'blood_pressure'  => 'nullable|string|max:20',
+'temperature'     => 'nullable|numeric|min:30|max:45',
+'oxygen'          => 'nullable|integer|min:0|max:100',
         ]);
 
         // 🔹 تعریف متغیر بیرون از closure
@@ -62,6 +67,11 @@ class PrescriptionController extends Controller
                 'total_amount'        => $request->total_amount,
                 'discount'            => $request->discount ?? 0,
                 'net_amount'          => $request->net_amount,
+                'diagnosis'           => $request->diagnosis ?? null,
+                'weight'              => $request->weight ?? null,
+                'blood_pressure'      => $request->blood_pressure ?? null,
+                'temperature'         => $request->temperature ?? null,
+                'oxygen'              => $request->oxygen ?? null,
             ]);
 
             // ثبت آیتم‌ها
@@ -152,6 +162,7 @@ class PrescriptionController extends Controller
                 'total_amount'        => $request->total_amount,
                 'discount'            => $request->discount ?? 0,
                 'net_amount'          => $request->net_amount,
+
             ]);
 
             // حذف ژورنال‌های قدیمی مرتبط

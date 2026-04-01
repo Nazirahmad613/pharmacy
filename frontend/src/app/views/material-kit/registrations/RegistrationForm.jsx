@@ -21,6 +21,11 @@ export default function RegistrationForm() {
     note: "",
     status: 1,
     department_id: "",
+     diagnosis: "",
+    weight: "",
+    blood_pressure: "",
+    temperature: "",
+    oxygen: "",
   });
 
   const [departments, setDepartments] = useState([]);
@@ -97,6 +102,11 @@ export default function RegistrationForm() {
         note: "",
         status: 1,
         department_id: "",
+          diagnosis: "",
+    weight: "",
+    blood_pressure: "",
+    temperature: "",
+    oxygen: "",
       });
 
       setEditingId(null);
@@ -343,6 +353,73 @@ export default function RegistrationForm() {
               <option value="O-">O-</option>
             </select>
           </div>
+          {form.reg_type === "patient" && (
+    <>
+        <div>
+            <label>تشخیص</label>
+            <textarea
+                name="diagnosis"
+                value={form.diagnosis}
+                onChange={handleChange}
+                className="form-control"
+                rows="2"
+                placeholder="تشخیص اولیه (اختیاری)"
+            />
+        </div>
+
+        <div>
+            <label>وزن (کیلوگرم)</label>
+            <input
+                type="number"
+                step="0.1"
+                name="weight"
+                value={form.weight}
+                onChange={handleChange}
+                className="form-control"
+                placeholder="مثلاً 70.5"
+            />
+        </div>
+
+        <div>
+            <label>فشار خون</label>
+            <input
+                type="text"
+                name="blood_pressure"
+                value={form.blood_pressure}
+                onChange={handleChange}
+                className="form-control"
+                placeholder="مثلاً 120/80"
+            />
+        </div>
+
+        <div>
+            <label>حرارت (درجه سانتی‌گراد)</label>
+            <input
+                type="number"
+                step="0.1"
+                name="temperature"
+                value={form.temperature}
+                onChange={handleChange}
+                className="form-control"
+                placeholder="مثلاً 36.5"
+            />
+        </div>
+
+        <div>
+            <label>اکسیجن (%)</label>
+            <input
+                type="number"
+                name="oxygen"
+                value={form.oxygen}
+                onChange={handleChange}
+                className="form-control"
+                placeholder="مثلاً 98"
+                min="0"
+                max="100"
+            />
+        </div>
+    </>
+)}
 
           <div>
             <label>تاریخ مراجعه / مصرف</label>

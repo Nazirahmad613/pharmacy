@@ -2,32 +2,43 @@
 import React, { useState, useEffect } from 'react';
 import moment from 'moment-jalaali';
 import { Box, Typography, Paper } from '@mui/material';
-import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff'; // آیکون پرنده
+import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff';
 import { keyframes } from '@emotion/react';
 
 moment.locale('fa');
 
-const persianMonths = [
-  'فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور',
-  'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'
+// ماه‌های دری (افغانستان)
+const dariMonths = [
+  'حمل', 'ثور', 'جوزا', 'سرطان', 'اسد', 'سنبله',
+  'میزان', 'عقرب', 'قوس', 'جدی', 'دلو', 'حوت'
 ];
 
-const persianWeekDays = [
+// روزهای هفته (دری) – همان ترتیب معمول افغانستان
+const dariWeekDays = [
   'شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه'
 ];
 
+// تبدیل اعداد به رقم فارسی/دری
 const toPersianNumber = (num) => {
   const persianDigits = '۰۱۲۳۴۵۶۷۸۹';
   return num.toString().replace(/\d/g, (digit) => persianDigits[digit]);
 };
 
-const formatTime = (date) => {
-  const hours = date.getHours().toString().padStart(2, '0');
-  const minutes = date.getMinutes().toString().padStart(2, '0');
-  const seconds = date.getSeconds().toString().padStart(2, '0');
-  return `${toPersianNumber(hours)}:${toPersianNumber(minutes)}:${toPersianNumber(seconds)}`;
+// فرمت ۱۲ ساعته با ق.ظ / ب.ظ
+const formatTime12Hour = (date) => {
+  let hours = date.getHours();
+  const minutes = date.getMinutes();
+  const seconds = date.getSeconds();
+  const ampm = hours >= 12 ? 'ب.ظ' : 'ق.ظ';
+  hours = hours % 12;
+  hours = hours ? hours : 12; // ساعت ۱۲ برای ۱۲:۰۰
+  const formattedHours = hours.toString().padStart(2, '0');
+  const formattedMinutes = minutes.toString().padStart(2, '0');
+  const formattedSeconds = seconds.toString().padStart(2, '0');
+  return `${toPersianNumber(formattedHours)}:${toPersianNumber(formattedMinutes)}:${toPersianNumber(formattedSeconds)} ${ampm}`;
 };
 
+// دریافت تاریخ شمسی با ماه‌های دری
 const getPersianDate = (date) => {
   const m = moment(date);
   const year = m.jYear();
@@ -35,8 +46,8 @@ const getPersianDate = (date) => {
   const day = m.jDate();
   const weekDayIndex = date.getDay();
   let persianWeekDayIndex = (weekDayIndex + 1) % 7;
-  const weekDayName = persianWeekDays[persianWeekDayIndex];
-  const monthName = persianMonths[monthIndex];
+  const weekDayName = dariWeekDays[persianWeekDayIndex];
+  const monthName = dariMonths[monthIndex];
   return `${weekDayName} ${toPersianNumber(day)} ${monthName} ${toPersianNumber(year)}`;
 };
 
@@ -81,7 +92,7 @@ const SimpleClock = () => {
           animation: `${flyAnimation} 2s infinite ease-in-out`,
           display: 'flex',
           alignItems: 'center',
-          color: '#a11d18', // رنگ نارنجی شاد
+          color: '#a11d18',
         }}
       >
         <FlightTakeoffIcon sx={{ fontSize: 32 }} />
@@ -101,7 +112,7 @@ const SimpleClock = () => {
             letterSpacing: '1px',
           }}
         >
-          {formatTime(currentTime)}
+          {formatTime12Hour(currentTime)}
         </Typography>
         <Typography
           variant="body2"
