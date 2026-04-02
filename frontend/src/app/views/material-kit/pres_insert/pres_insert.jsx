@@ -1354,7 +1354,8 @@ export default function PrescriptionForm() {
               )}
             </>
           ) : (
-            <PrescriptionSheet />
+            // ✅ Adding a stable key to prevent remounting after print dialog closes
+            <PrescriptionSheet key="prescription-sheet" />
           )}
         </div>
       </div>
