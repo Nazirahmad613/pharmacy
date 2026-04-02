@@ -2,7 +2,6 @@ import React, { forwardRef } from "react";
 import "./sale-print.css";
 
 const PrescriptionPrint = forwardRef(({ data }, ref) => {
-  // ⚡️ جنسیت به فارسی
   const genderFa =
     data?.gender?.toLowerCase() === "male"
       ? "مرد"
@@ -26,6 +25,15 @@ const PrescriptionPrint = forwardRef(({ data }, ref) => {
               <div><strong>تذکره:</strong> {data.tazkira_number || "-"}</div>
               <div><strong>تاریخ:</strong> {data.date || "-"}</div>
             </div>
+          </div>
+
+          {/* بخش جدید: تشخیص، فشار خون، وزن، حرارت، اکسیژن */}
+          <div style={{ marginBottom: "15px", padding: "10px", backgroundColor: "#f9f9f9", borderRadius: "5px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px", textAlign: "right" }}>
+            <div><strong>تشخیص:</strong> {data.diagnosis || "-"}</div>
+            <div><strong>فشار خون:</strong> {data.blood_pressure || "-"}</div>
+            <div><strong>وزن (کیلوگرم):</strong> {data.weight || "-"}</div>
+            <div><strong>حرارت (درجه سانتی‌گراد):</strong> {data.temperature || "-"}</div>
+            <div><strong>اکسیژن (%):</strong> {data.oxygen || "-"}</div>
           </div>
 
           <table className="print-table" style={{ width: "100%", borderCollapse: "collapse", marginBottom: "20px" }}>

@@ -69,7 +69,7 @@ export default function PrescriptionForm() {
 
   const handlePrint = useReactToPrint({
     contentRef: printRef,
-    documentTitle: patientInfo?.pres_num || "Prescription",
+    documentTitle: prescriptionPrintData?.pres_num || "Prescription",
     pageStyle: `
       @page { size: A4; margin: 20mm; }
       @media print { body { -webkit-print-color-adjust: exact; } }
@@ -379,7 +379,12 @@ export default function PrescriptionForm() {
         blood_group: "",
         reg_id: "",
         pres_num: "",
-        tazkira_number: ""
+        tazkira_number: "",
+        diagnosis: "",
+        weight: "",
+        blood_pressure: "",
+        temperature: "",
+        oxygen: "",
       });
 
       loadPrescriptions();
@@ -399,7 +404,6 @@ export default function PrescriptionForm() {
     setTotalAmount(pres.total_amount);
     setNetAmount(pres.net_amount);
 
-    // پر کردن اطلاعات مریض (برای نمایش فیلدهای جدید)
     const patient = patients.find(x => x.reg_id == pres.patient_id);
     if (patient) {
       setPatientInfo({
@@ -551,12 +555,10 @@ export default function PrescriptionForm() {
     });
     const [localDiscount, setLocalDiscount] = useState(tempPrescriptionData?.discount || 0);
 
-    // فیلتر داروها بر اساس جستجو
     const filteredMeds = medications.filter(m =>
       m.gen_name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // فیلتر حمایت‌کنندگان بر اساس داروی انتخاب شده
     const filteredSuppliersForSheet = selectedMed
       ? suppliers.filter(s => s.reg_id == selectedMed.supplier_id)
       : [];
@@ -573,7 +575,6 @@ export default function PrescriptionForm() {
       setSearchTerm(med.gen_name);
     };
 
-    // محاسبه قیمت مجموعی هر بار که تعداد یا قیمت واحد تغییر کند
     useEffect(() => {
       setNewItem(prev => ({
         ...prev,
@@ -615,7 +616,6 @@ export default function PrescriptionForm() {
       saveFinalFromSheet(items, localDiscount);
     };
 
-    // چاپ از برگه
     const handlePrintSheet = () => {
       const printData = {
         pres_num: tempPrescriptionData?.pres_num || "ندارد",
@@ -649,7 +649,6 @@ export default function PrescriptionForm() {
       }
     };
 
-    // استایل‌های قالب (با متن فارسی)
     const styles = {
       topHeader: {
         width: "800px",
@@ -718,7 +717,6 @@ export default function PrescriptionForm() {
         <div style={styles.topHeader}>بیمارستان شفا‌‌‌‌ی الفلاح</div>
 
         <div style={styles.prescription}>
-          {/* HEADER */}
           <div style={styles.header}>
             <div>
               <h2>دکتر {tempPrescriptionData?.doctor?.full_name || "--------"}</h2>
@@ -729,7 +727,6 @@ export default function PrescriptionForm() {
             </div>
           </div>
 
-          {/* PATIENT INFO */}
           <div style={styles.patientInfo}>
             <div style={styles.patientInfoDiv}>
               <p><strong>نام مریض:</strong> {tempPrescriptionData?.patient?.full_name || "__________________"}</p>
@@ -742,9 +739,7 @@ export default function PrescriptionForm() {
             </div>
           </div>
 
-          {/* RX SECTION */}
           <div style={styles.rxSection}>
-            {/* LEFT SIDE - Vital Signs */}
             <div style={styles.leftBox}>
               <label style={styles.label}>تشخیص</label>
               <input style={styles.input} type="text" value={tempPrescriptionData?.diagnosis || ""} readOnly />
@@ -765,7 +760,6 @@ export default function PrescriptionForm() {
               <input style={styles.input} type="text" value={tempPrescriptionData?.oxygen || ""} readOnly />
             </div>
 
-            {/* RIGHT SIDE - Medicines */}
             <div style={styles.rightBox}>
               <div style={styles.rxTitle}>Rx</div>
 
@@ -789,7 +783,6 @@ export default function PrescriptionForm() {
                 </div>
               )}
 
-              {/* Add item form */}
               {selectedMed && (
                 <div style={styles.addForm}>
                   <input
@@ -838,7 +831,6 @@ export default function PrescriptionForm() {
             </div>
           </div>
 
-          {/* Items Table */}
           {items.length > 0 && (
             <table style={styles.itemsTable}>
               <thead>
@@ -851,7 +843,7 @@ export default function PrescriptionForm() {
                   <th style={styles.th}>جمع</th>
                   <th style={styles.th}>ملاحظات</th>
                   <th style={styles.th}>عملیات</th>
-                 </tr>
+                </tr>
               </thead>
               <tbody>
                 {items.map((item, idx) => {
@@ -877,7 +869,6 @@ export default function PrescriptionForm() {
             </table>
           )}
 
-          {/* Totals */}
           <div style={styles.totals}>
             <div>مجموع: {totalAmount.toLocaleString()} افغانی</div>
             <div>
@@ -886,7 +877,6 @@ export default function PrescriptionForm() {
             <div>خالص: {netAmount.toLocaleString()} افغانی</div>
           </div>
 
-          {/* Footer & Actions */}
           <div style={styles.footer}>
             <div>امضای پزشک</div>
             <div>مهر بیمارستان</div>
@@ -941,7 +931,7 @@ export default function PrescriptionForm() {
         <div className="layout-content">
           {!showPrescriptionSheet ? (
             <>
-              {/* ===== فرم اطلاعات عمومی (مثل قبل) ===== */}
+              {/* ===== فرم اطلاعات عمومی ===== */}
               <div className="form-container">
                 <h1>{editingId ? "ویرایش نسخه" : "ثبت نسخه جدید"}</h1>
 
@@ -1195,9 +1185,9 @@ export default function PrescriptionForm() {
 
                   {prescriptionItems.length > 0 && (
                     <div className="table-container" style={{ marginTop: "10px" }}>
-                       <table>
+                      <table>
                         <thead>
-                           <tr>
+                          <tr>
                             <th>ردیف</th>
                             <th>کتگوری</th>
                             <th>دوا</th>
@@ -1209,7 +1199,7 @@ export default function PrescriptionForm() {
                             <th>قیمت مجموعی</th>
                             <th>ملاحظات</th>
                             <th>عملیات</th>
-                           </tr>
+                          </tr>
                         </thead>
                         <tbody>
                           {prescriptionItems.map((item, idx) => {
@@ -1237,7 +1227,7 @@ export default function PrescriptionForm() {
                             );
                           })}
                         </tbody>
-                       </table>
+                      </table>
                     </div>
                   )}
 
@@ -1252,13 +1242,13 @@ export default function PrescriptionForm() {
                 </>
               )}
 
-              {/* ===== لیست نسخه‌ها (مثل قبل) ===== */}
+              {/* ===== لیست نسخه‌ها ===== */}
               {prescriptionsList.length > 0 && (
                 <div className="table-container" style={{ marginTop: "20px" }}>
                   <h3>نسخه های ثبت شده</h3>
                   <table>
                     <thead>
-                       <tr>
+                      <tr>
                         <th>شماره</th>
                         <th>شماره نسخه</th>
                         <th>مریض</th>
@@ -1268,7 +1258,7 @@ export default function PrescriptionForm() {
                         <th>تخفیف</th>
                         <th>خالص</th>
                         <th>عملیات</th>
-                       </tr>
+                      </tr>
                     </thead>
                     <tbody>
                       {currentPrescriptions.map((p, index) => {
@@ -1364,16 +1354,16 @@ export default function PrescriptionForm() {
               )}
             </>
           ) : (
-            <>
-              <PrescriptionSheet />
-              <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
-                {prescriptionPrintData && (
-                  <PrescriptionPrint ref={printRef} data={prescriptionPrintData} />
-                )}
-              </div>
-            </>
+            <PrescriptionSheet />
           )}
         </div>
+      </div>
+
+      {/* ===== کامپوننت پرنت - همیشه در دسترس ===== */}
+      <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
+        {prescriptionPrintData && (
+          <PrescriptionPrint ref={printRef} data={prescriptionPrintData} />
+        )}
       </div>
     </MainLayoutjur>
   );
