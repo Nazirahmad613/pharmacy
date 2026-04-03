@@ -66,6 +66,10 @@ export default function PrescriptionForm() {
   // ========== حالت جدید: نمایش برگه‌ی نسخه ==========
   const [showPrescriptionSheet, setShowPrescriptionSheet] = useState(false);
   const [tempPrescriptionData, setTempPrescriptionData] = useState(null);
+  
+  // ========== State for PrescriptionSheet items (moved to parent to persist during print) ==========
+  const [sheetItems, setSheetItems] = useState([]);
+  const [sheetLocalDiscount, setSheetLocalDiscount] = useState(0);
 
   const handlePrint = useReactToPrint({
     contentRef: printRef,
@@ -219,6 +223,8 @@ export default function PrescriptionForm() {
     });
     setShowPrescriptionSheet(false);
     setTempPrescriptionData(null);
+    setSheetItems([]);
+    setSheetLocalDiscount(0);
     toast.info("✏️ ویرایش لغو شد");
   };
 
@@ -259,6 +265,8 @@ export default function PrescriptionForm() {
     };
 
     setTempPrescriptionData(fullData);
+    setSheetItems([]);
+    setSheetLocalDiscount(0);
     setShowPrescriptionSheet(true);
     toast.success("معلومات عمومی ذخیره شد. اکنون می‌توانید آیتم‌ها را اضافه کنید.");
   };
@@ -542,8 +550,7 @@ export default function PrescriptionForm() {
   };
 
   // ========== کامپوننت برگه‌ی نسخه (با منطق مشابه فایل اصلی) ==========
-  const PrescriptionSheet = () => {
-    const [items, setItems] = useState(tempPrescriptionData?.items || []);
+  const PrescriptionSheet = ({ items, setItems, localDiscount, setLocalDiscount }) => {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedMed, setSelectedMed] = useState(null);
     const [newItem, setNewItem] = useState({
@@ -553,7 +560,6 @@ export default function PrescriptionForm() {
       supplier_id: "",
       remarks: "",
     });
-    const [localDiscount, setLocalDiscount] = useState(tempPrescriptionData?.discount || 0);
 
     const filteredMeds = medications.filter(m =>
       m.gen_name?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -1354,13 +1360,17 @@ export default function PrescriptionForm() {
               )}
             </>
           ) : (
-            // ✅ Adding a stable key to prevent remounting after print dialog closes
-            <PrescriptionSheet key="prescription-sheet" />
+            <PrescriptionSheet 
+              items={sheetItems} 
+              setItems={setSheetItems} 
+              localDiscount={sheetLocalDiscount} 
+              setLocalDiscount={setSheetLocalDiscount} 
+            />
           )}
         </div>
       </div>
 
-      {/* ===== کامپوننت پرنت - همیشه در دسترس ===== */}
+       {/* ===== کامپوننت پرنت - همیشه در دسترس ===== */}
       <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
         {prescriptionPrintData && (
           <PrescriptionPrint ref={printRef} data={prescriptionPrintData} />
