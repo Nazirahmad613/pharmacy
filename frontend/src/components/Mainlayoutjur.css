@@ -1,0 +1,309 @@
+/* ===== ریست صفحه ===== */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ===== لایه اصلی با تصویر پس‌زمینه یکپارچه ===== */
+.main-layout {
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+  
+  /* تصویر پس‌زمینه یکسان برای کل صفحه */
+  background-image: url('/images/background.jpg'); /* ← مسیر عکس خود را جایگزین کنید */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed; /* برای جلوه بهتر در اسکرول */
+  
+  /* رنگ پشتیبان (در صورت بار نشدن عکس) */
+  background-color: #eef2f5;
+  
+  color: #1e2a36;
+}
+
+/* ===== لایه پوشش روشن برای خوانایی متن ===== */
+.background-overlay {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  background: rgba(196, 217, 247, 0.26); /* ← شفافیت بیشتر برای خوانایی */
+  
+}
+
+/* ===== محتوا ===== */
+.layout-content {
+  position: relative;
+  z-index: 2;
+  max-width: 1200px;
+  margin: auto;
+  padding-bottom: 20px;
+  padding-top: 40px;
+}
+
+/* ===== حذف تصویر پس‌زمینه از کارت‌ها و کانتینرها ===== */
+.MuiCard-root,
+.card,
+.table-container,
+.form-container {
+  background-image: none !important;   /* حذف هر عکس تکه‌تکه */
+  background-color: #ffffff;           /* پس‌زمینه سفید یکدست */
+}
+
+/* ===== افزایش سایز فونت عمومی ===== */
+body {
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* ================= فرم ================= */
+.form-container {
+  background: #ffffff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  text-align: center;
+}
+
+.form-container label {
+  color: #1e2a36;
+  font-size: 13px;      /* بزرگتر از قبل */
+  font-weight: 500;
+}
+
+.form-container input,
+.form-container select,
+.form-container textarea {
+  width: 100%;
+  height: 32px;
+  padding: 6px 8px;
+  background: #fafafa;
+  border: 1px solid #cbd5e1;
+  color: #1e2a36;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+/* ================= جدول‌ها ================= */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;      /* بزرگتر از 10px قبل */
+  color: #1e2a36;
+}
+
+table thead th {
+  background-color: #e2e8f0;
+  color: #1e2a36;
+  font-weight: 600;
+  padding: 8px 6px;
+}
+
+table td,
+table th {
+  padding: 8px 6px;
+  text-align: center;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+table tbody tr:hover td {
+  background-color: #7db5f556;
+}
+
+/* ================= کانتینر جدول ================= */
+.table-container {
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: auto;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+  width: 95%;
+  margin: 0 auto 16px auto;
+}
+
+/* ================= دکمه‌های جدول ================= */
+table td button {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+}
+
+table td button.edit {
+  background-color: #fbbf24;
+  color: #000;
+}
+
+table td button.delete {
+  background-color: #ef4444;
+  color: #ffffff;
+}
+
+/* ================= دکمه ثبت ================= */
+button.edit {
+  display: block;
+  margin: 16px auto;
+  background-color: #2563eb;
+  color: #ffffff;
+  height: 36px;
+  width: 160px;
+  border-radius: 6px;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+button.edit:hover {
+  background-color: #1e40af;
+}
+
+/* ===== Toast بدون تغییر ===== */
+.Toastify__toast-container {
+  z-index: 999999 !important;
+}
+
+.Toastify__toast {
+  z-index: 999999 !important;
+}
+
+.custom-toast {
+  background-color: #333 !important;
+  color: white !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+}
+
+.custom-toast-body {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+
+.custom-toast-container {
+  z-index: 9999999 !important;
+  position: fixed !important;
+  pointer-events: all !important;
+}
+
+.custom-toast {
+  background-color: #333 !important;
+  color: white !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  font-family: inherit !important;
+  direction: rtl !important;
+  padding: 12px !important;
+  margin: 10px auto !important;
+}
+
+.custom-toast-body {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  text-align: center !important;
+}
+
+.Toastify__toast--success.custom-toast {
+  background-color: #10b981 !important;
+}
+
+.Toastify__toast--error.custom-toast {
+  background-color: #ef4444 !important;
+}
+
+.custom-toast .Toastify__progress-bar {
+  background: rgba(255, 255, 255, 0.7) !important;
+}
+
+.custom-toast .Toastify__close-button {
+  color: white !important;
+  opacity: 0.8 !important;
+}
+
+.custom-toast .Toastify__close-button:hover {
+  opacity: 1 !important;
+}
+
+.prescription-sheet {
+  background: #fff;
+  padding: 20px;
+  max-width: 800px;
+  margin: auto;
+  border-radius: 10px;
+  color: #000;
+}
+
+.pres-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rx-symbol {
+  font-size: 40px;
+  font-weight: bold;
+  color: green;
+}
+
+.patient-info {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.rx-box {
+  border: 2px solid green;
+  padding: 15px;
+  margin-top: 20px;
+}
+
+.med-search-list {
+  background: #f1f1f1;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.med-search-list div {
+  padding: 5px;
+  cursor: pointer;
+}
+
+.med-search-list div:hover {
+  background: #ddd;
+}
+
+.rx-form-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.rx-items {
+  margin-top: 15px;
+}
+
+.rx-item {
+  padding: 5px 0;
+  border-bottom: 1px dashed #ccc;
+}
+
+.rx-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  font-weight: bold;
+}
