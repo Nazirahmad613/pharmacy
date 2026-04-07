@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "app/contexts/AuthContext";
-import ReportLayout from "../style/ReportLayout";
+import ReportLayout from "../../../../../components/ReportLayout";
 import {
   Box,
   TextField,
@@ -44,16 +44,15 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   },
 }));
 
-const SearchBox = styled(Box)(({ theme }) => ({
+ const SearchBox = styled(Box)(({ theme }) => ({
   display: "flex",
   gap: theme.spacing(2),
   flexWrap: "wrap",
   marginBottom: theme.spacing(3),
   alignItems: "flex-end",
-  // RTL support
+  justifyContent: "flex-end", // 👈 مهم
   direction: "rtl",
 }));
-
 export default function DashboardDailyTable() {
   const { api, user, loading: authLoading } = useAuth();
 
@@ -228,18 +227,36 @@ export default function DashboardDailyTable() {
         </StyledTableContainer>
 
         {/* Pagination */}
-        {totalPages > 1 && (
-          <Box display="flex" justifyContent="center" mt={3}>
-            <Pagination
-              count={totalPages}
-              page={currentPage}
-              onChange={(_, page) => setCurrentPage(page)}
-              color="primary"
-              shape="rounded"
-            />
+         <Pagination
+  count={totalPages}
+  page={currentPage}
+  onChange={(_, page) => setCurrentPage(page)}
+  shape="rounded"
+  sx={{
+    "& .MuiPaginationItem-root": {
+      backgroundColor: "#ffffff",
+      color: "#333",
+      border: "1px solid #ccc",
+    },
+
+    "& .MuiPaginationItem-root:hover": {
+      backgroundColor: "#e3f2fd",
+    },
+
+    "& .MuiPaginationItem-page.Mui-selected": {
+      backgroundColor: "#1976d2",
+      color: "#fff",
+      border: "1px solid #1976d2",
+      fontWeight: "bold",
+    },
+
+    "& .MuiPaginationItem-ellipsis": {
+      color: "#333",
+    },
+  }}
+/>
           </Box>
-        )}
-      </Box>
+      
     </ReportLayout>
   );
 }

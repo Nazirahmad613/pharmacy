@@ -1,0 +1,83 @@
+/* ===== Page Wrapper ===== */
+.report-wrapper {
+  background: #cbd9e7;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+/* ===== Header ===== */
+.report-header {
+  background: #ffffff;
+  padding: 15px 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* ===== Title ===== */
+.report-title {
+  font-weight: bold;
+  color: #0a4c97da;
+  text-align: center;
+}
+
+/* ===== Content Box ===== */
+.report-content {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(255, 255, 255, 0.952);
+}
+/* ===== Page Wrapper ===== */
+.report-wrapper {
+  background: #cbd9e7;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+/* ===== Header ===== */
+.report-header {
+  background: #ffffff;
+  padding: 15px 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* ===== Title ===== */
+.report-title {
+  font-weight: bold;
+  color: #0a4c97da;
+  text-align: center;
+  font-size: 1.5rem;   /* larger title */
+}
+
+/* ===== Content Box ===== */
+.report-content {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(255, 255, 255, 0.952);
+  font-size: 1.125rem;   /* larger base text (18px if root 16px) */
+  font-weight: 500;      /* semi-bold, adjust as needed (600 for bold) */
+}
+
+/* Optional: make all text inside report-content bold (if you want full bold) */
+.report-content p,
+.report-content span,
+.report-content div,
+.report-content table,
+.report-content td,
+.report-content th,
+.report-content label,
+.report-content input,
+.report-content button {
+  font-weight: 500;      /* or 600 for bold */
+  font-size: inherit;    /* inherit from parent */
+}
+
+/* If you want tables inside to have larger bold text */
+.report-content table {
+  font-size: 1rem;
+  font-weight: 500;
+}

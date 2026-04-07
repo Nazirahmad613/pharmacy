@@ -219,9 +219,36 @@
         "sales_d_insert":"ثبت معلومات  جزئیات فروش  بطور عمده ",
         "addsuppliers":"اضاقه نمودن شرکت سازنده دوا",
         "addcustomers":"اضافه نمودن مشتری جدید",
-        "addcatagory" :"اضافه نمودن کتگوری"
-      
-      
+        "addcatagory" :"اضافه نمودن کتگوری",
+        "parchases" :"خریداری دوا",
+        "addchanges" :"معاملات",
+        "addreports" :"گزارشات",
+        "addusers" :"اضافه نمودن کاربران",
+        "addroles" :"اضافه نمودن نقش ها",
+        "addpermissions" :"اضافه نمودن دسترسی ها",
+        "addsettings" :"تنظیمات",
+        "addprofile" :"پروفایل",
+        "adddashboard" :"داشبورد",
+        "addhome" :"صفحه اصلی",
+        "addabout" :"درباره ما",
+        "addcontact" :"تماس با ما",
+        "addhelp" :"راهنما",
+        "RegistrationForm" :"ثبت نام عمومی ",
+        "LoginForm" :"فرم ورود",
+        "UserProfile" :"پروفایل کاربری",
+        "logs" :"ذخیره کارکرد ها",
+        "PaymentForm" :"فرم پرداخت",
+        "hospital_report":"گزارش عمومی شفاخانه",
+        "AccountSummaryPage":"گزارش حسابات",
+        "MedicationStockChart":"چارت دواهای موجود",
+        "SalesReport":"گزارش فروش",
+        "InventoryReport":"گزارش موجودی",
+        "CustomerReport":"گزارش مشتریان",
+        "SupplierReport":"گزارش شرکت سازنده دوا",
+        "SalesTable":"جدول فروش",
+        "SalesChart":"چارت فروش",
+        "MedicationStockTable":"جدول موجودی دوا"
+
       
      
     

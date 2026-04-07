@@ -47,7 +47,7 @@ const navigations = [
     roles: ["user", "admin", "super_admin"],
     children: [
       {
-        name: "RegistationForm",
+        name: "RegistrationForm",
         path: "/material/registrations",
         icon: <AppRegistrationIcon />,
         roles: ["admin", "user", "super_admin"],
