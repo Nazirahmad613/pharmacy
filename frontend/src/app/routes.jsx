@@ -8,27 +8,29 @@ import Loadable from "./components/Loadable";
 import MatxLayout from "./components/MatxLayout/MatxLayout";
 import sessionRoutes from "./views/sessions/session-routes";
 import materialRoutes from "app/views/material-kit/MaterialRoutes";
+ 
 
 // Pages
 const AppEchart = Loadable(lazy(() => import("app/views/charts/echarts/AppEchart")));
 const Analytics = Loadable(lazy(() => import("app/views/dashboard/Analytics")));
 const UsersPage = Loadable(lazy(() => import("../app/views/material-kit/users/UsersPage")));
 
-// ✅ موجود (صفحه استاک دوا)
+// موجود (صفحه استاک دوا)
 const MedicationStockTable = Loadable(
-  lazy(() =>
-    import("app/views/material-kit/reports/medication-stock/MedicationStockTable")
-  )
+  lazy(() => import("app/views/material-kit/reports/medication-stock/MedicationStockTable"))
 );
 
-// ✅ جدید (صفحه جدول روزانه)
+// اصلاح شده: استفاده از مسیر صحیح برای نمودار
+const MedicationStockChart = Loadable(
+  lazy(() => import("../app/views/material-kit/reports/medication-stock/MedicationStockChart"))
+);
+
+// جدید (صفحه جدول روزانه)
 const DashboardDailyTable = Loadable(
-  lazy(() =>
-    import("app/views/material-kit/reports/dashboard/DashboardDailyTable")
-  )
+  lazy(() => import("app/views/material-kit/reports/dashboard/DashboardDailyTable"))
 );
 
-// ✅ جدید (صفحه گزارش فواید) - با Loadable برای نمایش fallback
+// جدید (صفحه گزارش فواید)
 const BenefitsReport = Loadable(lazy(() => import("./views/material-kit/reports/BenefitsReport")));
 const BenefitsChart = Loadable(lazy(() => import("./views/material-kit/reports/BenefitsChart")));
 const SalesTable = Loadable(lazy(() => import("./views/material-kit/reports/sales/SalesTable")));
@@ -46,9 +48,7 @@ const routes = [
       ...materialRoutes,
 
       { path: "dashboard/default", element: <Analytics />, auth: authRoles.admin },
-
       { path: "charts/echarts", element: <AppEchart />, auth: authRoles.editor },
-
       { path: "users", element: <UsersPage />, auth: authRoles.admin },
 
       // مسیر استاک دوا
@@ -65,7 +65,7 @@ const routes = [
         auth: authRoles.admin
       },
 
-      // ✅ مسیر جدید گزارش فواید
+      // مسیرهای گزارش فواید
       {
         path: "reports/benefits",
         element: <BenefitsReport />,
@@ -82,15 +82,22 @@ const routes = [
         auth: authRoles.admin
       },
       {
-        path: "reports/benefits-Report",
-        element: <BenefitsChart />,
-        auth: authRoles.admin
-      },
-      {
         path: "reports/sales-table",
         element: <SalesTable />,
         auth: authRoles.admin
       },
+
+      // مسیرهای جدید گزارش موجودی
+      {
+        path: "reports/medication-stock",
+        element: <MedicationStockTable />,
+        auth: authRoles.admin
+      },
+      {
+        path: "reports/medication-stock-chart",
+        element: <MedicationStockChart />,
+        auth: authRoles.admin
+      }
     ]
   },
 

@@ -191,15 +191,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/view-supplier-purchases', [ViewSupplierPurchasesController::class, 'index']);
     Route::get('/hospital-reports', [HospitalReportController::class, 'index']);
     Route::get('/reports/medication-stock', function () {
-    return DB::table('view_medication_stock_advanced')->get();
+    return DB::table('vw_medication_status')->get();
 });
-
-Route::get('/reports/medication-stock', function () {
-    return response()->json(
-        DB::table('view_medication_stock_advanced')->get()
-    );
-});
-
+  Route::get('/reports/medication-stock', [StockReportController::class, 'medicationStock']);
 // این مسیر برای تست گزارش فروش روزانه است
 Route::get('/dashboard-daily', function () {
     return DB::table('view_dashboard_daily')->get();

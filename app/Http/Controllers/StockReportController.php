@@ -17,4 +17,18 @@ class StockReportController extends Controller
    }
 
 
+  public function medicationStock()
+    {
+        try {
+            $data = DB::table('vw_medication_status')->get();
+            return response()->json($data);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'خطا در دریافت داده‌ها: ' . $e->getMessage()], 500);
+        }
+    }
+
+    // متدهای دیگر مانند index که قبلاً وجود دارد را می‌توانید نگه دارید
 }
+
+
+

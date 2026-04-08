@@ -1,31 +1,24 @@
-// فایل: src/components/reports/medication-stock/CompactMedicationStockChart.jsx
-import { useEffect, useState } from "react";
+// src/components/reports/StockShortagePieChart.jsx
+import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "app/contexts/AuthContext";
+import { Box, Card, Grid, Typography, CircularProgress } from "@mui/material";
 import { Pie } from "react-chartjs-2";
-import { Box, Typography, CircularProgress } from "@mui/material";
 import {
   Chart as ChartJS,
   ArcElement,
   Tooltip,
-  Legend
+  Legend,
 } from "chart.js";
+import { useNavigate } from "react-router-dom";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-const getStatusColor = (status) => {
-  switch (status) {
-    case "LOW": return "#FF6384";   // قرمز
-    case "MEDIUM": return "#FFCE56"; // زرد
-    case "HIGH": return "#36A2EB";  // سبز
-    default: return "#C9CBCF";
-  }
-};
-
-export default function CompactMedicationStockChart() {
+export default function StockShortagePieChart() {
   const { api, user, loading: authLoading } = useAuth();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (authLoading) return;
@@ -33,7 +26,6 @@ export default function CompactMedicationStockChart() {
       setError("❌ لطفاً ابتدا وارد سیستم شوید");
       return;
     }
-
     const fetchData = async () => {
       setLoading(true);
       try {
@@ -49,56 +41,177 @@ export default function CompactMedicationStockChart() {
     fetchData();
   }, [api, user, authLoading]);
 
-  if (authLoading || loading) return <CircularProgress size={40} />;
-  if (error) return <Typography color="error">{error}</Typography>;
-  if (!data.length) return <Typography>داده‌ای موجود نیست</Typography>;
+  // آمار موجودی
+  const stockStats = useMemo(() => {
+    let low = 0, medium = 0, high = 0;
+    data.forEach(item => {
+      if (item.available_stock <= 10) low++;
+      else if (item.available_stock <= 50) medium++;
+      else high++;
+    });
+    return { low, medium, high };
+  }, [data]);
 
-  const pieLabels = data.map(d => d.medication_name);
-  const pieDataValues = data.map(d => d.available_stock);
-  const pieBackgroundColors = data.map(d => getStatusColor(d.stock_status));
+  // آمار انقضا
+  const expiryStats = useMemo(() => {
+    let expired = 0, nearExpiry = 0, valid = 0;
+    data.forEach(item => {
+      if (item.expiry_status === "EXPIRED") expired++;
+      else if (item.expiry_status === "NEAR_EXPIRY") nearExpiry++;
+      else valid++;
+    });
+    return { expired, nearExpiry, valid };
+  }, [data]);
 
-  const pieData = {
-    labels: pieLabels,
-    datasets: [{
-      data: pieDataValues,
-      backgroundColor: pieBackgroundColors,
-      borderColor: "#fff",
-      borderWidth: 1,
-    }]
+  // انیمیشن چشمک‌زن
+  const blinkAnimation = {
+    "@keyframes blink": {
+      "0%": { opacity: 1, boxShadow: "0 0 0px red" },
+      "50%": { opacity: 0.85, boxShadow: "0 0 12px red" },
+      "100%": { opacity: 1, boxShadow: "0 0 0px red" },
+    },
+    animation: "blink 1s infinite",
+    cursor: "pointer",
+    transition: "transform 0.2s",
+    "&:hover": { transform: "scale(1.02)" },
   };
 
-  const pieOptions = {
+  const handleSevereClick = () => {
+    navigate("/reports/medication-stock?stockRange=0-10");
+  };
+
+  const handleNearExpiryClick = () => {
+    navigate("/reports/medication-stock?expiryStatus=NEAR_EXPIRY");
+  };
+
+  const chartOptions = {
     responsive: true,
     maintainAspectRatio: true,
     plugins: {
-      tooltip: {
-        callbacks: {
-          label: (context) => {
-            const label = context.label || "";
-            const value = context.raw;
-            const status = data[context.dataIndex]?.stock_status || "نامشخص";
-            return `${label}: ${value} (وضعیت: ${status})`;
-          }
-        }
-      },
-      legend: {
-        position: 'bottom',
-        labels: { boxWidth: 12, font: { size: 10 } }
-      }
-    }
+      legend: { position: "bottom", rtl: true },
+      tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.raw} مورد` } },
+    },
   };
 
-  return (
-    <Box sx={{ p: 1, textAlign: "center" }}>
-      <Typography variant="subtitle1" gutterBottom>
-       دواهای موجود
-      </Typography>
-      <Box sx={{ maxWidth: 250, mx: "auto", my: 1 }}>
-        <Pie data={pieData} options={pieOptions} />
+  const stockPieData = {
+    labels: ["کمبود شدید (≤۱۰)", "متوسط (۱۱-۵۰)", "زیاد (>۵۰)"],
+    datasets: [{
+      data: [stockStats.low, stockStats.medium, stockStats.high],
+      backgroundColor: ["#FF6384", "#FFCE56", "#36A2EB"],
+      borderColor: "#fff",
+      borderWidth: 1,
+    }],
+  };
+
+  const expiryPieData = {
+    labels: ["تاریخ گذشته", "نزدیک به انقضا", "معتبر"],
+    datasets: [{
+      data: [expiryStats.expired, expiryStats.nearExpiry, expiryStats.valid],
+      backgroundColor: ["#FF6384", "#FF9F40", "#4BC0C0"],
+      borderColor: "#fff",
+      borderWidth: 1,
+    }],
+  };
+
+  if (authLoading || loading) {
+    return (
+      <Box display="flex" justifyContent="center" p={4}>
+        <CircularProgress />
       </Box>
-      <Typography variant="caption" display="block">
-        🔴 کم &nbsp;&nbsp; 🟡 متوسط &nbsp;&nbsp; 🔵 زیاد
+    );
+  }
+
+  if (error) {
+    return (
+      <Typography color="error" textAlign="center" p={3}>
+        {error}
       </Typography>
+    );
+  }
+
+  if (data.length === 0) {
+    return (
+      <Typography textAlign="center" p={3}>
+        داده‌ای برای نمایش وجود ندارد.
+      </Typography>
+    );
+  }
+
+  return (
+    <Box p={2}>
+      {/* دو کارت هشدار متحرک کوچک در کنار هم */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid item xs={12} sm={6}>
+          <Card
+            sx={{
+              ...blinkAnimation,
+              bgcolor: "#FFEBEE",
+              borderLeft: "6px solid #d32f2f",
+              p: 1.5,
+              textAlign: "center",
+            }}
+            onClick={handleSevereClick}
+          >
+            <Typography variant="subtitle2" color="error" fontWeight="bold">
+              ⚠️ کمبود شدید
+            </Typography>
+            <Typography variant="h5" color="error" fontWeight="bold">
+              {stockStats.low}
+            </Typography>
+            <Typography variant="caption">مورد دارو با موجودی ≤۱۰</Typography>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <Card
+            sx={{
+              ...blinkAnimation,
+              bgcolor: "#FFF3E0",
+              borderLeft: "6px solid #ff9800",
+              p: 1.5,
+              textAlign: "center",
+            }}
+            onClick={handleNearExpiryClick}
+          >
+            <Typography variant="subtitle2" color="#e65100" fontWeight="bold">
+              ⏳ نزدیک به انقضا
+            </Typography>
+            <Typography variant="h5" color="#e65100" fontWeight="bold">
+              {expiryStats.nearExpiry}
+            </Typography>
+            <Typography variant="caption">کمتر از ۳۰ روز باقی‌مانده</Typography>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* نمودارهای دایره‌ای */}
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={6}>
+          <Card sx={{ p: 2, height: "100%" }}>
+            <Typography variant="h6" textAlign="center" gutterBottom>
+              توزیع وضعیت موجودی
+            </Typography>
+            <Box sx={{ maxWidth: 280, mx: "auto" }}>
+              <Pie data={stockPieData} options={chartOptions} />
+            </Box>
+            <Typography variant="caption" display="block" textAlign="center" mt={1}>
+              🔴 کمبود شدید &nbsp;&nbsp; 🟡 متوسط &nbsp;&nbsp; 🔵 زیاد
+            </Typography>
+          </Card>
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <Card sx={{ p: 2, height: "100%" }}>
+            <Typography variant="h6" textAlign="center" gutterBottom>
+              توزیع وضعیت انقضا
+            </Typography>
+            <Box sx={{ maxWidth: 280, mx: "auto" }}>
+              <Pie data={expiryPieData} options={chartOptions} />
+            </Box>
+            <Typography variant="caption" display="block" textAlign="center" mt={1}>
+              🔴 تاریخ گذشته &nbsp;&nbsp; 🟠 نزدیک به انقضا &nbsp;&nbsp; 🔵 معتبر
+            </Typography>
+          </Card>
+        </Grid>
+      </Grid>
     </Box>
   );
 }
