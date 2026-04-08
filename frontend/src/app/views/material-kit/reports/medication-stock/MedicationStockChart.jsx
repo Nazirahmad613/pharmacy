@@ -10,8 +10,61 @@ import {
   Legend,
 } from "chart.js";
 import { useNavigate } from "react-router-dom";
+import { keyframes } from "@emotion/react";
+import { styled } from "@mui/material/styles";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
+
+// انیمیشن چشمک‌زن قوی برای کمبود شدید (قرمز)
+
+const blinkRed = keyframes`
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 5px rgba(211, 47, 47, 0.4);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 0 25px rgba(211, 47, 47, 0.9),
+                0 0 50px rgba(211, 47, 47, 0.6);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 5px rgba(211, 47, 47, 0.4);
+  }
+`;
+
+const blinkOrange = keyframes`
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 5px rgba(255, 152, 0, 0.4);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 0 25px rgba(255, 152, 0, 0.9),
+                0 0 50px rgba(255, 152, 0, 0.6);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 5px rgba(255, 152, 0, 0.4);
+  }
+`;
+
+// کارت‌های انیمیشنی با انیمیشن سریع‌تر (0.8s)
+const AnimatedRedCard = styled(Card)({
+  animation: `${blinkRed} 0.8s ease-in-out infinite`,
+  transition: "transform 0.2s",
+  "&:hover": {
+    transform: "scale(1.02) !important",
+  },
+});
+
+const AnimatedOrangeCard = styled(Card)({
+  animation: `${blinkOrange} 0.8s ease-in-out infinite`,
+  transition: "transform 0.2s",
+  "&:hover": {
+    transform: "scale(1.02) !important",
+  },
+});
 
 export default function StockShortagePieChart() {
   const { api, user, loading: authLoading } = useAuth();
@@ -41,7 +94,6 @@ export default function StockShortagePieChart() {
     fetchData();
   }, [api, user, authLoading]);
 
-  // آمار موجودی
   const stockStats = useMemo(() => {
     let low = 0, medium = 0, high = 0;
     data.forEach(item => {
@@ -52,7 +104,6 @@ export default function StockShortagePieChart() {
     return { low, medium, high };
   }, [data]);
 
-  // آمار انقضا
   const expiryStats = useMemo(() => {
     let expired = 0, nearExpiry = 0, valid = 0;
     data.forEach(item => {
@@ -62,19 +113,6 @@ export default function StockShortagePieChart() {
     });
     return { expired, nearExpiry, valid };
   }, [data]);
-
-  // انیمیشن چشمک‌زن
-  const blinkAnimation = {
-    "@keyframes blink": {
-      "0%": { opacity: 1, boxShadow: "0 0 0px red" },
-      "50%": { opacity: 0.85, boxShadow: "0 0 12px red" },
-      "100%": { opacity: 1, boxShadow: "0 0 0px red" },
-    },
-    animation: "blink 1s infinite",
-    cursor: "pointer",
-    transition: "transform 0.2s",
-    "&:hover": { transform: "scale(1.02)" },
-  };
 
   const handleSevereClick = () => {
     navigate("/reports/medication-stock?stockRange=0-10");
@@ -139,18 +177,17 @@ export default function StockShortagePieChart() {
 
   return (
     <Box p={2}>
-      {/* دو کارت هشدار متحرک کوچک در کنار هم */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6}>
-          <Card
-            sx={{
-              ...blinkAnimation,
-              bgcolor: "#FFEBEE",
-              borderLeft: "6px solid #d32f2f",
-              p: 1.5,
-              textAlign: "center",
-            }}
+          <AnimatedRedCard
             onClick={handleSevereClick}
+            sx={{
+              backgroundColor: "#FFEBEE",
+              borderLeft: "6px solid #d32f2f",
+              padding: "12px",
+              textAlign: "center",
+              cursor: "pointer",
+            }}
           >
             <Typography variant="subtitle2" color="error" fontWeight="bold">
               ⚠️ کمبود شدید
@@ -159,18 +196,18 @@ export default function StockShortagePieChart() {
               {stockStats.low}
             </Typography>
             <Typography variant="caption">مورد دارو با موجودی ≤۱۰</Typography>
-          </Card>
+          </AnimatedRedCard>
         </Grid>
         <Grid item xs={12} sm={6}>
-          <Card
-            sx={{
-              ...blinkAnimation,
-              bgcolor: "#FFF3E0",
-              borderLeft: "6px solid #ff9800",
-              p: 1.5,
-              textAlign: "center",
-            }}
+          <AnimatedOrangeCard
             onClick={handleNearExpiryClick}
+            sx={{
+              backgroundColor: "#FFF3E0",
+              borderLeft: "6px solid #ff9800",
+              padding: "12px",
+              textAlign: "center",
+              cursor: "pointer",
+            }}
           >
             <Typography variant="subtitle2" color="#e65100" fontWeight="bold">
               ⏳ نزدیک به انقضا
@@ -179,11 +216,10 @@ export default function StockShortagePieChart() {
               {expiryStats.nearExpiry}
             </Typography>
             <Typography variant="caption">کمتر از ۳۰ روز باقی‌مانده</Typography>
-          </Card>
+          </AnimatedOrangeCard>
         </Grid>
       </Grid>
 
-      {/* نمودارهای دایره‌ای */}
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
           <Card sx={{ p: 2, height: "100%" }}>

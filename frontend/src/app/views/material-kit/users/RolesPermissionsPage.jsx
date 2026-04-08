@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import MainLayoutjur from "../../../../components/Mainlayoutjur";
+import ReportLayout from "../../../../components/ReportLayout";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useAuth } from "app/contexts/AuthContext";
@@ -235,8 +235,8 @@ export default function RolesPermissionsPage() {
   const rolesTotalPages = Math.ceil(roles.length / rolesPerPage);
 
   return (
+      <ReportLayout>
     <AdminRoute>
-      <MainLayoutjur>
         <div className="p-6" dir="rtl">
           <h1 className="text-2xl font-bold mb-4">مدیریت رول‌ها و پرمیشن‌ها</h1>
 
@@ -555,7 +555,7 @@ export default function RolesPermissionsPage() {
             }}
           />
         </div>
-      </MainLayoutjur>
     </AdminRoute>
+      </ReportLayout>
   );
 }

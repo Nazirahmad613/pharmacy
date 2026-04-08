@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../../../api";
-import MainLayoutjur from "../../../../components/Mainlayoutjur";
+import ReportLayout from "../../../../components/ReportLayout";
 import {
   Box,
   Button,
@@ -59,17 +59,17 @@ export default function UsersPage() {
 
   if (loading) {
     return (
-      <MainLayoutjur>
+      <ReportLayout>
         <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
           <CircularProgress />
         </Box>
-      </MainLayoutjur>
+      </ReportLayout>
     );
   }
 
   if (currentUser.role === "hospital_head") {
     return (
-      <MainLayoutjur>
+      <ReportLayout>
         <Box sx={{ textAlign: "center", mt: 5 }}>
           <h2>شما فقط اجازه مشاهده گزارش‌ها را دارید</h2>
           <NavLink to="/reports" style={{ textDecoration: "none" }}>
@@ -78,7 +78,7 @@ export default function UsersPage() {
             </Button>
           </NavLink>
         </Box>
-      </MainLayoutjur>
+      </ReportLayout>
     );
   }
 
@@ -151,7 +151,7 @@ export default function UsersPage() {
   };
 
   return (
-    <MainLayoutjur>
+    <ReportLayout>
       {/* ✅ ToastContainer با استایل مناسب */}
       <ToastContainer 
         position="top-right"
@@ -253,6 +253,6 @@ export default function UsersPage() {
           </Button>
         </DialogActions>
       </Dialog>
-    </MainLayoutjur>
+    </ReportLayout>
   );
 }
