@@ -134,7 +134,7 @@ const navigations = [
     roles: ["user", "admin", "super_admin", "hospital_head"],
     children: [
       {
-        name: "hospital_report",
+        name: "hospital_Report",
         path: "/material/hospital-report",
         icon: <LocalHospitalIcon />,
         roles: ["user", "admin", "super_admin"],
@@ -146,11 +146,7 @@ const navigations = [
         roles: ["user", "admin", "super_admin"],
       },
 
-       {
-  name: "MedicationStockChart",
-  path: "/material/MedicationStockChart",
-  icon: <BarChartIcon />,
-},
+
 {
   name: "MedicationStockTable",
   path: "/material/MedicationStockTable",
@@ -161,16 +157,8 @@ const navigations = [
   path: "/material/SalesTable",
   icon: <BarChartIcon />,
 },
-{
-  name: "SalesChart",
-  path: "/material/SalesChart",
-  icon: <BarChartIcon />,
-},
-{
-  name: "گزارش روزانه (چارت)",
-  path: "/material/dashboard-daily-chart",
-  icon: <BarChartIcon />,
-},
+
+
 
 {
   name: "گزارش روزانه (جدول)",
@@ -186,10 +174,7 @@ const navigations = [
       name: "فواید (جدول)",
       path: "/reports/benefits"
     },
-    {
-      name: "فواید (گراف)",
-      path: "/reports/benefits-chart"
-    }
+   
   ]
 }
 
@@ -203,12 +188,31 @@ const navigations = [
     icon: <BarChartIcon />,
     roles: ["admin", "user", "super_admin"],
     children: [
-      {
-        name: "echarts",
-        path: "/charts/echarts",
-        icon: <BarChartIcon />,
-        roles: ["admin", "user", "super_admin"],
-      },
+       
+
+       {
+      name: "فواید (گراف)",
+      path: "/reports/benefits-chart",
+      icon: <BarChartIcon />,
+    },
+    {
+  name: "گزارش روزانه (چارت)",
+  path: "/material/dashboard-daily-chart",
+  icon: <BarChartIcon />,
+},
+
+{
+  name: "SalesChart",
+  path: "/material/SalesChart",
+  icon: <BarChartIcon />,
+},
+       {
+  name: "MedicationStockChart",
+  path: "/material/MedicationStockChart",
+  icon: <BarChartIcon />,
+},
+
+
     ],
   },
 

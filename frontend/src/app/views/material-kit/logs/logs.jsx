@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import MainLayoutjur from "../../../../components/MainLayoutjur";
+import ReportLayout from "../../../../components/ReportLayout";
 import { useAuth } from "app/contexts/AuthContext";
 
 export default function LogsPage() {
@@ -16,10 +16,8 @@ export default function LogsPage() {
     user_id: "",
   });
 
-  // نگاشت user_id => name
   const [usersMap, setUsersMap] = useState({});
 
-  // دریافت لیست کاربران برای نمایش نام
   const fetchUsers = async () => {
     try {
       const res = await api.get("/users");
@@ -34,18 +32,16 @@ export default function LogsPage() {
     }
   };
 
-  // دریافت لاگ‌ها
-  const fetchLogs = async (pageNumber = 1) => {
+  // تابع کمکی برای واکشی لاگ‌ها با فیلترهای مشخص
+  const fetchLogsWithFilters = async (pageNumber, filterValues) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       params.append("page", pageNumber);
-
-      if (filters.action) params.append("action", filters.action);
-      if (filters.user_id) params.append("user_id", filters.user_id);
+      if (filterValues.action) params.append("action", filterValues.action);
+      if (filterValues.user_id) params.append("user_id", filterValues.user_id);
 
       const res = await api.get(`/logs?${params.toString()}`);
-
       setLogs(res.data.data);
       setPage(res.data.current_page);
       setLastPage(res.data.last_page);
@@ -54,6 +50,11 @@ export default function LogsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // واکشی با فیلترهای جاری (از state)
+  const fetchLogs = (pageNumber = 1) => {
+    fetchLogsWithFilters(pageNumber, filters);
   };
 
   useEffect(() => {
@@ -69,20 +70,21 @@ export default function LogsPage() {
   };
 
   const applyFilters = () => {
-    fetchLogs(1);
+    fetchLogs(1); // صفحه اول با فیلترهای فعلی
   };
 
   const resetFilters = () => {
+    // ریست state فیلترها
     setFilters({
       action: "",
       user_id: "",
     });
-    // پس از ریست، دوباره لاگ‌ها را دریافت کن
-    fetchLogs(1);
+    // واکشی لاگ‌ها با فیلترهای خالی (بدون تکیه بر state که هنوز بروز نشده)
+    fetchLogsWithFilters(1, { action: "", user_id: "" });
   };
 
   return (
-    <MainLayoutjur>
+    <ReportLayout>
       <div className="p-6">
         <h2 className="text-2xl font-bold mb-4">📜 لاگ‌ها</h2>
 
@@ -149,7 +151,6 @@ export default function LogsPage() {
                 <th className="p-3 border">تاریخ</th>
               </tr>
             </thead>
-
             <tbody>
               {loading ? (
                 <tr>
@@ -193,11 +194,9 @@ export default function LogsPage() {
           >
             قبلی
           </button>
-
           <span className="px-3 py-1">
             صفحه {page} از {lastPage}
           </span>
-
           <button
             disabled={page === lastPage}
             onClick={() => fetchLogs(page + 1)}
@@ -207,6 +206,6 @@ export default function LogsPage() {
           </button>
         </div>
       </div>
-    </MainLayoutjur>
+    </ReportLayout>
   );
 }

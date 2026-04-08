@@ -195,7 +195,7 @@
       "components": "اجزا",
         "add_information": "افزودن اطلاعات",
         "add_new_information": "افزودن اطلاعات جدید",
-        "addmedication": " ثبت معلومات خرید دوا",
+        "addmedication": "ثبت دواها",
         "buttons": "دکمه‌ها",
         "checkbox": "چک‌باکس",
         "dialog": "دیالوگ",
@@ -207,10 +207,9 @@
         "slider": "نوار لغزنده",
         "snackbar": "نوار اطلاع‌رسانی",
         "table": "جدول",
-        "charts": "نمودارها",
+        "charts": "چارت ها ",
         "echarts": "ای‌چارتز",
         "documentation": "مستندات",
-        "create_med":"ثبت معلومات خرید دوا",
         "cust_insert":"ثبت معلومات مشتری",
         "doctor_insert":"ثبت معلومات داکتر ",
         "pres_insert":"اجرآ نخسه جات ",
@@ -219,7 +218,30 @@
         "sales_d_insert":"ثبت معلومات  جزئیات فروش  بطور عمده ",
         "addsuppliers":"اضاقه نمودن شرکت سازنده دوا",
         "addcustomers":"اضافه نمودن مشتری جدید",
-        "addcatagory" :"اضافه نمودن کتگوری"
+        "RegistationForm":"ثبت نام ",
+        
+        "addchanges":"معاملات",
+        "parchases":"خریداری",
+        "logs":"ذخیره تغییرات سیستم",
+        "PaymentForm":"فورم پرداخت ها",
+        "addcatagory":"اضافه نمودن کتگوری",
+        "BenefitsChart":"چارت گزارش  فواید",
+        "BenefitsReport":"گزارش وضعیت فواید",
+       
+        "MedicationStockChart":"چارت گزارش موجودی ",
+        "MedicationStockTable":"جدول گزارش موجودی ",
+        "SalesChart":"چارت گزارش فروش",
+        "SalesTable":"جدول گزارش فروش",
+        "ParchasesChart":"چارت گزارش خریداری",
+        "ParchasesTable":"جدول گزارش خریداری",
+        "AccountSummaryPage":"حسابات",
+        "hospital_Report":"گزارش عمومی شفاخانه"
+
+        
+
+
+
+       
       
       
       
