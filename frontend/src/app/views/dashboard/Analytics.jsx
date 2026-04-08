@@ -14,8 +14,7 @@ import MedicationStockChart from "../material-kit/reports/medication-stock/Medic
 import SalesChart from "../material-kit/reports/sales/SalesChart";
 import DashboardDailyChart from "../material-kit/reports/dashboard/DashboardDailyChart";
 import BenefitsChart from "../material-kit/reports/BenefitsChart";
-import SimpleClock from "../material-kit/SimpleClock";
-import NavigationHub from "../../../modules/NavigationHub"; // مسیر صحیح را وارد کنید
+import SimpleClock from "../material-kit/SimpleClock"; // یا مسیر صحیح
 
 const ContentBox = styled("div")(({ theme }) => ({
   margin: "2rem",
@@ -52,7 +51,7 @@ export default function Analytics() {
             alignItems: 'center',
             px: 3,
             py: 1,
-            backgroundColor: 'transparent',
+            backgroundColor: 'transparent', // بدون پس‌زمینه
           }}
         >
           <SimpleClock />
@@ -60,12 +59,6 @@ export default function Analytics() {
         </Box>
 
         <ContentBox className="analytics">
-          {/* ===== بخش جدید: ماژول‌های ناوبری (کارت‌های راهنما) ===== */}
-          <Box sx={{ mb: 4 }}>
-            <NavigationHub />
-          </Box>
-
-          {/* ===== نمودارهای تحلیلی (همان‌های قبلی) ===== */}
           <Grid container spacing={3}>
             {/* سطر اول - دو بخش مساوی */}
             <Grid item xs={12} md={6}>
@@ -126,7 +119,7 @@ export default function Analytics() {
                     <SalesChart />
                     <Box mt={2} textAlign="center">
                       <Link to="/reports/sales-table" style={{ textDecoration: "none" }}>
-                        جزئیات بیشتر فروش
+                        جزئیات بشتر فروش
                       </Link>
                     </Box>
                   </Card>

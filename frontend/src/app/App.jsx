@@ -7,7 +7,6 @@ import SettingsProvider from "./contexts/SettingsContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import NavigationHub from "../modules/NavigationHub";
 
 import {
   BrowserRouter,
@@ -35,20 +34,10 @@ function ProtectedRoute({ children, allowedRoles }) {
   return children;
 }
 
-/* 🔹 Router با اضافه کردن مسیر NavigationHub */
+/* 🔹 Router */
 function AppRouter() {
-  // اضافه کردن مسیر جدید به آرایه routes بدون تغییر فایل اصلی
-  const extendedRoutes = [
-    ...routes,
-    {
-      path: "/navigation-hub",
-      element: <NavigationHub />,
-      // بدون نیاز به نقش خاص (در صورت نیاز می‌توان roles اضافه کرد)
-    }
-  ];
-
   const element = useRoutes(
-    extendedRoutes.map((r) => ({
+    routes.map((r) => ({
       path: r.path,
       element: r.roles ? (
         <ProtectedRoute allowedRoles={r.roles}>
@@ -95,11 +84,17 @@ export default function App() {
         <AuthProvider>
           <MatxTheme>
             <CssBaseline />
-            {/* حذف خط <Route> اشتباه */}
+          
+
             <div style={{ direction: i18n.language === "fa" ? "rtl" : "ltr" }}>
-              <AnimatedBackground>
-                <AppRouter />
+              <AnimatedBackground> 
+          <AppRouter />
+       
               </AnimatedBackground>
+            </div>
+            <div>
+
+
             </div>
           </MatxTheme>
         </AuthProvider>

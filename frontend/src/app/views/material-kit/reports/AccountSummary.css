@@ -21,7 +21,7 @@
 }
 
 .account-card {
-  background: #f9f6ffab;
+  background: #1b084f;
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.07);
@@ -42,13 +42,13 @@
   font-weight: bold;
   font-size: 18px;
   min-width: 180px;
-  color: #000000;
+  color: #ffffff;
 }
 
 .account-info {
   min-width: 150px;
   font-size: 14px;
-  color: #000000;
+  color: #cfd8dc;
   font-weight: bold;
 }
 

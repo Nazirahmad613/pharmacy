@@ -92,7 +92,7 @@ const SimpleClock = () => {
           animation: `${flyAnimation} 2s infinite ease-in-out`,
           display: 'flex',
           alignItems: 'center',
-          color: '#050505',
+          color: '#a11d18',
         }}
       >
         <FlightTakeoffIcon sx={{ fontSize: 32 }} />
@@ -104,7 +104,7 @@ const SimpleClock = () => {
           variant="h5"
           sx={{
             fontWeight: 'bold',
-            background: 'linear-gradient(135deg, #da8524, #d6a810)',
+            background: 'linear-gradient(135deg, #910202, #ee0979)',
             backgroundClip: 'text',
             WebkitBackgroundClip: 'text',
             color: 'transparent',
@@ -120,7 +120,7 @@ const SimpleClock = () => {
             color: '#555',
             direction: 'rtl',
             fontWeight: 500,
-            background: 'linear-gradient(135deg, #6a11ff, #070708)',
+            background: 'linear-gradient(135deg, #6a11ff, #2575fc)',
             backgroundClip: 'text',
             WebkitBackgroundClip: 'text',
             color: 'transparent',
