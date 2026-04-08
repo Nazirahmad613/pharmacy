@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+ import { useState, useEffect, useRef } from "react";
 import MainLayoutjur from "../../../../components/MainLayoutjur";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useAuth } from "app/contexts/AuthContext";
 import { useReactToPrint } from "react-to-print";
@@ -759,9 +759,6 @@ export default function PrescriptionForm() {
               <label style={styles.label}>حرارت (درجه سانتی‌گراد)</label>
               <input style={styles.input} type="text" value={tempPrescriptionData?.temperature || ""} readOnly />
 
-              <label style={styles.label}>نبض</label>
-              <input style={styles.input} type="text" placeholder="---" readOnly />
-
               <label style={styles.label}>اکسیژن (%)</label>
               <input style={styles.input} type="text" value={tempPrescriptionData?.oxygen || ""} readOnly />
             </div>
@@ -841,9 +838,12 @@ export default function PrescriptionForm() {
             <table style={styles.itemsTable}>
               <thead>
                 <tr>
-                  <th style={styles.th}>#</th>
-                  <th style={styles.th}>دارو</th>
-                  <th style={styles.th}>دوز</th>
+                  <th style={styles.th}>شماره</th>
+                  <th style={styles.th}>کتگوری</th>
+                  <th style={styles.th}>دوا</th>
+                  <th style={styles.th}>حمایت کننده</th>
+                  <th style={styles.th}>نوع دوا</th>
+                  <th style={styles.th}>مقدار مصرف</th>
                   <th style={styles.th}>تعداد</th>
                   <th style={styles.th}>قیمت واحد</th>
                   <th style={styles.th}>جمع</th>
@@ -854,14 +854,20 @@ export default function PrescriptionForm() {
               <tbody>
                 {items.map((item, idx) => {
                   const med = medications.find(m => m.med_id == item.med_id);
+                  const cat = categories.find(c => c.category_id == item.category_id);
+                    const sup = suppliers.find(s => s.reg_id == item.supplier_id);
                   return (
                     <tr key={item.id}>
                       <td style={styles.td}>{idx + 1}</td>
+                      <td style={styles.td}>{cat?.category_name || "-"}</td>
                       <td style={styles.td}>{med?.gen_name || "-"}</td>
+                      <td style={styles.td}>{sup?.full_name || sup?.name || "-"}</td>
+                      <td style={styles.td}>{item.type}</td>
                       <td style={styles.td}>{item.dosage || "-"}</td>
                       <td style={styles.td}>{item.quantity}</td>
                       <td style={styles.td}>{Number(item.unit_price).toLocaleString()}</td>
                       <td style={styles.td}>{Number(item.total_price).toLocaleString()}</td>
+
                       <td style={styles.td}>{item.remarks || "-"}</td>
                       <td style={styles.td}>
                         <button style={styles.deleteButton} onClick={() => removeItem(item.id)}>
@@ -907,30 +913,6 @@ export default function PrescriptionForm() {
   // ========== رندر اصلی ==========
   return (
     <MainLayoutjur>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={true}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="colored"
-        limit={5}
-        style={{
-          zIndex: 9999999,
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          left: 'auto',
-          width: 'auto',
-          maxWidth: '350px',
-          transform: 'none'
-        }}
-      />
-
       <div className="main-layout">
         <div className="background-overlay"></div>
 
@@ -1370,7 +1352,7 @@ export default function PrescriptionForm() {
         </div>
       </div>
 
-       {/* ===== کامپوننت پرنت - همیشه در دسترس ===== */}
+      {/* ===== کامپوننت پرنت - همیشه در دسترس ===== */}
       <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
         {prescriptionPrintData && (
           <PrescriptionPrint ref={printRef} data={prescriptionPrintData} />

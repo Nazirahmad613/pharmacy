@@ -1,4 +1,4 @@
- 
+import React, { forwardRef } from "react";
 import "./sale-print.css";
 
 const PrescriptionPrint = forwardRef(({ data }, ref) => {

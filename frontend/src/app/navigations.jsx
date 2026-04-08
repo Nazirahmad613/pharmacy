@@ -14,6 +14,7 @@ import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
+import HubIcon from '@mui/icons-material/Hub';
 
 const navigations = [
   {
@@ -34,6 +35,9 @@ const navigations = [
       { name: "error", path: "/session/404" },
     ],
   },
+
+  
+
 
   { label: "ثبت معلومات", type: "label" },
 
@@ -84,12 +88,12 @@ const navigations = [
         icon: <CategoryIcon />,
         roles: ["admin", "user", "super_admin"],
       },
-      {
-        name: "logs",
-        path: "/material/logs",
-        icon: <logsIcon />,
-        roles: ["admin", "user", "super_admin"],
-      },
+   {
+  name: "logs",
+  path: "/material/logs",
+  icon: <DescriptionIcon />,   // ✅ یا هر آیکون دیگر
+  roles: ["admin", "user", "super_admin"],
+},
       {
         name: "PaymentForm",
         path: "/material/payment",
