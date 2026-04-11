@@ -9,20 +9,28 @@ const backgrounds = [
 
 export default function MainLayoutg({ children, title }) {
   const [index, setIndex] = useState(0);
+  const [fade, setFade] = useState(true);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setIndex((p) => (p + 1) % backgrounds.length);
+      setFade(false); // fade out
+
+      setTimeout(() => {
+        setIndex((p) => (p + 1) % backgrounds.length);
+        setFade(true); // fade in
+      }, 1000); // زمان fade
     }, 10000);
 
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <div
-      className="main-layout"
-      style={{ backgroundImage: `url(${backgrounds[index]})` }}
-    >
+    <div className="main-layout">
+      <div
+        className={`bg-image ${fade ? "fade-in" : "fade-out"}`}
+        style={{ backgroundImage: `url(${backgrounds[index]})` }}
+      />
+
       <div className="background-overlay">
         {title && <h1 className="layout-title">{title}</h1>}
         <div className="layout-content">{children}</div>

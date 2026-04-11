@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import "./MainLayoutjur.css";
 import { ToastContainer } from "react-toastify";
@@ -11,45 +11,45 @@ const backgrounds = [
 ];
 
 export default function MainLayoutjur({ children, title }) {
-  const [index, setIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const intervalRef = useRef(null);
   const isRTL = document.dir === "rtl";
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setIndex((p) => (p + 1) % backgrounds.length);
+    // پیش‌بارگذاری
+    backgrounds.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, []);
+
+  useEffect(() => {
+    intervalRef.current = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % backgrounds.length);
     }, 10000);
-    return () => clearInterval(interval);
+    
+    return () => clearInterval(intervalRef.current);
   }, []);
 
   return (
     <>
-      {/* ✅ کل ساختار صفحه (بدون تغییر) */}
-      <div
+      <div 
         className="main-layout"
         style={{
-          backgroundImage: `url(${backgrounds[index]})`,
-          minHeight: "100vh",
-          overflowY: "auto",
+          backgroundImage: `url(${backgrounds[currentIndex]})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          transition: "all 1.5s ease-in-out",
         }}
       >
-        <div
-          className="background-overlay"
-          style={{
-            minHeight: "100vh",
-            overflowY: "auto",
-          }}
-        >
+        <div className="background-overlay">
           {title && <h1 className="layout-title">{title}</h1>}
-          <div
-            className="layout-content"
-            style={{ paddingBottom: "50px" }}
-          >
+          <div className="layout-content">
             {children}
           </div>
         </div>
       </div>
 
-      {/* ✅ ToastContainer با Portal به انتهای body می‌رود */}
       {typeof document !== "undefined" &&
         createPortal(
           <ToastContainer

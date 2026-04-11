@@ -1,70 +1,50 @@
- import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import "./AnimatedBackground.css";
 
 const images = [
-  "/backgrounds/bg1.jpg",
-  "/backgrounds/bg2.jpg",
-  "/backgrounds/bg3.jpg",
+  "https://picsum.photos/id/1015/1920/1080",
+  "https://picsum.photos/id/1018/1920/1080",
+  "https://picsum.photos/id/104/1920/1080",
 ];
 
 export default function AnimatedBackground({ children }) {
-  const [current, setCurrent] = useState(0); // تصویر فعلی
-  const [next, setNext] = useState(1);       // تصویر بعدی
-  const [fade, setFade] = useState(true);    // کنترل fade
+  const [imageUrl, setImageUrl] = useState(images[0]);
+  const [opacity, setOpacity] = useState(1);
 
   useEffect(() => {
+    let index = 0;
+    
     const interval = setInterval(() => {
-      setFade(false); // fade out current
-
+      // مرحله 1: محو شدن
+      setOpacity(0);
+      
+      // مرحله 2: بعد از 1 ثانیه، تصویر را عوض کن
       setTimeout(() => {
-        setCurrent(next);
-        setNext((next + 1) % images.length);
-        setFade(true); // fade in next
-      }, 2000); // مدت fade 2 ثانیه
-    }, 7000); // فاصله بین تغییر تصاویر
-
+        index = (index + 1) % images.length;
+        setImageUrl(images[index]);
+        
+        // مرحله 3: بعد از 0.1 ثانیه، تصویر جدید را نشان بده
+        setTimeout(() => {
+          setOpacity(1);
+        }, 100);
+      }, 1000);
+      
+    }, 8000);
+    
     return () => clearInterval(interval);
-  }, [next]);
+  }, []);
 
   return (
-    <div style={{ position: "relative", width: "100%", minHeight: "100vh", overflow: "hidden" }}>
-      {/* تصویر فعلی */}
+    <div className="bg-wrapper">
       <div
+        className="bg-slide"
         style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          backgroundImage: `url(${images[current]})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          transition: "opacity 2s ease-in-out",
-          opacity: fade ? 1 : 0,
-          zIndex: 0,
+          backgroundImage: `url(${imageUrl})`,
+          opacity: opacity,
+          transition: "opacity 1s ease-in-out",
         }}
       />
-
-      {/* تصویر بعدی */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          backgroundImage: `url(${images[next]})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          transition: "opacity 2s ease-in-out",
-          opacity: fade ? 0 : 1,
-          zIndex: 0,
-        }}
-      />
-
-      {/* محتوای اصلی */}
-      <div style={{ position: "relative", zIndex: 1 }}>
-        {children}
-      </div>
+      <div className="bg-content">{children}</div>
     </div>
   );
 }

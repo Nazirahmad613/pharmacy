@@ -1,5 +1,4 @@
-// فایل Analytics.js
-import { Fragment } from "react";
+import { Fragment, useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
 import Card from "@mui/material/Card";
 import Grid from "@mui/material/Grid";
@@ -7,7 +6,6 @@ import { styled } from "@mui/material/styles";
 import { Link } from "react-router-dom";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
 
 import MainLayoutjur from "../../../components/Mainlayoutjur";
 import MedicationStockChart from "../material-kit/reports/medication-stock/MedicationStockChart";
@@ -15,7 +13,8 @@ import SalesChart from "../material-kit/reports/sales/SalesChart";
 import DashboardDailyChart from "../material-kit/reports/dashboard/DashboardDailyChart";
 import BenefitsChart from "../material-kit/reports/BenefitsChart";
 import SimpleClock from "../material-kit/SimpleClock";
-import NavigationHub from "../../../modules/NavigationHub"; // مسیر صحیح را وارد کنید
+import NavigationHub from "../../../modules/NavigationHub";
+import MatxLoading from "../../components/MatxLoading";
 
 const ContentBox = styled("div")(({ theme }) => ({
   margin: "2rem",
@@ -40,11 +39,20 @@ const LanguageSwitcher = () => {
 
 export default function Analytics() {
   const { t } = useTranslation();
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
-    <MainLayoutjur>
+    <MainLayoutjur>  {/* فقط MainLayoutjur - حذف AnimatedBackground */}
       <Fragment>
-        {/* هدر بالا: ساعت در چپ، سوئیچ زبان در راست */}
+        {/* هدر بالا */}
         <Box
           sx={{
             display: 'flex',
@@ -59,24 +67,28 @@ export default function Analytics() {
           <LanguageSwitcher />
         </Box>
 
+        {/* لودینگ ماشین در بالای صفحه */}
+        {isLoading && (
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center',
+            py: 2,
+            mb: 2,
+            borderBottom: '1px solid rgba(255,255,255,0.2)'
+          }}>
+            <MatxLoading isComplete={false} isSmall={true} />
+          </Box>
+        )}
+
         <ContentBox className="analytics">
-          {/* ===== بخش جدید: ماژول‌های ناوبری (کارت‌های راهنما) ===== */}
           <Box sx={{ mb: 4 }}>
             <NavigationHub />
           </Box>
 
-          {/* ===== نمودارهای تحلیلی (همان‌های قبلی) ===== */}
           <Grid container spacing={3}>
-            {/* سطر اول - دو بخش مساوی */}
             <Grid item xs={12} md={6}>
-              <Card
-                sx={{
-                  height: 400,
-                  overflow: "auto",
-                  px: 3,
-                  py: 2,
-                }}
-              >
+              <Card sx={{ height: 400, overflow: "auto", px: 3, py: 2, backgroundColor: 'rgba(255,255,255,0.9)' }}>
                 <DashboardDailyChart />
                 <Box mt={2} textAlign="center">
                   <Link to="/reports/DashboardDailyTable" style={{ textDecoration: "none" }}>
@@ -87,15 +99,7 @@ export default function Analytics() {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <Card
-                sx={{
-                  height: 400,
-                  display: "flex",
-                  flexDirection: "column",
-                  px: 3,
-                  py: 2,
-                }}
-              >
+              <Card sx={{ height: 400, display: "flex", flexDirection: "column", px: 3, py: 2, backgroundColor: 'rgba(255,255,255,0.9)' }}>
                 <Box sx={{ flex: 1, overflow: "auto" }}>
                   <MedicationStockChart />
                 </Box>
@@ -107,11 +111,10 @@ export default function Analytics() {
               </Card>
             </Grid>
 
-            {/* سطر دوم - فواید + فروش */}
             <Grid item xs={12}>
               <Grid container spacing={2}>
                 <Grid item xs={12} md={6}>
-                  <Card sx={{ px: 3, py: 2, height: "100%" }}>
+                  <Card sx={{ px: 3, py: 2, height: "100%", backgroundColor: 'rgba(255,255,255,0.9)' }}>
                     <BenefitsChart />
                     <Box mt={2} textAlign="center">
                       <Link to="/reports/benefits" style={{ textDecoration: "none" }}>
@@ -122,7 +125,7 @@ export default function Analytics() {
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <Card sx={{ px: 2, py: 2, height: "100%" }}>
+                  <Card sx={{ px: 2, py: 2, height: "100%", backgroundColor: 'rgba(255,255,255,0.9)' }}>
                     <SalesChart />
                     <Box mt={2} textAlign="center">
                       <Link to="/reports/sales-table" style={{ textDecoration: "none" }}>
