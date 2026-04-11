@@ -94,13 +94,15 @@
 .puff4-small { animation-delay: 0.45s; }
 
 /* متن لودینگ کوچک */
-.loading-text-small {
+ .loading-text-small {
   margin-top: 15px;
   display: flex;
   gap: 3px;
   font-size: 14px;
   font-weight: bold;
   font-family: 'Arial Black', sans-serif;
+  direction: ltr;
+  unicode-bidi: embed; /* اضافه کنید برای پشتیبانی بهتر */
 }
 
 .loading-text-small span {

@@ -1,4 +1,3 @@
- 
 import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
@@ -9,7 +8,7 @@ import styled from "@mui/material/styles/styled";
 import useSettings from "app/hooks/useSettings";
 import { Paragraph, Span } from "../Typography";
 import MatxVerticalNavExpansionPanel from "./MatxVerticalNavExpansionPanel";
-import { useAuth } from "app/contexts/AuthContext"; // ✅ اضافه شد
+import { useAuth } from "app/contexts/AuthContext";
 
 // STYLED COMPONENTS
 const ListLabel = styled(Paragraph)(({ theme, mode }) => ({
@@ -55,9 +54,9 @@ export default function MatxVerticalNav({ items }) {
   const { settings } = useSettings();
   const { mode } = settings.layout1Settings.leftSidebar;
   const { t } = useTranslation();
-  const { user } = useAuth(); // ✅ کاربر جاری
+  const { user } = useAuth();
 
-  // ✅ فیلتر آیتم‌ها بر اساس نقش کاربر
+  // فیلتر آیتم‌ها بر اساس نقش کاربر
   const filterItemsByRole = (data) => {
     return data
       .filter(item => !item.roles || item.roles.includes(user?.role))
@@ -92,7 +91,15 @@ export default function MatxVerticalNav({ items }) {
               className={({ isActive }) => (isActive ? `navItemActive` : "")}
             >
               <ButtonBase key={item.name} sx={{ width: "100%" }}>
-                {item.icon && <Icon className={item.icon} />}
+                {/* ✅ اصلاح شده: بررسی نوع icon و تبدیل به string در صورت نیاز */}
+                {item.icon && (
+                  typeof item.icon === 'string' ? (
+                    <Icon className={item.icon} />
+                  ) : (
+                    // اگر icon از نوع object است، آن را نادیده بگیر یا آیکون پیش‌فرض نمایش بده
+                    <Icon className="default-icon" />
+                  )
+                )}
                 <StyledText mode={mode} className="sidenavHoverShow">
                   {t(item.name)}
                 </StyledText>
