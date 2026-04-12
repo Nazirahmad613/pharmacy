@@ -57,6 +57,12 @@ export default function UsersPage() {
       });
   }, []);
 
+  const [roles, setRoles] = useState([]);
+
+useEffect(() => {
+  api.get("/roles").then(res => setRoles(res.data));
+}, []);
+
   if (loading) {
     return (
       <ReportLayout>
@@ -86,7 +92,12 @@ export default function UsersPage() {
   const handleOpenDialog = (user = null) => {
     if (user) {
       setEditingUser(user);
-      setFormData({ name: user.name, email: user.email, role: user.role, password: "" });
+       setFormData({
+  name: user.name,
+  email: user.email,
+  role: user.roles?.[0]?.name || "user",
+  password: ""
+});
     } else {
       setEditingUser(null);
       setFormData({ name: "", email: "", role: "user", password: "" });
@@ -184,7 +195,7 @@ export default function UsersPage() {
           <tr>
             <th>نام</th>
             <th>ایمیل</th>
-            <th>نقش</th>
+            <th> کاربرنقش</th>
             <th>عملیات</th>
           </tr>
         </thead>
@@ -193,7 +204,11 @@ export default function UsersPage() {
             <tr key={u.id}>
               <td>{u.name} <FaKey style={{ marginLeft: 5, color: "#007bff" }} /></td>
               <td>{u.email}</td>
-              <td>{u.role}</td>
+              <td>
+  {u.roles && u.roles.length > 0
+    ? u.roles.map(r => r.name).join(", ")
+    : "بدون رول"}
+</td>
               <td>
                 <IconButton color="primary" onClick={() => handleOpenDialog(u)}>
                   <EditIcon />
@@ -240,7 +255,11 @@ export default function UsersPage() {
               onChange={e => setFormData({ ...formData, role: e.target.value })}
             >
               <MenuItem value="user">User</MenuItem>
-              <MenuItem value="admin">Admin</MenuItem>
+              {roles.map(role => (
+  <MenuItem key={role.id} value={role.name}>
+    {role.name}
+  </MenuItem>
+))}
               <MenuItem value="hospital_head">رئیس عمومی شفاخانه</MenuItem>
               {isAdminOrSuper && <MenuItem value="super_admin">Super Admin</MenuItem>}
             </Select>

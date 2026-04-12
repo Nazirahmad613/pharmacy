@@ -52,21 +52,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // ================= USERS =================
- 
-    Route::get('/users', [UserController::class, 'index'])
-        ->middleware('permission:view-users');
-
-    Route::post('/users', [UserController::class, 'store'])
-        ->middleware('permission:create-users');
-
-    Route::get('/users/{user}', [UserController::class, 'show'])
-        ->middleware('permission:view-users');
-
-    Route::put('/users/{user}', [UserController::class, 'update'])
-        ->middleware('permission:edit-users');
-
-    Route::delete('/users/{user}', [UserController::class, 'destroy'])
-        ->middleware('permission:delete-users');
+    Route::get('/users', [UserController::class, 'index'])->middleware('permission:view-users');
+    Route::post('/users', [UserController::class, 'store'])->middleware('permission:create-users');
+    Route::get('/users/{user}', [UserController::class, 'show'])->middleware('permission:view-users');
+    Route::put('/users/{user}', [UserController::class, 'update'])->middleware('permission:edit-users');
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])->middleware('permission:delete-users');
 
     // ================= LOGS =================
     Route::get('/logs', [LogController::class, 'index'])->middleware('permission:view-logs');
@@ -152,7 +142,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ================= REPORTS =================
     Route::get('/hospital-reports', [HospitalReportController::class, 'index'])->middleware('permission:view-reports');
-    Route::get('/account-summary', [AccountSummaryController::class, 'index'])->middleware('permission:');
+    Route::get('/account-summary', [AccountSummaryController::class, 'index'])->middleware('permission:view-reports');
     Route::get('/view-profit-loss', [ViewProfitLossController::class, 'index'])->middleware('permission:view-reports');
     Route::get('/view-inventory', [ViewInventoryController::class, 'index'])->middleware('permission:view-reports');
     Route::get('/view-medications', [ViewMedicationsController::class, 'index'])->middleware('permission:view-reports');

@@ -195,12 +195,37 @@
       "323sa680b324976dfgga21rt47": { "title": "Bass Speaker 1" },
       "323sa680bdf4976dfgga21rt4": { "title": "Bass Speaker 2" }
     }
-  }
+  },
 
 
 
   
-  
+ 
+        
+        "pres_insert":  "pres_insert",
+        "invent_insert": "invent_inser",
+        "sales_insert": "sales_insert",
+        "addsuppliers":"addsuppliers",
+        "addcustomers":"addcustomers",
+        "RegistationForm":"RegistationForm",
+          
+        "addchanges":"addchanges",
+        "parchases":"parchases",
+        "logs":"logs",
+        "PaymentForm":"PaymentForm",
+        "addcatagory":"addcatagory",
+        "BenefitsChart":"BenefitsChart",
+        "BenefitsReport":"BenefitsReport",
+        
+        "MedicationStockC":"MedicationStockC",
+        "MedicationStockT":"MedicationStockT",
+        "SalesChart":"SalesChart",
+        "SalesTable":"SalesTable",
+        "ParchasesChart":"ParchasesChart",
+        "ParchasesTable":"ParchasesTable",
+        "AccountSummaryPa":"AccountSummaryPa",
+        "hospital_Report":"hospital_Report"
+
   
 
 

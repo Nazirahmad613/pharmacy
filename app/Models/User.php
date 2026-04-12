@@ -10,33 +10,22 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+    
 
-    /**
-     * تعریف ثابت‌های نقش‌ها - هماهنگ با نام‌های موجود در Spatie
-     */
-    const ROLE_SUPER_ADMIN = 'super-admin';
-    const ROLE_ADMIN = 'admin';
-    const ROLE_HOSPITAL_HEAD = 'head-of-hospital';
-    const ROLE_DOCTOR = 'doctor';
-    const ROLE_PHARMACIST = 'pharmacist';
-    const ROLE_NURSE = 'nurse';
-    const ROLE_USER = 'user';
-    const ROLE_EMPLOYEES = 'کارمندان';
+     
+ use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
-    /**
-     * Mass assignable attributes
-     */
+    protected $guard_name = 'sanctum';
+
     protected $fillable = [
         'name',
         'email',
         'password',
-        'role',
     ];
 
-    /**
-     * Hidden attributes
-     */
+    protected $casts = [
+        'password' => 'hashed',
+    ];
     protected $hidden = [
         'password',
         'remember_token',
@@ -44,13 +33,8 @@ class User extends Authenticatable
 
     /**
      * The attributes that should be cast.
-     */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-        'password' => 'hashed', // لاراول 11 به صورت خودکار پسورد را هش می‌کند
-    ];
-
-    /**
+   
+ 
      * 🔹 دریافت لیست تمام نقش‌ها با عنوان فارسی
      */
     public static function getRoles(): array
@@ -70,19 +54,14 @@ class User extends Authenticatable
     /**
      * 🔹 دریافت عنوان فارسی نقش کاربر
      */
-    public function getRoleNameAttribute(): string
-    {
-        if ($this->roles->isNotEmpty()) {
-            $roleNames = $this->roles->pluck('name')->toArray();
-            $persianRoles = [];
-            foreach ($roleNames as $roleName) {
-                $persianRoles[] = self::getRoles()[$roleName] ?? $roleName;
-            }
-            return implode('، ', $persianRoles);
-        }
-
-        return self::getRoles()[$this->role] ?? $this->role;
+  public function getRoleNameAttribute(): string
+{
+    if ($this->roles->isNotEmpty()) {
+        return $this->roles->pluck('name')->join('، ');
     }
+
+    return 'بدون نقش';
+}
 
     /**
      * 🔹 رابطه با نسخه‌ها
