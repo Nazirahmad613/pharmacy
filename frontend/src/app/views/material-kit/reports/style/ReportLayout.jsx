@@ -1,5 +1,5 @@
  import React from 'react';
-import './ReportLayout.css';
+import './report-layout.css';
 
 const ReportLayout = ({ title, children }) => {
   return (

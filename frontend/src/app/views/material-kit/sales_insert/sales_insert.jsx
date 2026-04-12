@@ -1,6 +1,8 @@
+ 
+
 import { useState, useEffect, useRef } from "react";
 import MainLayoutjur from "../../../../components/MainLayoutjur";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useAuth } from "app/contexts/AuthContext";
 import { useReactToPrint } from "react-to-print";
@@ -35,7 +37,6 @@ export default function SaleForm() {
   const [remaining, setRemaining] = useState(0);
   const [paymentStatus, setPaymentStatus] = useState("پرداخت نشده");
   const [printSale, setPrintSale] = useState(null);
- 
 
   const [formItem, setFormItem] = useState({
     cust_id: "",
@@ -59,6 +60,7 @@ export default function SaleForm() {
   const currentSales = salesList.slice(indexOfFirst, indexOfLast);
   const totalPages = Math.ceil(salesList.length / itemsPerPage);
 
+  // ==================== بارگذاری اولیه ====================
   useEffect(() => {
     loadSales();
   }, []);
@@ -69,6 +71,7 @@ export default function SaleForm() {
       setSalesList(res.data ?? []);
     } catch (err) {
       console.error(err);
+      toast.error("خطا در دریافت لیست فروش");
     }
   };
 
@@ -85,7 +88,6 @@ export default function SaleForm() {
   useEffect(() => {
     const rem = Number(netSales) - Number(totalPaid || 0);
     setRemaining(rem >= 0 ? rem : 0);
-
     if (Number(totalPaid) === 0) setPaymentStatus("پرداخت نشده");
     else if (Number(totalPaid) < Number(netSales)) setPaymentStatus("پرداخت جزئی");
     else setPaymentStatus("پرداخت کامل شده");
@@ -173,7 +175,7 @@ export default function SaleForm() {
       }
     ]);
     setFormItem({
-      ...formItem,
+      cust_id: formItem.cust_id, // حفظ مشتری انتخاب شده
       category_id: "",
       med_id: "",
       supplier_id: "",
@@ -188,8 +190,8 @@ export default function SaleForm() {
     setSaleItems(saleItems.filter(item => item.id !== id));
   };
 
-  // ✅ تابع جدید برای انصراف از ویرایش
-  const handleCancelEdit = () => {
+  // ==================== ریست کامل فرم ====================
+  const resetForm = () => {
     setEditingId(null);
     setSaleItems([]);
     setFormItem({
@@ -206,12 +208,25 @@ export default function SaleForm() {
     setDiscount(0);
     setTotalPaid(0);
     setCustomerNID("");
+    setTotalSale(0);
+    setNetSales(0);
+    setRemaining(0);
+    setPaymentStatus("پرداخت نشده");
+  };
+
+  const handleCancelEdit = () => {
+    resetForm();
     toast.info("✏️ ویرایش لغو شد");
   };
 
+  // ==================== ثبت فروش جدید ====================
   const handleSaveSale = async () => {
     if (saleItems.length === 0) {
       toast.error("❌ حداقل یک آیتم اضافه کنید");
+      return;
+    }
+    if (!formItem.cust_id) {
+      toast.error("❌ مشتری را انتخاب کنید");
       return;
     }
     const payload = {
@@ -234,14 +249,18 @@ export default function SaleForm() {
       const res = await api.post("/sales", payload);
       setSalesId(res.data.sale_id);
       toast.success("✅ فروش با موفقیت ثبت شد");
-      loadSales();
+      resetForm();              // ← پاک کردن همه چیز بعد از ثبت
+      loadSales();              // ← بروزرسانی لیست
+      setCurrentPage(1);
     } catch (err) {
       console.error(err);
       toast.error("❌ خطا در ثبت فروش");
     }
   };
 
+  // ==================== ویرایش فروش ====================
   const handleEditSale = (sale) => {
+    resetForm(); // پاک کردن حالت قبلی
     setEditingId(sale.id);
     setSaleDate(sale.sales_date);
     setDiscount(sale.discount);
@@ -262,7 +281,6 @@ export default function SaleForm() {
     }));
 
     setSaleItems(items);
-
     if (items.length > 0) {
       const firstItem = items[0];
       setFormItem({
@@ -275,6 +293,46 @@ export default function SaleForm() {
         unit_sales: firstItem.unit_sales,
         total_sales: firstItem.total_sales,
       });
+    } else {
+      setFormItem({ ...formItem, cust_id: sale.cust_id });
+    }
+    // تنظیم customerNID
+    const cust = customers.find(c => Number(c.reg_id) === Number(sale.cust_id));
+    if (cust) setCustomerNID(cust.tazkira_number ?? "");
+  };
+
+  // ==================== بروزرسانی فروش ====================
+  const handleUpdateSale = async () => {
+    if (!editingId) return;
+    if (saleItems.length === 0) {
+      toast.error("❌ حداقل یک آیتم اضافه کنید");
+      return;
+    }
+    const payload = {
+      sales_date: saleDate || new Date().toISOString().split("T")[0],
+      cust_id: formItem.cust_id,
+      tazkira_number: customerNID,
+      discount,
+      total_paid: totalPaid,
+      items: saleItems.map(item => ({
+        category_id: item.category_id,
+        med_id: item.med_id,
+        supplier_id: item.supplier_id,
+        type: item.type,
+        quantity: Number(item.quantity),
+        unit_sales: Number(item.unit_sales),
+        total_sales: Number(item.total_sales),
+      })),
+    };
+    try {
+      await api.put(`/sales/${editingId}`, payload);
+      toast.success("✅ فروش با موفقیت بروزرسانی شد");
+      resetForm();            // ← پاک کردن فرم بعد از بروزرسانی
+      loadSales();
+      setCurrentPage(1);
+    } catch (err) {
+      console.error(err);
+      toast.error("❌ خطا در بروزرسانی فروش");
     }
   };
 
@@ -284,6 +342,7 @@ export default function SaleForm() {
       await api.delete(`/sales/${id}`);
       toast.success("فروش حذف شد");
       loadSales();
+      if (editingId === id) resetForm();
     } catch {
       toast.error("خطا در حذف فروش");
     }
@@ -303,18 +362,13 @@ export default function SaleForm() {
       remaining: sale.remaining,
       paymentStatus: sale.payment_status,
     };
-
     setPrintSale(salePrintData);
-
-    setTimeout(() => {
-      handlePrint();
-    }, 200);
+    setTimeout(() => handlePrint(), 200);
   };
 
   const selectedCustomer = customers.find(
     c => Number(c.reg_id) === Number(formItem.cust_id)
   );
-
   const saleData = {
     sale_number: salesId ?? "-",
     date: saleDate || new Date().toLocaleDateString(),
@@ -329,371 +383,248 @@ export default function SaleForm() {
     paymentStatus,
   };
 
-  const handleUpdateSale = async () => {
-    if (!editingId) return;
-
-    const payload = {
-      sales_date: saleDate || new Date().toISOString().split("T")[0],
-      cust_id: formItem.cust_id,
-      tazkira_number: customerNID,
-      discount,
-      total_paid: totalPaid,
-      items: saleItems.map(item => ({
-        category_id: item.category_id,
-        med_id: item.med_id,
-        supplier_id: item.supplier_id,
-        type: item.type,
-        quantity: Number(item.quantity),
-        unit_sales: Number(item.unit_sales),
-        total_sales: Number(item.total_sales),
-      })),
-    };
-
-    try {
-      await api.put(`/sales/${editingId}`, payload);
-      toast.success("✅ فروش با موفقیت بروزرسانی شد");
-      setEditingId(null);
-      setSaleItems([]);
-      setFormItem({ cust_id: "", category_id: "", med_id: "", supplier_id: "", type: "", quantity: "", unit_sales: "", total_sales: 0 });
-      loadSales();
-    } catch (err) {
-      console.error(err);
-      toast.error("❌ خطا در بروزرسانی فروش");
-    }
-  };
-
+  // ==================== رندر ====================
   return (
     <MainLayoutjur>
-      {/* ✅ ToastContainer با استایل مناسب */}
-      <ToastContainer 
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={true}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="colored"
-        limit={5}
-        style={{ 
-          zIndex: 9999999,
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          left: 'auto',
-          width: 'auto',
-          maxWidth: '350px',
-          transform: 'none'
-        }}
-      />
- 
-      <div className="main-layout">
-        <div className="background-overlay"></div>
- 
-        <div className="layout-content">
- 
-          {/* ===== اطلاعات فروش ===== */}
-          <div className="form-container">
-            <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
-              {editingId ? "ویرایش فروش" : "ثبت فروشات"}
-            </h2>
- 
-            <div className="form-grid">
-              <div>
-                <label>تاریخ فروش</label>
-                <input type="date" value={saleDate} onChange={e => setSaleDate(e.target.value)} />
-              </div>
- 
-              <div>
-                <label>مشتری</label>
-                <select value={formItem.cust_id} onChange={e => handleChange("cust_id", e.target.value)}>
-                  <option value="">-- انتخاب مشتری --</option>
-                  {customers.map((c, index) => (
-                    <option key={c.id ?? c.reg_id ?? `cust-${index}`} value={c.id ?? c.reg_id}>
-                      {c.full_name ?? c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
- 
-              {/* ✅ نمایش شماره تذکره */}
-              <div>
-                <label>شماره تذکره مشتری</label>
-                <input type="text" value={customerNID} readOnly />
-              </div>
- 
-              <div>
-                <label>مجموع فروش</label>
-                <input type="number" value={totalSale} readOnly />
-              </div>
- 
-              <div>
-                <label>تخفیف</label>
-                <input type="number" value={discount} onChange={e => setDiscount(Number(e.target.value))} />
-              </div>
- 
-              <div>
-                <label>فروش خالص</label>
-                <input type="number" value={netSales} readOnly />
-              </div>
- 
-              <div>
-                <label>پرداخت اولیه</label>
-                <input type="number" value={totalPaid} onChange={e => setTotalPaid(Number(e.target.value))} />
-              </div>
- 
-              <div>
-                <label>باقی‌مانده</label>
-                <input type="number" value={remaining} readOnly />
-              </div>
- 
-              <div>
-                <label>وضعیت پرداخت</label>
-                <input type="text" value={paymentStatus} readOnly />
-              </div>
-            </div>
+      {/* اطلاعات فروش */}
+      <div className="form-container">
+        <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
+          {editingId ? "ویرایش فروش" : "ثبت فروشات"}
+        </h2>
+        <div className="form-grid">
+          <div>
+            <label>تاریخ فروش</label>
+            <input type="date" value={saleDate} onChange={e => setSaleDate(e.target.value)} />
           </div>
- 
-          {/* ===== فرم آیتم‌ها ===== */}
-          <div className="form-container">
-            <h3>افزودن آیتم</h3>
-            <div className="form-grid" onKeyDown={handleKeyDown}>
-              <div>
-                <label>کتگوری</label>
-                <select value={formItem.category_id} onChange={e => handleChange("category_id", e.target.value)}>
-                  <option value="">-- انتخاب کتگوری --</option>
-                  {categories.map(c => (
-                    <option key={c.category_id} value={c.category_id}>{c.category_name}</option>
-                  ))}
-                </select>
-              </div>
- 
-              <div>
-                <label>دوا</label>
-                <select value={formItem.med_id} onChange={e => handleChange("med_id", e.target.value)}>
-                  <option value="">-- انتخاب دوا --</option>
-                  {filteredMedications.map(m => (
-                    <option key={m.med_id} value={m.med_id}>{m.gen_name}</option>
-                  ))}
-                </select>
-              </div>
- 
-              <div>
-                <label>حمایت‌کننده</label>
-                <select value={formItem.supplier_id} onChange={e => handleChange("supplier_id", e.target.value)}>
-                  <option value="">-- انتخاب حمایت‌کننده --</option>
-                  {filteredSuppliers.map((s, index) => (
-                    <option key={s.reg_id ?? `sup-${index}`} value={s.reg_id}>
-                      {s.full_name ?? s.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
- 
-              <div>
-                <label>نوع دوا</label>
-                <input type="text" value={formItem.type} readOnly />
-              </div>
- 
-              <div>
-                <label>تعداد</label>
-                <input type="number" value={formItem.quantity} onChange={e => handleChange("quantity", e.target.value)} />
-              </div>
- 
-              <div>
-                <label>قیمت واحد</label>
-                <input type="number" value={formItem.unit_sales} onChange={e => handleChange("unit_sales", e.target.value)} />
-              </div>
- 
-              <div>
-                <label>قیمت مجموعی</label>
-                <input type="number" value={formItem.total_sales} readOnly />
-              </div>
-            </div>
+          <div>
+            <label>مشتری</label>
+            <select value={formItem.cust_id} onChange={e => handleChange("cust_id", e.target.value)}>
+              <option value="">-- انتخاب مشتری --</option>
+              {customers.map((c, index) => (
+                <option key={c.id ?? c.reg_id ?? `cust-${index}`} value={c.id ?? c.reg_id}>
+                  {c.full_name ?? c.name}
+                </option>
+              ))}
+            </select>
           </div>
- 
-          {/* ===== جدول آیتم‌ها ===== */}
-          {saleItems.length > 0 && (
-            <div className="table-container">
-              <table className="dark-table">
-                <thead>
-                  <tr>
-                    <th>شماره</th>
-                    <th>کتگوری</th>
-                    <th>نام دوا</th>
-                    <th>حمایت‌کننده</th>
-                    <th>نوع دوا</th>
-                    <th>تعداد</th>
-                    <th>قیمت واحد</th>
-                    <th>قیمت مجموعی</th>
-                    <th>عملیات</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {saleItems.map((item, idx) => (
-                    <tr key={item.id}>
-                      <td>{idx + 1}</td>
-                      <td>{item.category_name}</td>
-                      <td>{item.gen_name}</td>
-                      <td>{item.supplier_name}</td>
-                      <td>{item.type}</td>
-                      <td>{item.quantity}</td>
-                      <td>{item.unit_sales?.toLocaleString()}</td>
-                      <td>{item.total_sales?.toLocaleString()}</td>
-                      <td>
-                        <button className="delete" onClick={() => handleRemoveItem(item.id)}>حذف</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
- 
-          <div style={{ marginTop: "10px", display: "flex", gap: "10px", justifyContent: "center" }}>
-            <button 
-              className="edit" 
-              onClick={editingId ? handleUpdateSale : handleSaveSale}
-              style={{ backgroundColor: editingId ? "#ffc107" : "#2563eb" }}
-            >
-              {editingId ? "بروزرسانی فروش" : "ثبت فروش"}
-            </button>
- 
-            <button type="button" className="edit" onClick={handlePrint} style={{ backgroundColor: "#4CAF50" }}>
-              چاپ بل فروش
-            </button>
-
-            {/* ✅ دکمه انصراف - فقط در حالت ویرایش نمایش داده می‌شود */}
-            {editingId && (
-              <button
-                type="button"
-                onClick={handleCancelEdit}
-                style={{
-                  backgroundColor: "#6c757d",
-                  color: "white",
-                  padding: "10px 20px",
-                  borderRadius: "5px",
-                  border: "none",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                  fontWeight: "bold"
-                }}
-              >
-                انصراف
-              </button>
-            )}
+          <div>
+            <label>شماره تذکره مشتری</label>
+            <input type="text" value={customerNID} readOnly />
           </div>
- 
-          {/* لیست فروشات */}
-          {salesList.length > 0 && (
-            <div className="table-container" style={{ marginTop: "20px" }}>
-              <h3>فروشات ثبت شده</h3>
- 
-              <table className="dark-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>تاریخ</th>
-                    <th>مشتری</th>
-                    <th>مجموع</th>
-                    <th>تخفیف</th>
-                    <th>خالص</th>
-                    <th>پرداخت</th>
-                    <th>باقی</th>
-                    <th>وضعیت</th>
-                    <th>عملیات</th>
-                  </tr>
-                </thead>
- 
-                <tbody>
-                  {currentSales.map((s, i) => (
-                    <tr key={s.id}>
-                      <td>{indexOfFirst + i + 1}</td>
-                      <td>{s.sales_date}</td>
-                      <td>{s.customer_name}</td>
-                      <td>{s.total_sales}</td>
-                      <td>{s.discount}</td>
-                      <td>{s.net_sales}</td>
-                      <td>{s.total_paid}</td>
-                      <td>{s.remaining}</td>
-                      <td>{s.payment_status}</td>
-                      <td>
-                        <button 
-                          style={{ 
-                            backgroundColor: "#dcc215", 
-                            color: "#000",
-                            padding: "5px 12px",
-                            borderRadius: "5px",
-                            border: "none",
-                            cursor: "pointer",
-                            fontSize: "12px",
-                            fontWeight: "bold",
-                            marginLeft: "5px"
-                          }}
-                          onClick={() => handleEditSale(s)}
-                        >
-                          تصحیح
-                        </button>
-
-                        <button 
-                          style={{ 
-                            backgroundColor: "#dc2626", 
-                            color: "#fff",
-                            padding: "5px 12px",
-                            borderRadius: "5px",
-                            border: "none",
-                            cursor: "pointer",
-                            fontSize: "12px",
-                            fontWeight: "bold",
-                            marginLeft: "5px"
-                          }}
-                          onClick={() => handleDeleteSale(s.id)}
-                        >
-                          حذف
-                        </button>
-
-                        <button  
-                          style={{ 
-                            backgroundColor: "#0da62f", 
-                            color: "#fff",
-                            padding: "5px 12px",
-                            borderRadius: "5px",
-                            border: "none",
-                            cursor: "pointer",
-                            fontSize: "12px",
-                            fontWeight: "bold"
-                          }}
-                          onClick={() => handlePrintSale(s)}
-                        >
-                          چاپ
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div style={{ marginTop: 15, textAlign: "center" }}>
-                <button disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>
-                  قبلی
-                </button>
- 
-                <span style={{ margin: "0 10px" }}>
-                  صفحه {currentPage} از {totalPages}
-                </span>
- 
-                <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(currentPage + 1)}>
-                  بعدی
-                </button>
-              </div>
-            </div>
-          )}
- 
-          <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
-            <SalePrint ref={printRef} saleData={printSale ?? saleData} />
+          <div>
+            <label>مجموع فروش</label>
+            <input type="number" value={totalSale} readOnly />
+          </div>
+          <div>
+            <label>تخفیف</label>
+            <input type="number" value={discount} onChange={e => setDiscount(Number(e.target.value))} />
+          </div>
+          <div>
+            <label>فروش خالص</label>
+            <input type="number" value={netSales} readOnly />
+          </div>
+          <div>
+            <label>پرداخت اولیه</label>
+            <input type="number" value={totalPaid} onChange={e => setTotalPaid(Number(e.target.value))} />
+          </div>
+          <div>
+            <label>باقی‌مانده</label>
+            <input type="number" value={remaining} readOnly />
+          </div>
+          <div>
+            <label>وضعیت پرداخت</label>
+            <input type="text" value={paymentStatus} readOnly />
           </div>
         </div>
+      </div>
+
+      {/* فرم آیتم‌ها */}
+      <div className="form-container">
+        <h3>افزودن آیتم</h3>
+        <div className="form-grid" onKeyDown={handleKeyDown}>
+          <div>
+            <label>کتگوری</label>
+            <select value={formItem.category_id} onChange={e => handleChange("category_id", e.target.value)}>
+              <option value="">-- انتخاب کتگوری --</option>
+              {categories.map(c => (
+                <option key={c.category_id} value={c.category_id}>{c.category_name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label>دوا</label>
+            <select value={formItem.med_id} onChange={e => handleChange("med_id", e.target.value)}>
+              <option value="">-- انتخاب دوا --</option>
+              {filteredMedications.map(m => (
+                <option key={m.med_id} value={m.med_id}>{m.gen_name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label>حمایت‌کننده</label>
+            <select value={formItem.supplier_id} onChange={e => handleChange("supplier_id", e.target.value)}>
+              <option value="">-- انتخاب حمایت‌کننده --</option>
+              {filteredSuppliers.map((s, index) => (
+                <option key={s.reg_id ?? `sup-${index}`} value={s.reg_id}>
+                  {s.full_name ?? s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label>نوع دوا</label>
+            <input type="text" value={formItem.type} readOnly />
+          </div>
+          <div>
+            <label>تعداد</label>
+            <input type="number" value={formItem.quantity} onChange={e => handleChange("quantity", e.target.value)} />
+          </div>
+          <div>
+            <label>قیمت واحد</label>
+            <input type="number" value={formItem.unit_sales} onChange={e => handleChange("unit_sales", e.target.value)} />
+          </div>
+          <div>
+            <label>قیمت مجموعی</label>
+            <input type="number" value={formItem.total_sales} readOnly />
+          </div>
+        </div>
+      </div>
+
+      {/* جدول آیتم‌ها */}
+      {saleItems.length > 0 && (
+        <div className="table-container">
+          <table className="dark-table">
+            <thead>
+              <tr>
+                <th>شماره</th>
+                <th>کتگوری</th>
+                <th>نام دوا</th>
+                <th>حمایت‌کننده</th>
+                <th>نوع دوا</th>
+                <th>تعداد</th>
+                <th>قیمت واحد</th>
+                <th>قیمت مجموعی</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {saleItems.map((item, idx) => (
+                <tr key={item.id}>
+                  <td>{idx + 1}</td>
+                  <td>{item.category_name}</td>
+                  <td>{item.gen_name}</td>
+                  <td>{item.supplier_name}</td>
+                  <td>{item.type}</td>
+                  <td>{item.quantity}</td>
+                  <td>{item.unit_sales?.toLocaleString()}</td>
+                  <td>{item.total_sales?.toLocaleString()}</td>
+                  <td>
+                    <button className="delete" onClick={() => handleRemoveItem(item.id)}>حذف</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div style={{ marginTop: "10px", display: "flex", gap: "10px", justifyContent: "center" }}>
+        <button 
+          className="edit" 
+          onClick={editingId ? handleUpdateSale : handleSaveSale}
+          style={{ backgroundColor: editingId ? "#ffc107" : "#2563eb" }}
+        >
+          {editingId ? "بروزرسانی فروش" : "ثبت فروش"}
+        </button>
+        <button type="button" className="edit" onClick={handlePrint} style={{ backgroundColor: "#4CAF50" }}>
+          چاپ بل فروش
+        </button>
+        {editingId && (
+          <button
+            type="button"
+            onClick={handleCancelEdit}
+            style={{
+              backgroundColor: "#6c757d",
+              color: "white",
+              padding: "10px 20px",
+              borderRadius: "5px",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "14px",
+              fontWeight: "bold"
+            }}
+          >
+            انصراف
+          </button>
+        )}
+      </div>
+
+      {/* لیست فروشات */}
+      {salesList.length > 0 && (
+        <div className="table-container" style={{ marginTop: "20px" }}>
+          <h3>فروشات ثبت شده</h3>
+          <table className="dark-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>تاریخ</th>
+                <th>مشتری</th>
+                <th>مجموع</th>
+                <th>تخفیف</th>
+                <th>خالص</th>
+                <th>پرداخت</th>
+                <th>باقی</th>
+                <th>وضعیت</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentSales.map((s, i) => (
+                <tr key={s.id}>
+                  <td>{indexOfFirst + i + 1}</td>
+                  <td>{s.sales_date}</td>
+                  <td>{s.customer_name}</td>
+                  <td>{s.total_sales}</td>
+                  <td>{s.discount}</td>
+                  <td>{s.net_sales}</td>
+                  <td>{s.total_paid}</td>
+                  <td>{s.remaining}</td>
+                  <td>{s.payment_status}</td>
+                  <td>
+                    <button 
+                      style={{ backgroundColor: "#dcc215", color: "#000", padding: "5px 12px", borderRadius: "5px", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: "bold", marginLeft: "5px" }}
+                      onClick={() => handleEditSale(s)}
+                    >
+                      تصحیح
+                    </button>
+                    <button 
+                      style={{ backgroundColor: "#dc2626", color: "#fff", padding: "5px 12px", borderRadius: "5px", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: "bold", marginLeft: "5px" }}
+                      onClick={() => handleDeleteSale(s.id)}
+                    >
+                      حذف
+                    </button>
+                    <button  
+                      style={{ backgroundColor: "#0da62f", color: "#fff", padding: "5px 12px", borderRadius: "5px", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: "bold" }}
+                      onClick={() => handlePrintSale(s)}
+                    >
+                      چاپ
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div style={{ marginTop: 15, textAlign: "center" }}>
+            <button disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>قبلی</button>
+            <span style={{ margin: "0 10px" }}>صفحه {currentPage} از {totalPages}</span>
+            <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(currentPage + 1)}>بعدی</button>
+          </div>
+        </div>
+      )}
+
+      {/* کامپوننت مخفی پرینت */}
+      <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
+        <SalePrint ref={printRef} saleData={printSale ?? saleData} />
       </div>
     </MainLayoutjur>
   );

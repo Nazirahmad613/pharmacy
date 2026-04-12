@@ -123,214 +123,185 @@ export default function CategoryForm() {
   const canDelete = user?.role === 'admin' || (permissionsList && permissionsList.includes('delete-category'));
 
   return (
-    <MainLayoutjur>
-      <ToastContainer 
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={true}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="colored"
-        limit={5}
-        style={{ 
-          zIndex: 9999999,
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          left: 'auto',
-          width: 'auto',
-          maxWidth: '350px',
-          transform: 'none'
-        }}
-      />
+  <MainLayoutjur>
+    <div className="layout-content">
+      <div className="form-container">
+        <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
+          {editingId ? "ویرایش کتگوری" : "ثبت کتگوری جدید"}
+        </h2>
 
-      <div className="main-layout">
-        <div className="background-overlay"></div>
-
-        <div className="layout-content">
-          <div className="form-container">
-            <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
-              {editingId ? "ویرایش کتگوری" : "ثبت کتگوری جدید"}
-            </h2>
-
-            <form onSubmit={handleSubmit}>
-              <div className="form-grid" style={{ gridTemplateColumns: "1fr auto" }}>
-                <div>
-                  <label>نام کتگوری</label>
-                  <input
-                    type="text"
-                    value={categoryName}
-                    onChange={(e) => setCategoryName(e.target.value)}
-                    placeholder="نام کتگوری را وارد کنید"
-                    style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ddd" }}
-                  />
-                </div>
-                <div style={{ display: "flex", alignItems: "flex-end", gap: "10px" }}>
-                  <button 
-                    type="submit" 
-                    className="edit"
-                    disabled={loading}
-                    style={{ 
-                      backgroundColor: editingId ? "#ffc107" : "#007bff",
-                      opacity: loading ? 0.5 : 1,
-                      color: "white",
-                      border: "none",
-                      padding: "10px 20px",
-                      borderRadius: "4px",
-                      cursor: loading ? "not-allowed" : "pointer",
-                      fontSize: "14px"
-                    }}
-                  >
-                    {loading ? "در حال ثبت..." : (editingId ? "بروزرسانی" : "ثبت")}
-                  </button>
-                  
-                  {editingId && (
-                    <button 
-                      type="button" 
-                      className="delete"
-                      onClick={handleCancelEdit}
-                      style={{
-                        backgroundColor: "#dc3545",
-                        color: "white",
-                        border: "none",
-                        padding: "10px 20px",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                        fontSize: "14px"
-                      }}
-                    >
-                      انصراف
-                    </button>
-                  )}
-                </div>
-              </div>
-            </form>
-          </div>
-
-          {categories.length > 0 && (
-            <div className="table-container" style={{ marginTop: "20px" }}>
-              <h3>لیست کتگوری‌ها</h3>
-
-              <table className="dark-table" style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr style={{ backgroundColor: "#f5f5f5" }}>
-                    <th style={{ padding: "12px", textAlign: "center" }}>شماره</th>
-                    <th style={{ padding: "12px", textAlign: "center" }}>نام کتگوری</th>
-                    <th style={{ padding: "12px", textAlign: "center" }}>تاریخ ایجاد</th>
-                    <th style={{ padding: "12px", textAlign: "center" }}>عملیات</th>
-                   </tr>
-                </thead>
-                <tbody>
-                  {currentCategories.map((category, index) => (
-                    <tr key={category.category_id}>
-                      <td style={{ padding: "10px", textAlign: "center" }}>
-                        {indexOfFirstItem + index + 1}
-                      </td>
-                      <td style={{ padding: "10px", textAlign: "center" }}>
-                        {category.category_name}
-                      </td>
-                      <td style={{ padding: "10px", textAlign: "center" }}>
-                        {formatDate(category.created_at)}
-                      </td>
-                      <td style={{ padding: "10px", textAlign: "center" }}>
-                        <button
-                          onClick={() => handleEdit(category)}
-                          style={{
-                            backgroundColor: "#ffc107",
-                            color: "black",
-                            border: "none",
-                            padding: "5px 15px",
-                            borderRadius: "4px",
-                            marginLeft: "5px",
-                            cursor: "pointer",
-                            fontSize: "13px"
-                          }}
-                        >
-                          تصحیح
-                        </button>
-                        {/* ✅ دکمه حذف فقط برای ادمین یا کاربرانی که پرمیشن delete-category را دارند نمایش داده شود */}
-                        {canDelete && (
-                          <button
-                            onClick={() => handleDelete(category.category_id)}
-                            style={{
-                              backgroundColor: "#dc3545",
-                              color: "white",
-                              border: "none",
-                              padding: "5px 15px",
-                              borderRadius: "4px",
-                              cursor: "pointer",
-                              fontSize: "13px"
-                            }}
-                          >
-                            حذف
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {totalPages > 1 && (
-                <div style={{ marginTop: "20px", textAlign: "center" }}>
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                    style={{
-                      margin: "0 5px",
-                      padding: "8px 15px",
-                      backgroundColor: currentPage === 1 ? "#ccc" : "#007bff",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor: currentPage === 1 ? "not-allowed" : "pointer"
-                    }}
-                  >
-                    قبلی
-                  </button>
-                  
-                  <span style={{ margin: "0 15px", fontSize: "14px" }}>
-                    صفحه {currentPage} از {totalPages}
-                  </span>
-                  
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                    style={{
-                      margin: "0 5px",
-                      padding: "8px 15px",
-                      backgroundColor: currentPage === totalPages ? "#ccc" : "#007bff",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor: currentPage === totalPages ? "not-allowed" : "pointer"
-                    }}
-                  >
-                    بعدی
-                  </button>
-                </div>
+        <form onSubmit={handleSubmit}>
+          <div className="form-grid" style={{ gridTemplateColumns: "1fr auto" }}>
+            <div>
+              <label>نام کتگوری</label>
+              <input
+                type="text"
+                value={categoryName}
+                onChange={(e) => setCategoryName(e.target.value)}
+                placeholder="نام کتگوری را وارد کنید"
+                style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ddd" }}
+              />
+            </div>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: "10px" }}>
+              <button 
+                type="submit" 
+                className="edit"
+                disabled={loading}
+                style={{ 
+                  backgroundColor: editingId ? "#ffc107" : "#007bff",
+                  opacity: loading ? 0.5 : 1,
+                  color: "white",
+                  border: "none",
+                  padding: "10px 20px",
+                  borderRadius: "4px",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  fontSize: "14px"
+                }}
+              >
+                {loading ? "در حال ثبت..." : (editingId ? "بروزرسانی" : "ثبت")}
+              </button>
+              
+              {editingId && (
+                <button 
+                  type="button" 
+                  className="delete"
+                  onClick={handleCancelEdit}
+                  style={{
+                    backgroundColor: "#dc3545",
+                    color: "white",
+                    border: "none",
+                    padding: "10px 20px",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontSize: "14px"
+                  }}
+                >
+                  انصراف
+                </button>
               )}
             </div>
-          )}
+          </div>
+        </form>
+      </div>
 
-          {categories.length === 0 && !loading && (
-            <div style={{ 
-              textAlign: "center", 
-              marginTop: "30px", 
-              padding: "30px", 
-              backgroundColor: "#f8f9fa",
-              borderRadius: "8px",
-              color: "#666"
-            }}>
-              هیچ کتگوری یافت نشد
+      {categories.length > 0 && (
+        <div className="table-container" style={{ marginTop: "20px" }}>
+          <h3>لیست کتگوری‌ها</h3>
+
+          <table className="dark-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ backgroundColor: "#f5f5f5" }}>
+                <th style={{ padding: "12px", textAlign: "center" }}>شماره</th>
+                <th style={{ padding: "12px", textAlign: "center" }}>نام کتگوری</th>
+                <th style={{ padding: "12px", textAlign: "center" }}>تاریخ ایجاد</th>
+                <th style={{ padding: "12px", textAlign: "center" }}>عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentCategories.map((category, index) => (
+                <tr key={category.category_id}>
+                  <td style={{ padding: "10px", textAlign: "center" }}>
+                    {indexOfFirstItem + index + 1}
+                  </td>
+                  <td style={{ padding: "10px", textAlign: "center" }}>
+                    {category.category_name}
+                  </td>
+                  <td style={{ padding: "10px", textAlign: "center" }}>
+                    {formatDate(category.created_at)}
+                  </td>
+                  <td style={{ padding: "10px", textAlign: "center" }}>
+                    <button
+                      onClick={() => handleEdit(category)}
+                      style={{
+                        backgroundColor: "#ffc107",
+                        color: "black",
+                        border: "none",
+                        padding: "5px 15px",
+                        borderRadius: "4px",
+                        marginLeft: "5px",
+                        cursor: "pointer",
+                        fontSize: "13px"
+                      }}
+                    >
+                      تصحیح
+                    </button>
+                    {canDelete && (
+                      <button
+                        onClick={() => handleDelete(category.category_id)}
+                        style={{
+                          backgroundColor: "#dc3545",
+                          color: "white",
+                          border: "none",
+                          padding: "5px 15px",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                          fontSize: "13px"
+                        }}
+                      >
+                        حذف
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {totalPages > 1 && (
+            <div style={{ marginTop: "20px", textAlign: "center" }}>
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                style={{
+                  margin: "0 5px",
+                  padding: "8px 15px",
+                  backgroundColor: currentPage === 1 ? "#ccc" : "#007bff",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: currentPage === 1 ? "not-allowed" : "pointer"
+                }}
+              >
+                قبلی
+              </button>
+              
+              <span style={{ margin: "0 15px", fontSize: "14px" }}>
+                صفحه {currentPage} از {totalPages}
+              </span>
+              
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                style={{
+                  margin: "0 5px",
+                  padding: "8px 15px",
+                  backgroundColor: currentPage === totalPages ? "#ccc" : "#007bff",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: currentPage === totalPages ? "not-allowed" : "pointer"
+                }}
+              >
+                بعدی
+              </button>
             </div>
           )}
         </div>
-      </div>
-    </MainLayoutjur>
-  );
+      )}
+
+      {categories.length === 0 && !loading && (
+        <div style={{ 
+          textAlign: "center", 
+          marginTop: "30px", 
+          padding: "30px", 
+          backgroundColor: "#f8f9fa",
+          borderRadius: "8px",
+          color: "#666"
+        }}>
+          هیچ کتگوری یافت نشد
+        </div>
+      )}
+    </div>
+  </MainLayoutjur>
+);
 }

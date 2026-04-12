@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+ import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import "./MainLayoutjur.css";
 import { ToastContainer } from "react-toastify";
@@ -16,7 +16,7 @@ export default function MainLayoutjur({ children, title }) {
   const isRTL = document.dir === "rtl";
 
   useEffect(() => {
-    // پیش‌بارگذاری
+    // پیش‌بارگذاری تصاویر
     backgrounds.forEach((src) => {
       const img = new Image();
       img.src = src;
@@ -36,10 +36,7 @@ export default function MainLayoutjur({ children, title }) {
       <div 
         className="main-layout"
         style={{
-          backgroundImage: `url(${backgrounds[currentIndex]})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          transition: "all 1.5s ease-in-out",
+          backgroundImage: `url(${backgrounds[currentIndex]})`
         }}
       >
         <div className="background-overlay">
