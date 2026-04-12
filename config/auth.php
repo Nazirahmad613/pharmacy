@@ -3,7 +3,7 @@
 return [
 
     'defaults' => [
-    'guard' => 'sanctum',
+    'guard' => 'web',
     'passwords' => 'users',
 ],
 
@@ -13,9 +13,6 @@ return [
         'provider' => 'users',
     ],
 
-    'sanctum' => [
-        'driver' => 'sanctum',
-        'provider' => 'users',
-    ],
+    
 ],
 ];

@@ -6,7 +6,9 @@ import {
   TextField,
   MenuItem,
   Button,
-  Typography
+  Typography,
+  CircularProgress,
+  Alert
 } from "@mui/material";
 import { Bar, Line } from "react-chartjs-2";
 import {
@@ -36,15 +38,36 @@ export default function BenefitsChart() {
   const [month, setMonth] = useState("");
   const [year, setYear] = useState("");
   const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const fetchData = async () => {
     try {
+      setLoading(true);
+      setError("");
       const res = await api.get("/benefits", {
         params: { type, month, year }
       });
-      setData(res.data);
+      
+      // ایمن‌سازی داده دریافتی
+      let responseData = [];
+      if (res.data) {
+        if (Array.isArray(res.data)) {
+          responseData = res.data;
+        } else if (res.data.data && Array.isArray(res.data.data)) {
+          responseData = res.data.data;
+        } else if (res.data.results && Array.isArray(res.data.results)) {
+          responseData = res.data.results;
+        }
+      }
+      
+      setData(responseData);
     } catch (err) {
       console.error(err);
+      setError("خطا در دریافت داده‌ها");
+      setData([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -56,62 +79,104 @@ export default function BenefitsChart() {
     fetchData();
   };
 
-  // آماده‌سازی دیتا برای گراف
-  const labels = data.map((item) =>
-    type === "yearly"
-      ? item.year
-      : type === "monthly"
-      ? item.month
-      : item.journal_date
-  );
+  // بررسی وجود داده (با ایمنی کامل)
+  const hasData = data && Array.isArray(data) && data.length > 0;
 
+  // تابع ایمن برای دریافت اعداد
+  const getSafeNumber = (value) => {
+    if (value === null || value === undefined) return 0;
+    const num = Number(value);
+    return isNaN(num) ? 0 : num;
+  };
+
+  // آماده‌سازی لیبل‌ها (فقط اگر داده وجود داشته باشد)
+  const labels = hasData ? data.map((item) => {
+    if (type === "yearly") return item?.year || "نامشخص";
+    if (type === "monthly") return item?.month || "نامشخص";
+    return item?.journal_date || "نامشخص";
+  }) : [];
+
+  // آماده‌سازی داده‌های نمودار
   const chartData = {
-    labels,
-    datasets: [
+    labels: labels,
+    datasets: hasData ? [
       {
         label: "درآمد",
-        data: data.map((item) => item.total_credit),
-        backgroundColor: "rgba(54, 162, 235, 0.6)", // آبی
+        data: data.map((item) => getSafeNumber(item?.total_credit)),
+        backgroundColor: "rgba(54, 162, 235, 0.6)",
         borderColor: "rgba(54, 162, 235, 1)",
         borderWidth: 1,
       },
       {
         label: "مصارف",
-        data: data.map((item) => item.total_debit),
-        backgroundColor: "rgba(255, 99, 132, 0.6)", // قرمز
+        data: data.map((item) => getSafeNumber(item?.total_debit)),
+        backgroundColor: "rgba(255, 99, 132, 0.6)",
         borderColor: "rgba(255, 99, 132, 1)",
         borderWidth: 1,
       },
       {
         label: "سود خالص",
-        data: data.map((item) => item.net_benefit),
-        backgroundColor: "rgba(75, 192, 192, 0.6)", // سبز-آبی
+        data: data.map((item) => getSafeNumber(item?.net_benefit)),
+        backgroundColor: "rgba(75, 192, 192, 0.6)",
         borderColor: "rgba(75, 192, 192, 1)",
         borderWidth: 1,
       }
-    ]
+    ] : []
   };
 
-  // گزینه‌های مشترک برای هر دو نمودار (کوچک‌سازی و زیباسازی)
   const options = {
     responsive: true,
-    maintainAspectRatio: false, // اجازه می‌دهد ارتفاع و عرض مستقل تنظیم شود
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'top',
       },
       tooltip: {
         callbacks: {
-          label: (context) => `${context.dataset.label}: ${context.raw.toLocaleString()}`
+          label: (context) => {
+            const value = context.raw;
+            const formattedValue = typeof value === 'number' ? value.toLocaleString('fa-IR') : '0';
+            return `${context.dataset.label}: ${formattedValue}`;
+          }
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          callback: (value) => value?.toLocaleString('fa-IR') || '0'
         }
       }
     }
   };
 
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+        <Typography mr={2}>در حال بارگذاری...</Typography>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box p={3}>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+        <Button variant="contained" onClick={handleSearch}>
+          تلاش مجدد
+        </Button>
+      </Box>
+    );
+  }
+
   return (
     <Box p={3}>
       <Card sx={{ p: 3 }}>
-        <Grid container spacing={2}>
+        <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} md={3}>
             <TextField
               select
@@ -130,6 +195,7 @@ export default function BenefitsChart() {
             <TextField
               label="ماه"
               fullWidth
+              placeholder="مثلاً 1"
               value={month}
               onChange={(e) => setMonth(e.target.value)}
             />
@@ -139,6 +205,7 @@ export default function BenefitsChart() {
             <TextField
               label="سال"
               fullWidth
+              placeholder="مثلاً 1403"
               value={year}
               onChange={(e) => setYear(e.target.value)}
             />
@@ -152,34 +219,42 @@ export default function BenefitsChart() {
         </Grid>
       </Card>
 
-    
-  
-<Grid container spacing={2} sx={{ mt: 3 }}>
-  {/* نمودار میله‌ای */}
-  <Grid item xs={12} md={6}>
-    <Card sx={{ p: 3 }}>
-      <Typography variant="h6" gutterBottom>
-        نمودار فواید (میله‌ای)
-      </Typography>
-      <Box sx={{ height: 300, width: '100%' }}>
-        <Bar data={chartData} options={options} />
-      </Box>
-    </Card>
-  </Grid>
+      {!hasData && !loading && !error && (
+        <Card sx={{ mt: 3, p: 5 }}>
+          <Typography variant="h6" textAlign="center" color="textSecondary">
+            داده‌ای برای نمایش وجود ندارد
+          </Typography>
+          <Typography variant="body2" textAlign="center" color="textSecondary" mt={1}>
+            لطفاً فیلترهای جستجو را تغییر دهید یا داده‌ای ایجاد کنید
+          </Typography>
+        </Card>
+      )}
+      
+      {hasData && (
+        <Grid container spacing={2} sx={{ mt: 1 }}>
+          <Grid item xs={12} md={6}>
+            <Card sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                نمودار فواید (میله‌ای)
+              </Typography>
+              <Box sx={{ height: 300, width: '100%' }}>
+                <Bar data={chartData} options={options} />
+              </Box>
+            </Card>
+          </Grid>
 
-  {/* نمودار خطی */}
-  <Grid item xs={12} md={6}>
-    <Card sx={{ p: 3 }}>
-      <Typography variant="h6" gutterBottom>
-        نمودار روند سود (خطی)
-      </Typography>
-      <Box sx={{ height: 300, width: '100%' }}>
-        <Line data={chartData} options={options} />
-      </Box>
-    </Card>
-  </Grid>
-</Grid>
-    
+          <Grid item xs={12} md={6}>
+            <Card sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                نمودار روند سود (خطی)
+              </Typography>
+              <Box sx={{ height: 300, width: '100%' }}>
+                <Line data={chartData} options={options} />
+              </Box>
+            </Card>
+          </Grid>
+        </Grid>
+      )}
     </Box>
   );
 }

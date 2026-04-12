@@ -14,18 +14,20 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-
-        // Sanctum
+        // Sanctum - برای API requests
         $middleware->api(prepend: [
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
         ]);
 
-        // Aliases
+        // Middleware aliases
         $middleware->alias([
             'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
             'admin' => AdminMiddleware::class,
-             'role' => CheckRole::class,   // 👈 این را اضافه کردیم
+            'role' => CheckRole::class,
         ]);
+        
+        // تنظیمات CORS برای اتصال به فرانت‌اند
+        $middleware->statefulApi();
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

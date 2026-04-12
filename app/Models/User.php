@@ -5,17 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
+use Laravel\Sanctum\HasApiTokens; // ✅ این خط حتماً باید باشد
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    
+    use HasApiTokens, HasFactory, Notifiable, HasRoles; // ✅ HasApiTokens اینجا اضافه شود
 
-     
- use HasApiTokens, HasFactory, Notifiable, HasRoles;
-
-    protected $guard_name = 'sanctum';
+    protected $guard_name = 'web';
 
     protected $fillable = [
         'name',
@@ -26,17 +23,21 @@ class User extends Authenticatable
     protected $casts = [
         'password' => 'hashed',
     ];
+
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * The attributes that should be cast.
-   
- 
-     * 🔹 دریافت لیست تمام نقش‌ها با عنوان فارسی
-     */
+    const ROLE_SUPER_ADMIN = 'super-admin';
+    const ROLE_ADMIN = 'admin';
+    const ROLE_HOSPITAL_HEAD = 'head-of-hospital';
+    const ROLE_DOCTOR = 'doctor';
+    const ROLE_PHARMACIST = 'pharmacist';
+    const ROLE_NURSE = 'nurse';
+    const ROLE_USER = 'user';
+    const ROLE_EMPLOYEES = 'employees';
+
     public static function getRoles(): array
     {
         return [
@@ -51,31 +52,22 @@ class User extends Authenticatable
         ];
     }
 
-    /**
-     * 🔹 دریافت عنوان فارسی نقش کاربر
-     */
-  public function getRoleNameAttribute(): string
-{
-    if ($this->roles->isNotEmpty()) {
-        return $this->roles->pluck('name')->join('، ');
+    public function getRoleNameAttribute(): string
+    {
+        if ($this->roles->isNotEmpty()) {
+            return $this->roles->pluck('name')->join('، ');
+        }
+
+        return 'بدون نقش';
     }
 
-    return 'بدون نقش';
-}
-
-    /**
-     * 🔹 رابطه با نسخه‌ها
-     */
     public function prescriptions()
     {
         return $this->hasMany(Prescription::class, 'doc_id', 'id');
     }
 
-    /**
-     * 🔹 رابطه با فروش‌ها
-     */
     public function sales()
     {
-        return $this->hasMany(Sale::class, 'created_by', 'id');
+        return $this->hasMany(Sales::class, 'created_by', 'id');
     }
 }

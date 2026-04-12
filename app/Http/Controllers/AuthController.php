@@ -10,42 +10,40 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    // ثبت‌نام کاربر
     public function register(Request $request)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6',
-            'role' => 'sometimes|in:' . implode(',', array_keys(User::getRoles())),
+            'role' => 'sometimes|string'
         ]);
 
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'password' => $validated['password'], // ✅ Mutator در مدل هش می‌کند
-            'role' => $validated['role'] ?? User::ROLE_USER, // نقش پیش‌فرض کاربر عادی
+            'password' => Hash::make($validated['password']),
         ]);
 
-        // ایجاد Personal Access Token
+        if (!empty($validated['role'])) {
+            $user->assignRole($validated['role']);
+        } else {
+            $user->assignRole('user');
+        }
+
+        // ✅ ایجاد توکن
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'success' => true,
-            'message' => 'ثبت‌نام با موفقیت انجام شد',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role,
-                'role_name' => $user->role_name,
-            ],
+            'message' => 'ثبت نام با موفقیت انجام شد',
+            'user' => $user,
             'token' => $token,
-            'permissions' => $this->getUserPermissions($user), // اضافه کردن دسترسی‌ها
+            'token_type' => 'Bearer',
+            'permissions' => $user->getAllPermissions()->pluck('name'),
         ], 201);
     }
 
-    // لاگین کاربر (API-safe)
     public function login(Request $request)
     {
         $validated = $request->validate([
@@ -53,132 +51,48 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        // بررسی اعتبارسنجی
         if (!Auth::attempt($validated)) {
-            throw ValidationException::withMessages([
-                'email' => ['ایمیل یا رمز عبور اشتباه است'],
-            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'ایمیل یا رمز عبور اشتباه است'
+            ], 401);
         }
 
         $user = Auth::user();
-
-        // حذف توکن‌های قبلی (اختیاری - اگر می‌خواهید هر بار توکن جدید بگیرد)
-        // $user->tokens()->delete();
-
-        // ایجاد Personal Access Token
+        
+        // ✅ ایجاد توکن جدید
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'success' => true,
-            'message' => 'ورود با موفقیت انجام شد',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role,
-                'role_name' => $user->role_name,
-            ],
+            'message' => 'ورود موفقیت آمیز',
+            'user' => $user,
             'token' => $token,
-            'permissions' => $this->getUserPermissions($user), // اضافه کردن دسترسی‌ها
-        ], 200);
+            'token_type' => 'Bearer',
+            'permissions' => $user->getAllPermissions()->pluck('name'),
+        ]);
     }
 
-    // لاگ‌اوت
     public function logout(Request $request)
     {
-        // حذف توکن فعلی کاربر
+        // ✅ حذف توکن فعلی
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([
             'success' => true,
-            'message' => 'با موفقیت خارج شدید'
-        ], 200);
+            'message' => 'خروج از سیستم با موفقیت انجام شد'
+        ]);
     }
 
-    // اطلاعات کاربر لاگین شده + دسترسی‌ها
     public function me(Request $request)
     {
         $user = $request->user();
         
         return response()->json([
             'success' => true,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role,
-                'role_name' => $user->role_name,
-            ],
-            'permissions' => $this->getUserPermissions($user),
-        ], 200);
-    }
-
-    /**
-     * دریافت دسترسی‌های کاربر بر اساس نقش
-     * این متد مستقل از متدهای کمکی مدل است و فقط از فیلد role استفاده می‌کند
-     */
-    private function getUserPermissions($user)
-{
-    // گرفتن تمام permission های کاربر از Spatie
-    return $user->getAllPermissions()->pluck('name');
-}
-    // دریافت لیست نقش‌ها
-    public function getRoles()
-    {
-        return response()->json([
-            'success' => true,
-            'roles' => User::getRoles(),
-        ]);
-    }
-
-    // تغییر رمز عبور
-    public function changePassword(Request $request)
-    {
-        $request->validate([
-            'current_password' => 'required',
-            'new_password' => 'required|min:6|confirmed',
-        ]);
-
-        $user = $request->user();
-
-        if (!Hash::check($request->current_password, $user->password)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'رمز عبور فعلی اشتباه است'
-            ], 400);
-        }
-
-        $user->password = $request->new_password;
-        $user->save();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'رمز عبور با موفقیت تغییر کرد'
-        ]);
-    }
-
-    // بروزرسانی پروفایل
-    public function updateProfile(Request $request)
-    {
-        $user = $request->user();
-
-        $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|email|unique:users,email,' . $user->id,
-        ]);
-
-        $user->update($request->only(['name', 'email']));
-
-        return response()->json([
-            'success' => true,
-            'message' => 'پروفایل با موفقیت بروزرسانی شد',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role,
-                'role_name' => $user->role_name,
-            ]
+            'user' => $user,
+            'permissions' => $user->getAllPermissions()->pluck('name'),
+            'roles' => $user->getRoleNames(),
         ]);
     }
 }

@@ -1,15 +1,10 @@
 <?php
 
 return [
-
     'models' => [
-        'permission' => App\Models\Permission::class,
+        'permission' => Spatie\Permission\Models\Permission::class,
         'role' => Spatie\Permission\Models\Role::class,
         'user' => App\Models\User::class,
-    ],
-
-    'defaults' => [
-        'guard' => 'sanctum',
     ],
 
     'table_names' => [
@@ -24,13 +19,13 @@ return [
         'role_pivot_key' => null,
         'permission_pivot_key' => null,
         'model_morph_key' => 'model_id',
-        'team_foreign_key' => 'team_id',
+        'team_foreign_key' => 'team_id', // ✅ این خط باید به این صورت باشد (string باشد نه null)
     ],
+
+    'teams' => false, // ✅ اگر از teams استفاده نمی‌کنید false بگذارید
 
     'register_permission_check_method' => true,
     'events_enabled' => false,
-
-    'teams' => false,
 
     'cache' => [
         'expiration_time' => \DateInterval::createFromDateString('24 hours'),

@@ -1,79 +1,55 @@
 <?php
 
-namespace App\Http\Controllers;
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
-use App\Models\Prescription;
-use App\Models\PrescriptionItem;
-use App\Models\Registrations;
-use App\Models\Journal;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-
-class PrescriptionController extends Controller
+return new class extends Migration
 {
-    public function store(Request $request)
+    public function up()
     {
-        $request->validate([
-            'patient_id' => 'required',
-            'doc_id' => 'required',
-            'pres_date' => 'required|date',
-            'items' => 'required|array|min:1',
-        ]);
+        Schema::create('sales_items', function (Blueprint $table) {
 
-        DB::transaction(function () use ($request) {
+            $table->id('sales_it_id');
 
-            // 1️⃣ snapshot اطلاعات مریض و داکتر
-            $patient = Registrations::find($request->patient_id);
-            $doc = Registrations::find($request->doc_id);
+            $table->unsignedBigInteger('sales_id');
+            $table->unsignedBigInteger('med_id');
+            $table->unsignedBigInteger('supplier_id');
+            $table->unsignedBigInteger('category_id');
 
-            $prescription = Prescription::create([
-                'patient_id'         => $request->patient_id,
-                'patient_name'       => $patient->full_name ?? $patient->name ?? null,
-                'patient_age'        => $patient->age ?? null,
-                'patient_phone'      => $patient->phone ?? null,
-                'patient_blood_group'=> $patient->blood_group ?? null,
+            $table->integer('quantity');
+            $table->decimal('unit_price', 15, 2);
+            $table->decimal('total_price', 15, 2);
+            $table->date('exp_date');
 
-                'doc_id'             => $request->doc_id,
-                'doc_name'           => $doc->full_name ?? $doc->name ?? null,
+            $table->timestamps();
 
-                'pres_num'           => $request->pres_num,
-                'pres_date'          => $request->pres_date,
-                'total_amount'       => $request->total_amount,
-                'discount'           => $request->discount,
-                'net_amount'         => $request->net_amount,
-            ]);
+            // ================= FOREIGN KEYS =================
 
-            // 2️⃣ ثبت آیتم‌های نسخه
-            foreach ($request->items as $item) {
-                PrescriptionItem::create([
-                    'pres_id'     => $prescription->pres_id,
-                    'category_id' => $item['category_id'],
-                    'med_id'      => $item['med_id'],
-                    'supplier_id' => $item['supplier_id'],
-                    'type'        => $item['type'] ?? null,
-                    'dosage'      => $item['dosage'] ?? null,
-                    'quantity'    => $item['quantity'],
-                    'unit_price'  => $item['unit_price'],
-                    'total_price' => $item['total_price'],
-                    'remarks'     => $item['remarks'] ?? null,
-                ]);
-            }
+            $table->foreign('sales_id')
+                ->references('sales_id')
+                ->on('sales')
+                ->onDelete('cascade');
 
-            // 3️⃣ ثبت journal
-            // مثال ساده: debit = net_amount، credit = 0، description = نام مریض + شماره نسخه
-            Journal::create([
-                'ref_type'   => 'Prescription',
-                'ref_id'     => $prescription->pres_id,
-                'date'       => $prescription->pres_date,
-                'description'=> "نسخه مریض: {$prescription->patient_name}, شماره: {$prescription->pres_num}",
-                'debit'      => $prescription->net_amount,
-                'credit'     => 0,
-                'balance'    => $prescription->net_amount, // در صورت نیاز محاسبه متغیر balance
-            ]);
+            $table->foreign('med_id')
+                ->references('med_id')
+                ->on('medications')
+                ->onDelete('cascade');
+
+            $table->foreign('supplier_id')
+                ->references('supplier_id')
+                ->on('suppliers')
+                ->onDelete('cascade');
+
+            $table->foreign('category_id')
+                ->references('category_id')
+                ->on('categories')
+                ->onDelete('cascade');
         });
-
-        return response()->json([
-            'message' => 'Prescription and journal saved successfully'
-        ], 201);
     }
-}
+
+    public function down()
+    {
+        Schema::dropIfExists('sales_items');
+    }
+};

@@ -3,40 +3,68 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
+use App\Models\User;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 
 class RolePermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        // پاک کردن cache
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // پاک کردن رول‌ها و پرمیشن‌ها برای جلوگیری از تکرار
-        Permission::truncate();
-        Role::truncate();
+        // ================= ROLES =================
+        $adminRole = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $userRole  = Role::firstOrCreate(['name' => 'user', 'guard_name' => 'web']);
 
-        // پرمیشن‌ها
+        // ================= PERMISSIONS =================
         $permissions = [
-            'create_patient', 'edit_patient', 'delete_patient', 'view_patient',
-            'create_prescription', 'edit_prescription', 'delete_prescription', 'view_prescription',
-            'create_sale', 'edit_sale', 'delete_sale', 'view_sale'
+            'view-users',
+            'create-users',
+            'edit-users',
+            'delete-users',
+
+            'view-roles',
+            'create-roles',
+            'edit-roles',
+            'delete-roles',
+
+            'view-permissions',
+            'create-permissions',
+            'delete-permissions',
+
+            'view-medications',
+            'create-medications',
+            'edit-medications',
+            'delete-medications',
         ];
 
         foreach ($permissions as $permission) {
-            Permission::create(['name' => $permission]);
+            Permission::firstOrCreate([
+                'name' => $permission,
+                'guard_name' => 'web'
+            ]);
         }
 
-        // رول‌ها
-        $superAdmin = Role::create(['name' => 'super-admin']);
-        $admin = Role::create(['name' => 'admin']);
-        $head = Role::create(['name' => 'head-of-hospital']);
-        $user = Role::create(['name' => 'user']);
+        // ================= ASSIGN PERMISSIONS TO ADMIN =================
+        $adminRole->syncPermissions($permissions);
 
-        // اتصال پرمیشن‌ها به رول‌ها
-        $superAdmin->givePermissionTo(Permission::all());
-        $admin->givePermissionTo(['create_patient','edit_patient','view_patient']);
-        $head->givePermissionTo(['view_patient','create_prescription','edit_prescription']);
-        $user->givePermissionTo(['view_patient','view_prescription']);
+        // ================= CREATE ADMIN USER =================
+        $admin = User::firstOrCreate(
+            ['email' => 'admin@gmail.com'],
+            [
+                'name' => 'Super Admin',
+                'password' => Hash::make('12345678'),
+                'role' => 'admin'
+            ]
+        );
+
+        // assign role
+        $admin->assignRole($adminRole);
+
+        $this->command->info('Roles, Permissions and Admin created successfully!');
     }
 }
