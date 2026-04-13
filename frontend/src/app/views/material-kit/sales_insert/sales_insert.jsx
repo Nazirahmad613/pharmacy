@@ -1,5 +1,3 @@
- 
-
 import { useState, useEffect, useRef } from "react";
 import MainLayoutjur from "../../../../components/MainLayoutjur";
 import { toast } from "react-toastify";
@@ -50,7 +48,7 @@ export default function SaleForm() {
   });
 
   const [saleItems, setSaleItems] = useState([]);
-  const [customerNID, setCustomerNID] = useState("");
+  const [customerNID, setCustomerNID] = useState(""); // شماره تذکره مشتری
 
   // pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -93,6 +91,7 @@ export default function SaleForm() {
     else setPaymentStatus("پرداخت کامل شده");
   }, [netSales, totalPaid]);
 
+  // دریافت لیست کتگوری‌ها، داروها، ثبت‌نام‌ها (تامین‌کنندگان و مشتریان)
   useEffect(() => {
     api.get("/categories").then(res => setCategories(res.data.data ?? res.data));
     api.get("/medications").then(res => setMedications(res.data.data ?? res.data));
@@ -103,13 +102,19 @@ export default function SaleForm() {
     });
   }, [api]);
 
+  // هرگاه مشتری تغییر کند، شماره تذکره آن را از لیست مشتریان پیدا کرده و در state ذخیره می‌کنیم
   useEffect(() => {
     if (!formItem.cust_id) {
       setCustomerNID("");
       return;
     }
     const cust = customers.find(c => Number(c.reg_id) === Number(formItem.cust_id));
-    if (cust) setCustomerNID(cust.tazkira_number ?? "");
+    if (cust && cust.tazkira_number) {
+      setCustomerNID(cust.tazkira_number);
+    } else {
+      setCustomerNID("");
+      if (cust) toast.warning("این مشتری شماره تذکره ثبت‌شده ندارد");
+    }
   }, [formItem.cust_id, customers]);
 
   const filteredMedications = medications.filter(
@@ -229,10 +234,11 @@ export default function SaleForm() {
       toast.error("❌ مشتری را انتخاب کنید");
       return;
     }
+    // شماره تذکره الزامی نیست، اما اگر وجود داشته باشد ارسال می‌شود
     const payload = {
       sales_date: saleDate || new Date().toISOString().split("T")[0],
       cust_id: formItem.cust_id,
-      tazkira_number: customerNID,
+      tazkira_number: customerNID, // شماره تذکره مشتری
       discount,
       total_paid: totalPaid,
       items: saleItems.map(item => ({
@@ -249,8 +255,8 @@ export default function SaleForm() {
       const res = await api.post("/sales", payload);
       setSalesId(res.data.sale_id);
       toast.success("✅ فروش با موفقیت ثبت شد");
-      resetForm();              // ← پاک کردن همه چیز بعد از ثبت
-      loadSales();              // ← بروزرسانی لیست
+      resetForm();
+      loadSales();
       setCurrentPage(1);
     } catch (err) {
       console.error(err);
@@ -296,9 +302,15 @@ export default function SaleForm() {
     } else {
       setFormItem({ ...formItem, cust_id: sale.cust_id });
     }
-    // تنظیم customerNID
-    const cust = customers.find(c => Number(c.reg_id) === Number(sale.cust_id));
-    if (cust) setCustomerNID(cust.tazkira_number ?? "");
+
+    // تنظیم شماره تذکره مشتری: ابتدا از خود آبجکت sale (اگر موجود باشد) استفاده کنیم
+    if (sale.tazkira_number) {
+      setCustomerNID(sale.tazkira_number);
+    } else {
+      // در غیر این صورت از لیست مشتریان پیدا می‌کنیم
+      const cust = customers.find(c => Number(c.reg_id) === Number(sale.cust_id));
+      setCustomerNID(cust?.tazkira_number ?? "");
+    }
   };
 
   // ==================== بروزرسانی فروش ====================
@@ -327,7 +339,7 @@ export default function SaleForm() {
     try {
       await api.put(`/sales/${editingId}`, payload);
       toast.success("✅ فروش با موفقیت بروزرسانی شد");
-      resetForm();            // ← پاک کردن فرم بعد از بروزرسانی
+      resetForm();
       loadSales();
       setCurrentPage(1);
     } catch (err) {
@@ -409,7 +421,7 @@ export default function SaleForm() {
           </div>
           <div>
             <label>شماره تذکره مشتری</label>
-            <input type="text" value={customerNID} readOnly />
+            <input type="text" value={customerNID} readOnly placeholder="پس از انتخاب مشتری نمایش داده می‌شود" />
           </div>
           <div>
             <label>مجموع فروش</label>

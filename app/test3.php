@@ -41,7 +41,6 @@ use App\Http\Controllers\BenefitController;
 |--------------------------------------------------------------------------
 */
 
- 
 /*
 |--------------------------------------------------------------------------
 | Authentication (PUBLIC)
@@ -52,6 +51,7 @@ Route::post('/login', [AuthController::class, 'login']);
 
 Route::get('/sales-view', [SalesController::class, 'view']); // View
 Route::get('/sales/chart', [SalesController::class, 'chart']);
+
 /*
 |--------------------------------------------------------------------------
 | Protected Routes (Token-based)
@@ -59,38 +59,43 @@ Route::get('/sales/chart', [SalesController::class, 'chart']);
 */
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/logs', [LogController::class, 'index']);
-    // ===== Users =====
-    // Only admin can delete users
-    Route::get('/users', [UserController::class, 'index']);
-    Route::post('/users', [UserController::class, 'store']);
-    Route::get('/users/{user}', [UserController::class, 'show']);
-    Route::put('/users/{user}', [UserController::class, 'update']);
-    Route::delete('/users/{user}', [UserController::class, 'destroy'])->middleware('admin');
+
+    // ===== Users ===== (با پرمیشن‌های مدیریت کاربران)
+    Route::get('/users', [UserController::class, 'index'])->middleware('view-users');
+    Route::post('/users', [UserController::class, 'store'])->middleware('create-users');
+    Route::get('/users/{user}', [UserController::class, 'show'])->middleware('view-users');
+    Route::put('/users/{user}', [UserController::class, 'update'])->middleware('edit-users');
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])
+        ->middleware('delete-users'); // جایگزین middleware('admin')
 
     // ===== Auth =====
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    // ==================== Role & Permission Routes ====================
+    // ==================== Role & Permission Routes (با پرمیشن‌ها) ====================
     // ------------------------------
     // رول‌ها
     // ------------------------------
-    Route::get('/roles', [RoleController::class, 'index']);
-    Route::post('/roles', [RoleController::class, 'store']);
-    Route::delete('/roles/{id}', [RoleController::class, 'destroy'])->middleware('admin');
+    Route::get('/roles', [RoleController::class, 'index'])->middleware('view-roles');
+    Route::post('/roles', [RoleController::class, 'store'])->middleware('create-roles');
+    Route::delete('/roles/{id}', [RoleController::class, 'destroy'])
+        ->middleware('delete-roles');
 
     // اختصاص پرمیشن به رول
-    Route::post('/roles/{id}/permissions', [RoleController::class, 'assignPermissions']);
+    Route::post('/roles/{id}/permissions', [RoleController::class, 'assignPermissions'])
+        ->middleware('assign-permissions');
 
     // حذف یک پرمیشن خاص از رول
-    Route::delete('/roles/{id}/permissions/{permissionId}', [RoleController::class, 'removePermission'])->middleware('admin');
+    Route::delete('/roles/{id}/permissions/{permissionId}', [RoleController::class, 'removePermission'])
+        ->middleware('edit-roles'); // یا می‌توانید از 'remove-permissions' استفاده کنید
 
     // ------------------------------
     // پرمیشن‌ها
     // ------------------------------
-    Route::get('/permissions', [PermissionController::class, 'index']);
-    Route::post('/permissions', [PermissionController::class, 'store']);
-    Route::delete('/permissions/{id}', [PermissionController::class, 'destroy'])->middleware('admin');
+    Route::get('/permissions', [PermissionController::class, 'index'])->middleware('view-permissions');
+    Route::post('/permissions', [PermissionController::class, 'store'])->middleware('create-permissions');
+    Route::delete('/permissions/{id}', [PermissionController::class, 'destroy'])
+        ->middleware('delete-permissions');
 
     // ===== Departments =====
     Route::get('/departments', [DepartementController::class, 'index']);
@@ -107,7 +112,6 @@ Route::middleware('auth:sanctum')->group(function () {
     // ===== Suppliers =====
     Route::get('/suppliers', [SupplierController::class, 'index']);
     Route::post('/suppliers', [SupplierController::class, 'store']);
-    // (اگر حذف تامین‌کننده نیز نیاز باشد، باید مسیر زیر را فعال کرده و middleware admin اضافه کنید)
     // Route::delete('/suppliers/{id}', [SupplierController::class, 'destroy'])->middleware('admin');
 
     // ===== Medications =====
@@ -120,7 +124,6 @@ Route::middleware('auth:sanctum')->group(function () {
     // ===== Doctors =====
     Route::get('/doctors', [DoctorController::class, 'index']);
     Route::post('/doctors', [DoctorController::class, 'store']);
-    // (در صورت نیاز به حذف پزشک، مسیر زیر را فعال کنید)
     // Route::delete('/doctors/{id}', [DoctorController::class, 'destroy'])->middleware('admin');
 
     // ===== Prescriptions =====
@@ -139,7 +142,6 @@ Route::middleware('auth:sanctum')->group(function () {
     // ===== Inventory =====
     Route::get('/inventory', [InventoryController::class, 'index']);
     Route::post('/inventory', [InventoryController::class, 'store']);
-    // (در صورت نیاز به حذف موجودی)
     // Route::delete('/inventory/{id}', [InventoryController::class, 'destroy'])->middleware('admin');
 
     // ===== Sales Details =====
@@ -154,7 +156,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/categories/{id}', [CategoryController::class, 'show']);
     Route::put('/categories/{id}', [CategoryController::class, 'update']);
     Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])
-    ->middleware('admin:delete-category');
+        ->middleware('admin:delete-category');
 
     // ===== PURCHASES ROUTES =====
     Route::prefix('parchases')->group(function () {
@@ -172,7 +174,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/sales', [SalesController::class, 'index']);
     Route::post('/sales', [SalesController::class, 'store']);
     Route::put('/sales/{sales_id}', [SalesController::class, 'update']);
-    Route::delete('/sales/{sales_id}', [SalesController::class, 'destroy'])->middleware('admin'); // CRUD
+    Route::delete('/sales/{sales_id}', [SalesController::class, 'destroy'])->middleware('admin');
 
     // ===== Journals =====
     Route::get('/journals', [JournalController::class, 'index']);
@@ -180,7 +182,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/journals', [JournalController::class, 'store']);
     Route::put('/journals/{id}', [JournalController::class, 'update']);
     Route::post('journals/upsert/{id?}', [JournalController::class, 'upsert']);
-    // (در صورت نیاز به حذف journal)
     // Route::delete('/journals/{id}', [JournalController::class, 'destroy'])->middleware('admin');
 
     // ===== Reports / Views =====
@@ -191,38 +192,26 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/view-supplier-purchases', [ViewSupplierPurchasesController::class, 'index']);
     Route::get('/hospital-reports', [HospitalReportController::class, 'index']);
     Route::get('/reports/medication-stock', function () {
-    return DB::table('vw_medication_status')->get();
-});
-  Route::get('/reports/medication-stock', [StockReportController::class, 'medicationStock']);
-// این مسیر برای تست گزارش فروش روزانه است
-Route::get('/dashboard-daily', function () {
-    return DB::table('view_dashboard_daily')->get();
-});
- Route::get('/benefits', [BenefitController::class, 'index']);
-
- 
-   
-   
+        return DB::table('vw_medication_status')->get();
+    });
+    Route::get('/reports/medication-stock', [StockReportController::class, 'medicationStock']);
+    Route::get('/dashboard-daily', function () {
+        return DB::table('view_dashboard_daily')->get();
+    });
+    Route::get('/benefits', [BenefitController::class, 'index']);
 });
 
-
-
+// مسیرهای عمومی (بدون نیاز به احراز هویت)
 Route::get('/sales-report', function (Request $request) {
     $type = $request->get('type', 'daily');
-
     $query = DB::table('view_sales_summary');
-
     if ($type) {
         $query->where('report_type', $type);
     }
-
     return $query->get();
-
 });
 
- Route::get('/benefits-chart', [BenefitController::class, 'chart']);
-
+Route::get('/benefits-chart', [BenefitController::class, 'chart']);
 Route::get('/test', function () {
     return response()->json(['message' => 'API is working']);
 });
- Route::get('/benefits-chart', [BenefitController::class, 'chart']); 

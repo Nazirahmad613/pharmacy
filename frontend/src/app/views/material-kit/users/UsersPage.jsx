@@ -19,16 +19,16 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { FaKey } from "react-icons/fa";
-// import { useAuth } from "app/contexts/AuthContext"; // غیرفعال کردیم برای تست
 import { NavLink } from "react-router-dom";
-import { toast, ToastContainer } from "react-toastify"; // ✅ اضافه کردن toast و ToastContainer
-import "react-toastify/dist/ReactToastify.css"; // ✅ اضافه کردن استایل toast
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function UsersPage() {
-  // 🔹 برای تست، یک currentUser موقت تعریف می‌کنیم
+  // موقت برای تست – در نهایی از AuthContext استفاده کنید
   const currentUser = { id: 1, name: "Test User", role: "admin" };
 
   const [users, setUsers] = useState([]);
+  const [roles, setRoles] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [formData, setFormData] = useState({
@@ -41,27 +41,22 @@ export default function UsersPage() {
 
   const isAdminOrSuper = ["admin", "super_admin"].includes(currentUser.role.toLowerCase());
 
-  // 🔹 فقط وقتی currentUser آماده است
   useEffect(() => {
-    // شبیه‌سازی درخواست API
-    api
-      .get("/users")
-      .then((res) => {
-        setUsers(res.data);
+    Promise.all([
+      api.get("/users"),
+      api.get("/roles")
+    ])
+      .then(([usersRes, rolesRes]) => {
+        setUsers(usersRes.data);
+        setRoles(rolesRes.data);
         setLoading(false);
       })
       .catch((err) => {
         console.error(err);
-        toast.error("❌ خطا در دریافت لیست کاربران"); // ✅ اضافه کردن پیام toast
+        toast.error("❌ خطا در دریافت اطلاعات");
         setLoading(false);
       });
   }, []);
-
-  const [roles, setRoles] = useState([]);
-
-useEffect(() => {
-  api.get("/roles").then(res => setRoles(res.data));
-}, []);
 
   if (loading) {
     return (
@@ -88,16 +83,15 @@ useEffect(() => {
     );
   }
 
-  // ===== بقیه کد بدون تغییر =====
   const handleOpenDialog = (user = null) => {
     if (user) {
       setEditingUser(user);
-       setFormData({
-  name: user.name,
-  email: user.email,
-  role: user.roles?.[0]?.name || "user",
-  password: ""
-});
+      setFormData({
+        name: user.name,
+        email: user.email,
+        role: user.roles?.[0]?.name || "user",
+        password: "", // همیشه خالی شروع می‌شود
+      });
     } else {
       setEditingUser(null);
       setFormData({ name: "", email: "", role: "user", password: "" });
@@ -108,7 +102,6 @@ useEffect(() => {
   const handleCloseDialog = () => setOpenDialog(false);
 
   const handleSave = () => {
-    // ✅ اعتبارسنجی فرم
     if (!formData.name.trim()) {
       toast.error("❌ نام کاربر را وارد کنید");
       return;
@@ -123,26 +116,36 @@ useEffect(() => {
     }
 
     if (editingUser) {
-      api.put(`/users/${editingUser.id}`, formData)
-        .then(() => {
-          setUsers(users.map(u => (u.id === editingUser.id ? { ...u, ...formData } : u)));
-          toast.success("✅ کاربر با موفقیت ویرایش شد"); // ✅ اضافه کردن پیام toast
+      // 🔹 فقط در صورتی که پسورد جدید وارد شده باشد آن را ارسال کن
+      const payload = {
+        name: formData.name,
+        email: formData.email,
+        role: formData.role,
+      };
+      if (formData.password && formData.password.trim() !== "") {
+        payload.password = formData.password;
+      }
+
+      api.put(`/users/${editingUser.id}`, payload)
+        .then((res) => {
+          setUsers(users.map(u => (u.id === editingUser.id ? res.data : u)));
+          toast.success("✅ کاربر با موفقیت ویرایش شد");
           handleCloseDialog();
         })
         .catch(err => {
           console.error(err);
-          toast.error("❌ خطا در ویرایش کاربر"); // ✅ اضافه کردن پیام toast
+          toast.error("❌ خطا در ویرایش کاربر");
         });
     } else {
       api.post("/users", formData)
         .then(res => {
           setUsers([...users, res.data]);
-          toast.success("✅ کاربر با موفقیت اضافه شد"); // ✅ اضافه کردن پیام toast
+          toast.success("✅ کاربر با موفقیت اضافه شد");
           handleCloseDialog();
         })
         .catch(err => {
           console.error(err);
-          toast.error("❌ خطا در افزودن کاربر"); // ✅ اضافه کردن پیام toast
+          toast.error("❌ خطا در افزودن کاربر");
         });
     }
   };
@@ -152,19 +155,18 @@ useEffect(() => {
       api.delete(`/users/${id}`)
         .then(() => {
           setUsers(users.filter(u => u.id !== id));
-          toast.success("✅ کاربر با موفقیت حذف شد"); // ✅ اضافه کردن پیام toast
+          toast.success("✅ کاربر با موفقیت حذف شد");
         })
         .catch(err => {
           console.error(err);
-          toast.error("❌ خطا در حذف کاربر"); // ✅ اضافه کردن پیام toast
+          toast.error("❌ خطا در حذف کاربر");
         });
     }
   };
 
   return (
     <ReportLayout>
-      {/* ✅ ToastContainer با استایل مناسب */}
-      <ToastContainer 
+      <ToastContainer
         position="top-right"
         autoClose={3000}
         hideProgressBar={false}
@@ -176,7 +178,7 @@ useEffect(() => {
         pauseOnHover
         theme="colored"
         limit={5}
-        style={{ 
+        style={{
           zIndex: 9999999,
           position: 'fixed',
           top: '20px',
@@ -195,7 +197,7 @@ useEffect(() => {
           <tr>
             <th>نام</th>
             <th>ایمیل</th>
-            <th> کاربرنقش</th>
+            <th>نقش</th>
             <th>عملیات</th>
           </tr>
         </thead>
@@ -205,10 +207,10 @@ useEffect(() => {
               <td>{u.name} <FaKey style={{ marginLeft: 5, color: "#007bff" }} /></td>
               <td>{u.email}</td>
               <td>
-  {u.roles && u.roles.length > 0
-    ? u.roles.map(r => r.name).join(", ")
-    : "بدون رول"}
-</td>
+                {u.roles && u.roles.length > 0
+                  ? u.roles.map(r => r.name).join(", ")
+                  : "بدون رول"}
+              </td>
               <td>
                 <IconButton color="primary" onClick={() => handleOpenDialog(u)}>
                   <EditIcon />
@@ -256,10 +258,10 @@ useEffect(() => {
             >
               <MenuItem value="user">User</MenuItem>
               {roles.map(role => (
-  <MenuItem key={role.id} value={role.name}>
-    {role.name}
-  </MenuItem>
-))}
+                <MenuItem key={role.id} value={role.name}>
+                  {role.name}
+                </MenuItem>
+              ))}
               <MenuItem value="hospital_head">رئیس عمومی شفاخانه</MenuItem>
               {isAdminOrSuper && <MenuItem value="super_admin">Super Admin</MenuItem>}
             </Select>

@@ -5,14 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens; // ✅ این خط حتماً باید باشد
+use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles; // ✅ HasApiTokens اینجا اضافه شود
+    use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
-    protected $guard_name = 'web';
+    // ✅ گارد sanctum برای هماهنگی با Sanctum
+    protected $guard_name = 'sanctum';
 
     protected $fillable = [
         'name',
@@ -28,6 +29,9 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+
+    // ✅ اضافه کردن role به appends تا در JSON خروجی قرار گیرد
+    protected $appends = ['role'];
 
     const ROLE_SUPER_ADMIN = 'super-admin';
     const ROLE_ADMIN = 'admin';
@@ -52,12 +56,26 @@ class User extends Authenticatable
         ];
     }
 
+    /**
+     * اکسسور role - مقدار فیلد role در دیتابیس را نادیده گرفته
+     * و نقش واقعی کاربر را برمی‌گرداند
+     */
+    public function getRoleAttribute(): string
+    {
+        if ($this->roles->isNotEmpty()) {
+            return $this->roles->first()->name;
+        }
+        return 'user'; // نقش پیش‌فرض
+    }
+
+    /**
+     * اکسسور role_name (برای نمایش چند نقش در صورت وجود)
+     */
     public function getRoleNameAttribute(): string
     {
         if ($this->roles->isNotEmpty()) {
             return $this->roles->pluck('name')->join('، ');
         }
-
         return 'بدون نقش';
     }
 

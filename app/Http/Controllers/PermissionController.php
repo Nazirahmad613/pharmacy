@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Permission;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
-use App\Services\LogService; // ✅ اضافه شد
+use App\Services\LogService;
 
 class PermissionController extends Controller
 {
@@ -21,7 +21,7 @@ class PermissionController extends Controller
         }
     }
 
-    // ایجاد پرمیشن جدید
+    // ایجاد پرمیشن جدید با گارد sanctum
     public function store(Request $request)
     {
         try {
@@ -29,12 +29,13 @@ class PermissionController extends Controller
                 'name' => 'required|string|unique:permissions,name',
             ]);
 
+            // ✅ تغییر گارد از 'web' به 'sanctum'
             $permission = Permission::create([
                 'name' => $request->name, 
-                'guard_name' => 'web'
+                'guard_name' => 'sanctum'
             ]);
             
-            // ✅ لاگ ایجاد
+            // لاگ ایجاد
             LogService::create(
                 'create',
                 'permissions',
@@ -54,20 +55,17 @@ class PermissionController extends Controller
         }
     }
 
-    // حذف پرمیشن
+    // حذف پرمیشن (بدون تغییر)
     public function destroy($id)
     {
         try {
-            // یافتن پرمیشن
             $permission = Permission::findOrFail($id);
             
-            // روش اول: استفاده از Query Builder برای بررسی وجود رابطه
             $rolesCount = \DB::table(config('permission.table_names.role_has_permissions'))
                 ->where('permission_id', $id)
                 ->count();
             
             if ($rolesCount > 0) {
-                // دریافت نام رول‌هایی که از این پرمیشن استفاده می‌کنند
                 $roles = \DB::table(config('permission.table_names.role_has_permissions'))
                     ->join(config('permission.table_names.roles'), config('permission.table_names.role_has_permissions') . '.role_id', '=', config('permission.table_names.roles') . '.id')
                     ->where(config('permission.table_names.role_has_permissions') . '.permission_id', $id)
@@ -81,16 +79,11 @@ class PermissionController extends Controller
                 ], 400);
             }
             
-            // ✅ ذخیره اطلاعات قبل از حذف
             $data = $permission->toArray();
-
-            // حذف پرمیشن
             $permission->delete();
             
-            // پاک کردن کش
             app()->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
 
-            // ✅ لاگ حذف
             LogService::create(
                 'delete',
                 'permissions',
@@ -113,14 +106,12 @@ class PermissionController extends Controller
         }
     }
 
-    // روش جایگزین برای حذف پرمیشن (اگر روش بالا کار نکرد)
+    // روش جایگزین (اختیاری) – بدون تغییر
     public function destroyAlternative($id)
     {
         try {
-            // یافتن پرمیشن
             $permission = Permission::findOrFail($id);
             
-            // روش دوم: استفاده از مدل Role برای بررسی
             $roles = \App\Models\Role::whereHas('permissions', function($query) use ($id) {
                 $query->where('id', $id);
             })->get();
@@ -133,16 +124,11 @@ class PermissionController extends Controller
                 ], 400);
             }
             
-            // ✅ ذخیره اطلاعات قبل از حذف
             $data = $permission->toArray();
-
-            // حذف پرمیشن
             $permission->delete();
             
-            // پاک کردن کش
             app()->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
 
-            // ✅ لاگ حذف
             LogService::create(
                 'delete',
                 'permissions',
