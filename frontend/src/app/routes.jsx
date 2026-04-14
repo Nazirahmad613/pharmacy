@@ -8,12 +8,12 @@ import Loadable from "./components/Loadable";
 import MatxLayout from "./components/MatxLayout/MatxLayout";
 import sessionRoutes from "./views/sessions/session-routes";
 import materialRoutes from "app/views/material-kit/MaterialRoutes";
- 
+import UsersPage from "../app/views/material-kit/users/UsersPage";
 
 // Pages
 const AppEchart = Loadable(lazy(() => import("app/views/charts/echarts/AppEchart")));
 const Analytics = Loadable(lazy(() => import("app/views/dashboard/Analytics")));
-const UsersPage = Loadable(lazy(() => import("../app/views/material-kit/users/UsersPage")));
+const UserProfile = Loadable(lazy(() => import("../app/views/material-kit/users/UserProfile")));
 
 // موجود (صفحه استاک دوا)
 const MedicationStockTable = Loadable(
@@ -50,6 +50,11 @@ const routes = [
       { path: "dashboard/default", element: <Analytics />, auth: authRoles.admin },
       { path: "charts/echarts", element: <AppEchart />, auth: authRoles.editor },
       { path: "users", element: <UsersPage />, auth: authRoles.admin },
+      
+      // مسیر پروفایل - با نام UserProfile
+      { path: "profile", element: <UserProfile />, auth: authRoles.admin },
+      { path: "user/profile", element: <UserProfile />, auth: authRoles.admin },
+      { path: "user/user-profile", element: <UserProfile />, auth: authRoles.admin },
 
       // مسیر استاک دوا
       {
@@ -97,7 +102,7 @@ const routes = [
         path: "reports/medication-stock-chart",
         element: <MedicationStockChart />,
         auth: authRoles.admin
-      }
+      },
     ]
   },
 

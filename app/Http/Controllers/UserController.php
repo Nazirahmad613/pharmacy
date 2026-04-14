@@ -5,15 +5,21 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
-    public function index()
+       public function index()
     {
-        return response()->json(
-            User::with('roles', 'permissions')->get()
-        );
+        $users = User::with('roles', 'permissions')->get();
+        
+        // اضافه کردن avatar_url به هر کاربر
+        $users->each(function($user) {
+            $user->avatar_url = $user->avatar_url;
+        });
+        
+        return response()->json($users);
     }
 
     public function store(Request $request)
@@ -24,13 +30,22 @@ class UserController extends Controller
             'email'    => 'required|email|unique:users,email',
             'password' => 'required|min:6',
             'role'     => 'required|exists:roles,name',
+            'avatar'   => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // اعتبارسنجی عکس
         ]);
 
-        $user = User::create([
+        $userData = [
             'name'     => $request->name,
             'email'    => $request->email,
             'password' => Hash::make($request->password),
-        ]);
+        ];
+
+        // ذخیره عکس اگر وجود داشته باشد
+        if ($request->hasFile('avatar')) {
+            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            $userData['avatar'] = $avatarPath;
+        }
+
+        $user = User::create($userData);
 
         // تخصیص نقش با گارد تعریف‌شده در مدل (همان sanctum)
         $user->assignRole($request->role);
@@ -45,6 +60,7 @@ class UserController extends Controller
             'email'    => 'sometimes|email|unique:users,email,' . $user->id,
             'password' => 'nullable|min:6',
             'role'     => 'nullable|exists:roles,name',
+            'avatar'   => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // اعتبارسنجی عکس
         ]);
 
         // به‌روزرسانی فیلدهای اصلی
@@ -53,6 +69,16 @@ class UserController extends Controller
         // اگر پسورد جدید ارسال شده باشد، هش و ذخیره کن
         if ($request->filled('password')) {
             $user->password = Hash::make($request->password);
+        }
+
+        // ذخیره عکس جدید اگر وجود داشته باشد
+        if ($request->hasFile('avatar')) {
+            // حذف عکس قدیمی اگر وجود داشته باشد
+            if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
+                Storage::disk('public')->delete($user->avatar);
+            }
+            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            $user->avatar = $avatarPath;
         }
 
         $user->save();
@@ -72,6 +98,11 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
+        // حذف عکس کاربر اگر وجود داشته باشد
+        if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
+            Storage::disk('public')->delete($user->avatar);
+        }
+        
         $user->delete();
         return response()->json(['message' => 'deleted']);
     }

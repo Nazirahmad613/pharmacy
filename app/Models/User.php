@@ -19,6 +19,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'avatar', // اضافه شدن فیلد عکس
     ];
 
     protected $casts = [
@@ -79,13 +80,36 @@ class User extends Authenticatable
         return 'بدون نقش';
     }
 
+    /**
+     * اکسسور avatar_url - آدرس کامل عکس پروفایل
+     */
+       public function getAvatarUrlAttribute(): string
+    {
+        // اگر avatar وجود داشته باشد
+        if ($this->avatar) {
+            // چک کردن اینکه آیا آدرس کامل است یا نسبی
+            if (filter_var($this->avatar, FILTER_VALIDATE_URL)) {
+                return $this->avatar;
+            }
+            
+            // اگر فایل در استوریج وجود دارد
+            $avatarPath = storage_path('app/public/' . $this->avatar);
+            if (file_exists($avatarPath)) {
+                return asset('storage/' . $this->avatar);
+            }
+        }
+        
+        // اگر عکس وجود نداشت، از ui-avatars استفاده کن
+        return 'https://ui-avatars.com/api/?background=0D8F81&color=fff&name=' . urlencode($this->name);
+    }
+
     public function prescriptions()
     {
         return $this->hasMany(Prescription::class, 'doc_id', 'id');
     }
 
-    public function sales()
-    {
-        return $this->hasMany(Sales::class, 'created_by', 'id');
-    }
+     public function sales(){
+
+      return $this->hasMany(Sales::class, 'created_by', 'id');
+     }
 }

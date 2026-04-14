@@ -1,5 +1,5 @@
-import { memo } from "react";
-import { Link } from "react-router-dom";
+import { memo, useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
 import Avatar from "@mui/material/Avatar";
@@ -12,9 +12,6 @@ import Home from "@mui/icons-material/Home";
 import Menu from "@mui/icons-material/Menu";
 import Person from "@mui/icons-material/Person";
 import Settings from "@mui/icons-material/Settings";
-import WebAsset from "@mui/icons-material/WebAsset";
-import MailOutline from "@mui/icons-material/MailOutline";
-import StarOutline from "@mui/icons-material/StarOutline";
 import PowerSettingsNew from "@mui/icons-material/PowerSettingsNew";
 import useAuth from "app/hooks/useAuth";
 import useSettings from "app/hooks/useSettings";
@@ -25,6 +22,7 @@ import { MatxMenu, MatxSearchBox } from "app/components";
 import { NotificationBar } from "app/components/NotificationBar";
 import { themeShadows } from "app/components/MatxTheme/themeColors";
 import { topBarHeight } from "app/utils/constant";
+import { FaUserCircle } from "react-icons/fa";
 
 const StyledIconButton = styled(IconButton)(({ theme }) => ({
   color: theme.palette.text.primary
@@ -58,6 +56,16 @@ const Layout1Topbar = () => {
   const { logout, user } = useAuth();
   const isMdScreen = useMediaQuery(theme.breakpoints.down("md"));
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
+  const [avatarError, setAvatarError] = useState(false);
+  
+  useEffect(() => {
+    console.log("User object in Topbar:", user);
+    if (user) {
+      console.log("User avatar:", user.avatar);
+      console.log("User avatar_url:", user.avatar_url);
+    }
+  }, [user]);
   
   const updateSidebarMode = (sidebarSettings) => {
     updateSettings({ layout1Settings: { leftSidebar: { ...sidebarSettings } } });
@@ -73,6 +81,39 @@ const Layout1Topbar = () => {
     }
     updateSidebarMode({ mode });
   };
+
+  const getAvatarUrl = () => {
+    if (!user) return null;
+    
+    if (user.avatar_url) {
+      return user.avatar_url;
+    }
+    
+    if (user.avatar) {
+      if (user.avatar.startsWith('http://') || user.avatar.startsWith('https://')) {
+        return user.avatar;
+      }
+      
+      if (user.avatar.startsWith('/storage/')) {
+        return window.location.origin + user.avatar;
+      }
+      
+      if (user.avatar.startsWith('avatars/')) {
+        return `${window.location.origin}/storage/${user.avatar}`;
+      }
+      
+      return `${window.location.origin}/storage/${user.avatar}`;
+    }
+    
+    return null;
+  };
+
+  const handleAvatarError = () => {
+    console.error("Avatar failed to load:", avatarUrl);
+    setAvatarError(true);
+  };
+
+  const avatarUrl = getAvatarUrl();
 
   return (
     <TopbarRoot dir={i18n.language === "fa" ? "rtl" : "ltr"}>
@@ -94,11 +135,17 @@ const Layout1Topbar = () => {
 
           <MatxMenu
             menuButton={
-              <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
                 <Span>
-                  {t("hi")} <strong>{user.name}</strong>
+                  {t("hi")} <strong>{user?.name || ""}</strong>
                 </Span>
-                <Avatar src={user.avatar} sx={{ cursor: "pointer" }} />
+                <Avatar 
+                  src={!avatarError ? avatarUrl : null} 
+                  sx={{ cursor: "pointer", width: 40, height: 40 }}
+                  onError={handleAvatarError}
+                >
+                  {(avatarError || !avatarUrl) && <FaUserCircle style={{ fontSize: 24 }} />}
+                </Avatar>
               </div>
             }>
             <MenuItem>
@@ -108,16 +155,16 @@ const Layout1Topbar = () => {
               </Link>
             </MenuItem>
 
-            <MenuItem>
-              <Link to="/page-layouts/user-profile">
-                <Person />
-                <Span sx={{ marginInlineStart: 1 }}>{t("profile")}</Span>
-              </Link>
+            <MenuItem onClick={() => navigate("/user/user-profile")}>
+              <Person />
+              <Span sx={{ marginInlineStart: 1 }}>{t("profile")}</Span>
             </MenuItem>
 
             <MenuItem>
-              <Settings />
-              <Span sx={{ marginInlineStart: 1 }}>{t("settings")}</Span>
+              <Link to="/settings">
+                <Settings />
+                <Span sx={{ marginInlineStart: 1 }}>{t("settings")}</Span>
+              </Link>
             </MenuItem>
 
             <MenuItem onClick={logout}>

@@ -15,17 +15,19 @@ import {
   InputLabel,
   IconButton,
   CircularProgress,
+  Avatar,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { FaKey } from "react-icons/fa";
+import { FaKey, FaUserCircle } from "react-icons/fa";
 import { NavLink } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useAuth } from "../../../contexts/AuthContext"; // اضافه شده
 
 export default function UsersPage() {
-  // موقت برای تست – در نهایی از AuthContext استفاده کنید
-  const currentUser = { id: 1, name: "Test User", role: "admin" };
+  // استفاده از AuthContext به جای currentUser موقت
+  const { user: currentUser, updateUser } = useAuth(); // اصلاح شده
 
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
@@ -36,10 +38,13 @@ export default function UsersPage() {
     email: "",
     role: "user",
     password: "",
+    avatar: null,
   });
+  const [avatarPreview, setAvatarPreview] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
 
-  const isAdminOrSuper = ["admin", "super_admin"].includes(currentUser.role.toLowerCase());
+  const isAdminOrSuper = currentUser && ["admin", "super_admin"].includes(currentUser.role?.toLowerCase() || "");
 
   useEffect(() => {
     Promise.all([
@@ -68,7 +73,7 @@ export default function UsersPage() {
     );
   }
 
-  if (currentUser.role === "hospital_head") {
+  if (currentUser?.role === "hospital_head") {
     return (
       <ReportLayout>
         <Box sx={{ textAlign: "center", mt: 5 }}>
@@ -90,18 +95,36 @@ export default function UsersPage() {
         name: user.name,
         email: user.email,
         role: user.roles?.[0]?.name || "user",
-        password: "", // همیشه خالی شروع می‌شود
+        password: "",
+        avatar: null,
       });
+      setAvatarPreview(user.avatar_url || null);
     } else {
       setEditingUser(null);
-      setFormData({ name: "", email: "", role: "user", password: "" });
+      setFormData({ name: "", email: "", role: "user", password: "", avatar: null });
+      setAvatarPreview(null);
     }
     setOpenDialog(true);
   };
 
-  const handleCloseDialog = () => setOpenDialog(false);
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setAvatarPreview(null);
+  };
 
-  const handleSave = () => {
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData({ ...formData, avatar: file });
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSave = async () => {
     if (!formData.name.trim()) {
       toast.error("❌ نام کاربر را وارد کنید");
       return;
@@ -115,38 +138,75 @@ export default function UsersPage() {
       return;
     }
 
+    setUploading(true);
+
     if (editingUser) {
-      // 🔹 فقط در صورتی که پسورد جدید وارد شده باشد آن را ارسال کن
-      const payload = {
-        name: formData.name,
-        email: formData.email,
-        role: formData.role,
-      };
+      const formDataToSend = new FormData();
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('email', formData.email);
+      formDataToSend.append('role', formData.role);
+      
       if (formData.password && formData.password.trim() !== "") {
-        payload.password = formData.password;
+        formDataToSend.append('password', formData.password);
+      }
+      
+      if (formData.avatar instanceof File) {
+        formDataToSend.append('avatar', formData.avatar);
+      }
+      
+      formDataToSend.append('_method', 'PUT');
+
+      try {
+        const res = await api.post(`/users/${editingUser.id}`, formDataToSend, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        
+        const updatedUser = res.data;
+        setUsers(users.map(u => (u.id === editingUser.id ? updatedUser : u)));
+        
+        // ✅ به‌روزرسانی کاربر فعلی اگر خودش باشد
+        if (currentUser && currentUser.id === editingUser.id) {
+          updateUser(updatedUser);
+          toast.success("✅ اطلاعات شما با موفقیت به‌روزرسانی شد");
+        } else {
+          toast.success("✅ کاربر با موفقیت ویرایش شد");
+        }
+        
+        handleCloseDialog();
+      } catch (err) {
+        console.error(err);
+        toast.error("❌ خطا در ویرایش کاربر");
+      } finally {
+        setUploading(false);
+      }
+    } else {
+      const formDataToSend = new FormData();
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('email', formData.email);
+      formDataToSend.append('password', formData.password);
+      formDataToSend.append('role', formData.role);
+      
+      if (formData.avatar instanceof File) {
+        formDataToSend.append('avatar', formData.avatar);
       }
 
-      api.put(`/users/${editingUser.id}`, payload)
-        .then((res) => {
-          setUsers(users.map(u => (u.id === editingUser.id ? res.data : u)));
-          toast.success("✅ کاربر با موفقیت ویرایش شد");
-          handleCloseDialog();
-        })
-        .catch(err => {
-          console.error(err);
-          toast.error("❌ خطا در ویرایش کاربر");
+      try {
+        const res = await api.post("/users", formDataToSend, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
         });
-    } else {
-      api.post("/users", formData)
-        .then(res => {
-          setUsers([...users, res.data]);
-          toast.success("✅ کاربر با موفقیت اضافه شد");
-          handleCloseDialog();
-        })
-        .catch(err => {
-          console.error(err);
-          toast.error("❌ خطا در افزودن کاربر");
-        });
+        setUsers([...users, res.data]);
+        toast.success("✅ کاربر با موفقیت اضافه شد");
+        handleCloseDialog();
+      } catch (err) {
+        console.error(err);
+        toast.error("❌ خطا در افزودن کاربر");
+      } finally {
+        setUploading(false);
+      }
     }
   };
 
@@ -195,6 +255,7 @@ export default function UsersPage() {
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr>
+            <th>عکس</th>
             <th>نام</th>
             <th>ایمیل</th>
             <th>نقش</th>
@@ -204,6 +265,15 @@ export default function UsersPage() {
         <tbody>
           {users.map(u => (
             <tr key={u.id}>
+              <td style={{ textAlign: "center" }}>
+                <Avatar 
+                  src={u.avatar_url} 
+                  alt={u.name}
+                  sx={{ width: 40, height: 40 }}
+                >
+                  {!u.avatar_url && <FaUserCircle />}
+                </Avatar>
+              </td>
               <td>{u.name} <FaKey style={{ marginLeft: 5, color: "#007bff" }} /></td>
               <td>{u.email}</td>
               <td>
@@ -233,6 +303,33 @@ export default function UsersPage() {
       <Dialog open={openDialog} onClose={handleCloseDialog}>
         <DialogTitle>{editingUser ? "ویرایش کاربر" : "افزودن کاربر"}</DialogTitle>
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 300 }}>
+          <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+            <Box sx={{ position: "relative", display: "inline-block" }}>
+              <Avatar
+                src={avatarPreview || (editingUser?.avatar_url)}
+                alt={formData.name || "Avatar"}
+                sx={{ width: 100, height: 100, cursor: "pointer" }}
+                onClick={() => document.getElementById('avatar-input').click()}
+              >
+                {!avatarPreview && !editingUser?.avatar_url && <FaUserCircle style={{ fontSize: 80 }} />}
+              </Avatar>
+              <input
+                id="avatar-input"
+                type="file"
+                accept="image/*"
+                style={{ display: "none" }}
+                onChange={handleAvatarChange}
+              />
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => document.getElementById('avatar-input').click()}
+                sx={{ mt: 1, display: "block", mx: "auto" }}
+              >
+                انتخاب عکس
+              </Button>
+            </Box>
+          </Box>
           <TextField
             label="نام"
             value={formData.name}
@@ -269,8 +366,8 @@ export default function UsersPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>لغو</Button>
-          <Button variant="contained" color="primary" onClick={handleSave}>
-            {editingUser ? "ذخیره تغییرات" : "افزودن"}
+          <Button variant="contained" color="primary" onClick={handleSave} disabled={uploading}>
+            {uploading ? <CircularProgress size={24} /> : (editingUser ? "ذخیره تغییرات" : "افزودن")}
           </Button>
         </DialogActions>
       </Dialog>

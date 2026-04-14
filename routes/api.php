@@ -51,6 +51,8 @@ Route::post('/login', [AuthController::class, 'login']);
 
 Route::get('/sales-view', [SalesController::class, 'view']);
 Route::get('/sales/chart', [SalesController::class, 'chart']);
+Route::put('/profile', [ProfileController::class, 'updateProfile']);
+    Route::get('/profile', [ProfileController::class, 'getProfile']);
 
 /*
 |--------------------------------------------------------------------------

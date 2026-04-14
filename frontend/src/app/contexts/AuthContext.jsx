@@ -5,7 +5,7 @@ import axios from "axios";
 const api = axios.create({
   baseURL: "http://localhost:8000/api",
   headers: {
-    Accept: "application/json", // 🔥 مهم برای جلوگیری از redirect
+    Accept: "application/json",
   },
 });
 
@@ -30,7 +30,6 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem("token");
 
-      // ❗ فقط اگر در login نیست redirect کن
       if (!window.location.pathname.includes("/session/login")) {
         window.location.href = "/session/login";
       }
@@ -41,6 +40,39 @@ api.interceptors.response.use(
 );
 
 const AuthContext = createContext(null);
+
+// ✅ تابع کمکی برای ساخت آدرس کامل عکس
+const getAvatarUrl = (userData) => {
+  if (!userData) return null;
+  
+  // اگر avatar_url وجود دارد
+  if (userData.avatar_url) {
+    return userData.avatar_url;
+  }
+  
+  // اگر avatar وجود دارد
+  if (userData.avatar) {
+    // اگر آدرس کامل است
+    if (userData.avatar.startsWith('http://') || userData.avatar.startsWith('https://')) {
+      return userData.avatar;
+    }
+    // حذف اسلش اضافی و ساخت آدرس کامل
+    const cleanPath = userData.avatar.replace(/^\/+/, '');
+    return `http://localhost:8000/storage/${cleanPath}`;
+  }
+  
+  return null;
+};
+
+// ✅ تابع برای پردازش اطلاعات کاربر و اضافه کردن avatar_url
+const processUserData = (userData) => {
+  if (!userData) return null;
+  
+  return {
+    ...userData,
+    avatar_url: getAvatarUrl(userData)
+  };
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -57,7 +89,10 @@ export const AuthProvider = ({ children }) => {
     api
       .get("/me")
       .then((res) => {
-        setUser(res.data.user ?? res.data);
+        const rawUser = res.data.user ?? res.data;
+        // ✅ پردازش کاربر و اضافه کردن avatar_url
+        const processedUser = processUserData(rawUser);
+        setUser(processedUser);
       })
       .catch(() => {
         localStorage.removeItem("token");
@@ -68,11 +103,14 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     const res = await api.post("/login", { email, password });
-
+    
     localStorage.setItem("token", res.data.token);
-    setUser(res.data.user);
-
-    return res.data;
+    
+    // ✅ پردازش کاربر و اضافه کردن avatar_url
+    const processedUser = processUserData(res.data.user);
+    setUser(processedUser);
+    
+    return { ...res.data, user: processedUser };
   };
 
   const logout = () => {
@@ -81,8 +119,19 @@ export const AuthProvider = ({ children }) => {
     window.location.href = "/session/signin";
   };
 
+  // ✅ تابع برای به‌روزرسانی کاربر (مثلاً بعد از آپلود عکس)
+  const updateUser = (updatedData) => {
+    const updatedUser = {
+      ...user,
+      ...updatedData,
+      avatar_url: getAvatarUrl({ ...user, ...updatedData })
+    };
+    setUser(updatedUser);
+    return updatedUser;
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, api }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, api, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
