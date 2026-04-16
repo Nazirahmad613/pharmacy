@@ -16,9 +16,11 @@ class ProfileController extends Controller
         
         return response()->json($user);
     }
-
+        
     public function updateProfile(Request $request)
     {
+ 
+
         $user = $request->user();
 
         $request->validate([

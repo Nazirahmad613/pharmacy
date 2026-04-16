@@ -5,6 +5,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\CheckRole;
+use Illuminate\Http\Middleware\HandleCors;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -14,10 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Sanctum - برای API requests
-        $middleware->api(prepend: [
-            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-        ]);
+
+        // ❌ حذف شد: EnsureFrontendRequestsAreStateful
+        // ❌ حذف شد: statefulApi()
+
+        // ✔️ فقط CORS
+        $middleware->append(HandleCors::class);
 
         // Middleware aliases
         $middleware->alias([
@@ -25,9 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => AdminMiddleware::class,
             'role' => CheckRole::class,
         ]);
-        
-        // تنظیمات CORS برای اتصال به فرانت‌اند
-        $middleware->statefulApi();
+
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

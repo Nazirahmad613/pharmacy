@@ -34,6 +34,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\DepartementController;
 use App\Http\Controllers\BenefitController;
+use App\Http\Controllers\ProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -51,8 +52,6 @@ Route::post('/login', [AuthController::class, 'login']);
 
 Route::get('/sales-view', [SalesController::class, 'view']);
 Route::get('/sales/chart', [SalesController::class, 'chart']);
-Route::put('/profile', [ProfileController::class, 'updateProfile']);
-    Route::get('/profile', [ProfileController::class, 'getProfile']);
 
 /*
 |--------------------------------------------------------------------------
@@ -60,6 +59,8 @@ Route::put('/profile', [ProfileController::class, 'updateProfile']);
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth:sanctum')->group(function () {
+    Route::put('/profile', [ProfileController::class, 'updateProfile']);
+        Route::get('/profile', [ProfileController::class, 'getProfile']);
     // ===== Logs =====
     Route::get('/logs', [LogController::class, 'index'])->middleware('can:view-logs');
 

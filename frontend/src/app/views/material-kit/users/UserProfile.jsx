@@ -133,11 +133,14 @@ export default function ProfilePage() {
 
       formDataToSend.append("_method", "PUT");
 
-      const res = await api.post(`/profile`, formDataToSend, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+   const token = localStorage.getItem("token");
+
+const res = await api.post(`/profile`, formDataToSend, {
+  headers: {
+    "Content-Type": "multipart/form-data",
+    Authorization: `Bearer ${token}`,
+  },
+});
 
       const updatedUser = res.data.user || res.data;
       updateUser(updatedUser);
@@ -176,30 +179,29 @@ export default function ProfilePage() {
 
   return (
     <ReportLayout>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={true}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="colored"
-        limit={5}
-        style={{
-          zIndex: 9999999,
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          left: 'auto',
-          width: 'auto',
-          maxWidth: '350px',
-          transform: 'none'
-        }}
-      />
-
+<ToastContainer
+  position="top-left"
+  autoClose={1500}
+  hideProgressBar={false}
+  newestOnTop
+  closeOnClick
+  rtl={true}
+  pauseOnFocusLoss
+  draggable
+  pauseOnHover
+  theme="colored"
+  limit={5}
+  style={{
+    zIndex: 9999999,
+    position: 'fixed',
+    top: '20px',
+    left: '20px',
+    right: 'auto',
+    width: 'auto',
+    maxWidth: '350px',
+    transform: 'none'
+  }}
+/>
       <Box sx={{ maxWidth: 800, mx: "auto", p: 3 }}>
         <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
           <CardContent>
