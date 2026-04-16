@@ -4,6 +4,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useAuth } from "app/contexts/AuthContext";
 import AdminRoute from "../AdminRoute";
+import "../../../../components/ReportLayout"; // وارد کردن فایل CSS
 
 export default function RolesPermissionsPage() {
   const { api } = useAuth();
@@ -134,7 +135,6 @@ export default function RolesPermissionsPage() {
       const response = await api.delete(`/permissions/${permId}`);
       toast.success(response.data.message || "پرمیشن با موفقیت حذف شد");
       
-      // Update selectedPermissions state
       setSelectedPermissions((prev) => {
         const newState = { ...prev };
         Object.keys(newState).forEach(roleId => {
@@ -144,7 +144,7 @@ export default function RolesPermissionsPage() {
       });
       
       await fetchPermissions();
-      await fetchRoles(); // Refresh roles to update permission lists
+      await fetchRoles();
     } catch (err) {
       console.error("Error deleting permission:", err);
       const errorMessage = err.response?.data?.error || "خطا در حذف پرمیشن";
@@ -169,13 +169,12 @@ export default function RolesPermissionsPage() {
       
       toast.success(response.data.message || "پرمیشن‌ها با موفقیت اختصاص داده شدند");
       
-      // Clear selected permissions for this role after successful assignment
       setSelectedPermissions((prev) => ({
         ...prev,
         [roleId]: []
       }));
       
-      await fetchRoles(); // Refresh roles to show updated permissions
+      await fetchRoles();
     } catch (err) {
       console.error("Error assigning permissions:", err);
       const errorMessage = err.response?.data?.error || "خطا در اختصاص پرمیشن‌ها";
@@ -222,75 +221,84 @@ export default function RolesPermissionsPage() {
     perm.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Pagination for permissions
   const permIndexOfLast = currentPage * perPage;
   const permIndexOfFirst = permIndexOfLast - perPage;
   const currentPermissions = filteredPermissions.slice(permIndexOfFirst, permIndexOfLast);
   const permTotalPages = Math.ceil(filteredPermissions.length / perPage);
 
-  // Pagination for roles
   const rolesIndexOfLast = rolesCurrentPage * rolesPerPage;
   const rolesIndexOfFirst = rolesIndexOfLast - rolesPerPage;
   const currentRoles = roles.slice(rolesIndexOfFirst, rolesIndexOfLast);
   const rolesTotalPages = Math.ceil(roles.length / rolesPerPage);
 
   return (
-      <ReportLayout>
-    <AdminRoute>
-        <div className="p-6" dir="rtl">
-          <h1 className="text-2xl font-bold mb-4">مدیریت رول‌ها و پرمیشن‌ها</h1>
+    <ReportLayout>
+      <AdminRoute>
+        <div className="report-page">
+          <h1 className="report-title">مدیریت رول‌ها و پرمیشن‌ها</h1>
 
           {/* Loading Overlay */}
           {(loading.roles || loading.permissions) && (
-            <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-              <div className="bg-white p-4 rounded-lg shadow-lg">
-                <p className="text-lg">در حال بارگذاری...</p>
-              </div>
+            <div className="loading-box">
+              <p>در حال بارگذاری...</p>
             </div>
           )}
 
-          <div className="mb-6 flex gap-4 flex-wrap">
-            <div className="flex gap-2">
+          <div className="filter-section">
+            <div>
               <input
                 type="text"
                 placeholder="نام رول جدید"
-                className="border p-2 rounded"
                 value={newRole}
                 onChange={(e) => setNewRole(e.target.value)}
                 disabled={loading.addRole}
               />
               <button 
-                className={`bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition-colors ${loading.addRole ? 'opacity-50 cursor-not-allowed' : ''}`} 
                 onClick={handleAddRole}
                 disabled={loading.addRole}
+                style={{
+                  backgroundColor: '#0d47a1',
+                  color: 'white',
+                  border: 'none',
+                  padding: '10px 15px',
+                  borderRadius: '8px',
+                  marginRight: '8px',
+                  cursor: 'pointer'
+                }}
               >
                 {loading.addRole ? 'در حال اضافه کردن...' : 'اضافه کردن رول'}
               </button>
             </div>
 
-            <div className="flex gap-2">
+            <div>
               <input
                 type="text"
                 placeholder="نام پرمیشن جدید"
-                className="border p-2 rounded"
                 value={newPermission}
                 onChange={(e) => setNewPermission(e.target.value)}
                 disabled={loading.addPermission}
               />
               <button 
-                className={`bg-purple-600 text-white p-2 rounded hover:bg-purple-700 transition-colors ${loading.addPermission ? 'opacity-50 cursor-not-allowed' : ''}`} 
                 onClick={handleAddPermission}
                 disabled={loading.addPermission}
+                style={{
+                  backgroundColor: '#6a1b9a',
+                  color: 'white',
+                  border: 'none',
+                  padding: '10px 15px',
+                  borderRadius: '8px',
+                  marginRight: '8px',
+                  cursor: 'pointer'
+                }}
               >
                 {loading.addPermission ? 'در حال اضافه کردن...' : 'اضافه کردن پرمیشن'}
               </button>
             </div>
 
-            <div className="mr-auto">
+            <div>
               <input
                 type="text"
                 placeholder="جستجوی پرمیشن‌ها"
-                className="border p-2 rounded"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -298,36 +306,35 @@ export default function RolesPermissionsPage() {
           </div>
 
           {/* Roles Table */}
-          <div className="mb-8">
-            <h2 className="font-semibold mb-4 text-lg">لیست رول‌ها</h2>
+          <div style={{ marginBottom: '40px' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '15px' }}>لیست رول‌ها</h2>
             {loading.roles ? (
-              <div className="text-center py-8">در حال بارگذاری رول‌ها...</div>
+              <div className="loading-box">در حال بارگذاری رول‌ها...</div>
             ) : (
               <>
-                <table className="w-full border-collapse border border-gray-300">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="border border-gray-300 p-3 text-right">نام رول</th>
-                      <th className="border border-gray-300 p-3 text-right">پرمیشن‌های فعلی</th>
-                      <th className="border border-gray-300 p-3 text-right">انتخاب پرمیشن جدید</th>
-                      <th className="border border-gray-300 p-3 text-center">عملیات</th>
+                <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                  <thead style={{ backgroundColor: '#f5f5f5' }}>
+                    <tr>
+                      <th style={{ borderBottom: '1px solid #ddd', padding: '12px', textAlign: 'right' }}>نام رول</th>
+                      <th style={{ borderBottom: '1px solid #ddd', padding: '12px', textAlign: 'right' }}>پرمیشن‌های فعلی</th>
+                      <th style={{ borderBottom: '1px solid #ddd', padding: '12px', textAlign: 'right' }}>انتخاب پرمیشن جدید</th>
+                      <th style={{ borderBottom: '1px solid #ddd', padding: '12px', textAlign: 'center' }}>عملیات</th>
                     </tr>
                   </thead>
                   <tbody>
                     {currentRoles.length > 0 ? (
                       currentRoles.map((role) => (
-                        <tr key={role.id} className="hover:bg-gray-50">
-                          <td className="border border-gray-300 p-3 font-medium">{role.name}</td>
-                          <td className="border border-gray-300 p-3">
-                            <div className="flex flex-wrap gap-1">
+                        <tr key={role.id} style={{ borderBottom: '1px solid #eee' }}>
+                          <td style={{ padding: '12px', fontWeight: '500' }}>{role.name}</td>
+                          <td style={{ padding: '12px' }}>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
                               {role.permissions && role.permissions.length > 0 ? (
                                 role.permissions.map((perm) => (
-                                  <span key={perm.id} className="inline-flex items-center bg-blue-100 text-blue-800 text-sm px-2 py-1 rounded ml-1 mb-1">
+                                  <span key={perm.id} style={{ backgroundColor: '#e3f2fd', color: '#0d47a1', padding: '4px 8px', borderRadius: '6px', fontSize: '12px', display: 'inline-flex', alignItems: 'center' }}>
                                     {perm.name}
                                     <button
                                       onClick={() => handleRemovePermissionFromRole(role.id, perm.id, perm.name)}
-                                      className="mr-1 text-red-600 hover:text-red-800 font-bold text-lg"
-                                      title="حذف پرمیشن"
+                                      style={{ marginRight: '6px', color: '#d32f2f', background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold' }}
                                       disabled={loading.removePermission === `${role.id}-${perm.id}`}
                                     >
                                       {loading.removePermission === `${role.id}-${perm.id}` ? '...' : '×'}
@@ -335,55 +342,64 @@ export default function RolesPermissionsPage() {
                                   </span>
                                 ))
                               ) : (
-                                <span className="text-gray-500 text-sm">بدون پرمیشن</span>
+                                <span style={{ color: '#999', fontSize: '13px' }}>بدون پرمیشن</span>
                               )}
                             </div>
                           </td>
-                          <td className="border border-gray-300 p-3">
-                            <div className="flex flex-col">
-                              <div className="flex flex-wrap gap-2 mb-2 max-h-40 overflow-y-auto p-1">
-                                {permissions.map((perm) => {
-                                  const isSelected = selectedPermissions[role.id]?.includes(perm.id);
-                                  const isAlreadyAssigned = role.permissions?.some(p => p.id === perm.id);
-                                  
-                                  return (
-                                    <button
-                                      key={perm.id}
-                                      onClick={() => handleSelectPermission(role.id, perm.id)}
-                                      className={`px-2 py-1 text-sm rounded transition-colors ${
-                                        isSelected 
-                                          ? 'bg-green-600 text-white' 
-                                          : isAlreadyAssigned
-                                            ? 'bg-gray-400 text-white cursor-not-allowed'
-                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                      }`}
-                                      disabled={isAlreadyAssigned || loading.assignPermissions === role.id}
-                                      title={isAlreadyAssigned ? 'این پرمیشن قبلاً به این رول اختصاص داده شده است' : ''}
-                                    >
-                                      {perm.name}
-                                    </button>
-                                  );
-                                })}
-                              </div>
+                          <td style={{ padding: '12px' }}>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', maxHeight: '120px', overflowY: 'auto', padding: '5px' }}>
+                              {permissions.map((perm) => {
+                                const isSelected = selectedPermissions[role.id]?.includes(perm.id);
+                                const isAlreadyAssigned = role.permissions?.some(p => p.id === perm.id);
+                                
+                                return (
+                                  <button
+                                    key={perm.id}
+                                    onClick={() => handleSelectPermission(role.id, perm.id)}
+                                    disabled={isAlreadyAssigned || loading.assignPermissions === role.id}
+                                    style={{
+                                      padding: '4px 10px',
+                                      fontSize: '12px',
+                                      borderRadius: '6px',
+                                      border: 'none',
+                                      cursor: isAlreadyAssigned || loading.assignPermissions === role.id ? 'not-allowed' : 'pointer',
+                                      backgroundColor: isSelected ? '#2e7d32' : (isAlreadyAssigned ? '#bdbdbd' : '#e0e0e0'),
+                                      color: isSelected ? 'white' : (isAlreadyAssigned ? 'white' : '#333')
+                                    }}
+                                  >
+                                    {perm.name}
+                                  </button>
+                                );
+                              })}
                             </div>
                           </td>
-                          <td className="border border-gray-300 p-3 text-center">
-                            <div className="flex justify-center gap-2">
+                          <td style={{ padding: '12px', textAlign: 'center' }}>
+                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                               <button
-                                className={`bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition-colors ${
-                                  loading.assignPermissions === role.id ? 'opacity-50 cursor-not-allowed' : ''
-                                }`}
                                 onClick={() => handleAssignPermissions(role.id)}
                                 disabled={loading.assignPermissions === role.id || !selectedPermissions[role.id]?.length}
+                                style={{
+                                  backgroundColor: '#2e7d32',
+                                  color: 'white',
+                                  border: 'none',
+                                  padding: '6px 12px',
+                                  borderRadius: '6px',
+                                  cursor: loading.assignPermissions === role.id || !selectedPermissions[role.id]?.length ? 'not-allowed' : 'pointer'
+                                }}
                               >
                                 {loading.assignPermissions === role.id ? 'در حال اختصاص...' : 'اختصاص'}
                               </button>
                               <button
-                                className={`bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition-colors ${
-                                  loading.deleteRole === role.id ? 'opacity-50 cursor-not-allowed' : ''
-                                }`}
                                 onClick={() => handleDeleteRole(role.id)}
                                 disabled={loading.deleteRole === role.id}
+                                style={{
+                                  backgroundColor: '#d32f2f',
+                                  color: 'white',
+                                  border: 'none',
+                                  padding: '6px 12px',
+                                  borderRadius: '6px',
+                                  cursor: loading.deleteRole === role.id ? 'not-allowed' : 'pointer'
+                                }}
                               >
                                 {loading.deleteRole === role.id ? 'در حال حذف...' : 'حذف رول'}
                               </button>
@@ -393,9 +409,7 @@ export default function RolesPermissionsPage() {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="4" className="text-center py-4 text-gray-500">
-                          هیچ رولی یافت نشد
-                        </td>
+                        <td colSpan="4" style={{ textAlign: 'center', padding: '30px', color: '#999' }}>هیچ رولی یافت نشد</td>
                       </tr>
                     )}
                   </tbody>
@@ -403,40 +417,20 @@ export default function RolesPermissionsPage() {
 
                 {/* Roles Pagination */}
                 {rolesTotalPages > 1 && (
-                  <div className="mt-4 flex justify-center gap-2">
-                    <button
-                      onClick={() => setRolesCurrentPage(prev => Math.max(prev - 1, 1))}
-                      disabled={rolesCurrentPage === 1}
-                      className={`px-3 py-1 rounded ${
-                        rolesCurrentPage === 1 
-                          ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
-                          : 'bg-blue-600 text-white hover:bg-blue-700'
-                      }`}
-                    >
+                  <div className="pagination-wrapper" style={{ marginTop: '20px' }}>
+                    <button onClick={() => setRolesCurrentPage(prev => Math.max(prev - 1, 1))} disabled={rolesCurrentPage === 1}>
                       قبلی
                     </button>
                     {Array.from({ length: rolesTotalPages }, (_, i) => (
                       <button
                         key={i + 1}
-                        className={`px-3 py-1 rounded ${
-                          rolesCurrentPage === i + 1 
-                            ? "bg-blue-600 text-white" 
-                            : "bg-gray-200 hover:bg-gray-300"
-                        }`}
                         onClick={() => setRolesCurrentPage(i + 1)}
+                        className={rolesCurrentPage === i + 1 ? "active-page" : ""}
                       >
                         {i + 1}
                       </button>
                     ))}
-                    <button
-                      onClick={() => setRolesCurrentPage(prev => Math.min(prev + 1, rolesTotalPages))}
-                      disabled={rolesCurrentPage === rolesTotalPages}
-                      className={`px-3 py-1 rounded ${
-                        rolesCurrentPage === rolesTotalPages 
-                          ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
-                          : 'bg-blue-600 text-white hover:bg-blue-700'
-                      }`}
-                    >
+                    <button onClick={() => setRolesCurrentPage(prev => Math.min(prev + 1, rolesTotalPages))} disabled={rolesCurrentPage === rolesTotalPages}>
                       بعدی
                     </button>
                   </div>
@@ -447,30 +441,35 @@ export default function RolesPermissionsPage() {
 
           {/* Permissions Table */}
           <div>
-            <h2 className="font-semibold mb-4 text-lg">لیست پرمیشن‌ها</h2>
+            <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '15px' }}>لیست پرمیشن‌ها</h2>
             {loading.permissions ? (
-              <div className="text-center py-8">در حال بارگذاری پرمیشن‌ها...</div>
+              <div className="loading-box">در حال بارگذاری پرمیشن‌ها...</div>
             ) : (
               <>
-                <table className="w-full border-collapse border border-gray-300">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="border border-gray-300 p-3 text-right">نام پرمیشن</th>
-                      <th className="border border-gray-300 p-3 text-center">عملیات</th>
+                <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                  <thead style={{ backgroundColor: '#f5f5f5' }}>
+                    <tr>
+                      <th style={{ borderBottom: '1px solid #ddd', padding: '12px', textAlign: 'right' }}>نام پرمیشن</th>
+                      <th style={{ borderBottom: '1px solid #ddd', padding: '12px', textAlign: 'center' }}>عملیات</th>
                     </tr>
                   </thead>
                   <tbody>
                     {currentPermissions.length > 0 ? (
                       currentPermissions.map((perm) => (
-                        <tr key={perm.id} className="hover:bg-gray-50">
-                          <td className="border border-gray-300 p-3">{perm.name}</td>
-                          <td className="border border-gray-300 p-3 text-center">
+                        <tr key={perm.id} style={{ borderBottom: '1px solid #eee' }}>
+                          <td style={{ padding: '12px' }}>{perm.name}</td>
+                          <td style={{ padding: '12px', textAlign: 'center' }}>
                             <button
-                              className={`bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition-colors ${
-                                loading.deletePermission === perm.id ? 'opacity-50 cursor-not-allowed' : ''
-                              }`}
                               onClick={() => handleDeletePermission(perm.id)}
                               disabled={loading.deletePermission === perm.id}
+                              style={{
+                                backgroundColor: '#d32f2f',
+                                color: 'white',
+                                border: 'none',
+                                padding: '6px 12px',
+                                borderRadius: '6px',
+                                cursor: loading.deletePermission === perm.id ? 'not-allowed' : 'pointer'
+                              }}
                             >
                               {loading.deletePermission === perm.id ? 'در حال حذف...' : 'حذف'}
                             </button>
@@ -479,9 +478,7 @@ export default function RolesPermissionsPage() {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="2" className="text-center py-4 text-gray-500">
-                          هیچ پرمیشنی یافت نشد
-                        </td>
+                        <td colSpan="2" style={{ textAlign: 'center', padding: '30px', color: '#999' }}>هیچ پرمیشنی یافت نشد</td>
                       </tr>
                     )}
                   </tbody>
@@ -489,40 +486,20 @@ export default function RolesPermissionsPage() {
 
                 {/* Permissions Pagination */}
                 {permTotalPages > 1 && (
-                  <div className="mt-4 flex justify-center gap-2">
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                      disabled={currentPage === 1}
-                      className={`px-3 py-1 rounded ${
-                        currentPage === 1 
-                          ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
-                          : 'bg-blue-600 text-white hover:bg-blue-700'
-                      }`}
-                    >
+                  <div className="pagination-wrapper" style={{ marginTop: '20px' }}>
+                    <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
                       قبلی
                     </button>
                     {Array.from({ length: permTotalPages }, (_, i) => (
                       <button
                         key={i + 1}
-                        className={`px-3 py-1 rounded ${
-                          currentPage === i + 1 
-                            ? "bg-blue-600 text-white" 
-                            : "bg-gray-200 hover:bg-gray-300"
-                        }`}
                         onClick={() => setCurrentPage(i + 1)}
+                        className={currentPage === i + 1 ? "active-page" : ""}
                       >
                         {i + 1}
                       </button>
                     ))}
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, permTotalPages))}
-                      disabled={currentPage === permTotalPages}
-                      className={`px-3 py-1 rounded ${
-                        currentPage === permTotalPages 
-                          ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
-                          : 'bg-blue-600 text-white hover:bg-blue-700'
-                      }`}
-                    >
+                    <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, permTotalPages))} disabled={currentPage === permTotalPages}>
                       بعدی
                     </button>
                   </div>
@@ -555,7 +532,7 @@ export default function RolesPermissionsPage() {
             }}
           />
         </div>
-    </AdminRoute>
-      </ReportLayout>
+      </AdminRoute>
+    </ReportLayout>
   );
 }

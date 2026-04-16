@@ -2,7 +2,7 @@
 .report-page {
   direction: rtl;
   padding: 30px;
-  background: #939699;
+  background: #eaf2ff; /* روشن‌تر برای کنتراست بهتر */
   min-height: 100vh;
 }
 
@@ -10,29 +10,33 @@
   text-align: center;
   font-weight: bold;
   margin-bottom: 30px;
-  color: #000105;
+  color: #0b1b3a;
 }
 
-/* سایر استایل‌ها مانند .account-card و .balance-positive و ... بدون تغییر باقی می‌مانند */
+/* کارت اصلی */
 .account-card {
-  background: #1b084f;
+  background: #0d47a1; /* آبی واضح */
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.07);
-  transition: all 0.3s ease;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-wrap: wrap;
   gap: 20px;
   align-items: center;
-  border-right: 5px solid #5d5959;
+  border-right: 5px solid #64b5f6;
   margin-bottom: 15px;
+
+  color: #ffffff; /* 👈 مهم: همه محتوا سفید شود */
 }
 
+/* hover */
 .account-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  transform: translateY(-3px);
+  transition: 0.3s ease;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 }
 
+/* متن‌ها داخل کارت */
 .account-name {
   font-weight: bold;
   font-size: 18px;
@@ -43,46 +47,47 @@
 .account-info {
   min-width: 150px;
   font-size: 14px;
-  color: #cfd8dc;
-  font-weight: bold;
+  color: #e3f2fd;
+  font-weight: 500;
 }
 
 .account-number {
   font-weight: bold;
   font-size: 15px;
-  color: #e0e0e0;
+  color: #bbdefb;
 }
 
+/* بالانس‌ها */
 .balance-positive {
-  color: #0fba18;
+  color: #00e676;
   font-weight: bold;
   font-size: large;
 }
 
 .balance-negative {
-  color: #e43636;
+  color: #ff5252;
   font-weight: bold;
   font-size: large;
 }
 
-/* سایر کلاس‌ها مانند .filter-section و .pagination-wrapper نیز قابل استفاده هستند */
+/* فیلتر */
 .filter-section {
   display: flex;
   gap: 20px;
   flex-wrap: wrap;
   margin-bottom: 25px;
-  color: #0f032e;
   justify-content: center;
 }
 
 .filter-section input {
   padding: 10px 15px;
   border-radius: 8px;
-  border: 1px solid #ccc;
+  border: 1px solid #90caf9;
   font-size: 16px;
   min-width: 250px;
 }
 
+/* pagination */
 .pagination-wrapper {
   margin-top: 30px;
   display: flex;
@@ -92,46 +97,39 @@
 }
 
 .pagination-wrapper button {
-  background-color: #1b084f;
+  background-color: #0d47a1;
   color: white;
   border: none;
   padding: 8px 14px;
   border-radius: 6px;
   cursor: pointer;
-  transition: background 0.2s;
 }
 
 .pagination-wrapper button:hover {
-  background-color: #2f1a6b;
+  background-color: #1565c0;
 }
 
 .pagination-wrapper button:disabled {
-  background-color: #aaa;
-  cursor: not-allowed;
+  background-color: #90a4ae;
 }
 
 .pagination-wrapper .active-page {
-  background-color: #0fba18;
+  background-color: #00c853;
   font-weight: bold;
 }
 
-.loading-box {
-  text-align: center;
-  margin-top: 40px;
-  font-size: 18px;
-  color: #1b084f;
-}
-
-.error-text {
-  text-align: center;
-  color: red;
-  margin-top: 30px;
-  font-weight: bold;
-}
-
+/* حالت‌ها */
+.loading-box,
 .no-data {
   text-align: center;
   margin-top: 40px;
   font-size: 18px;
-  color: #1b084f;
+  color: #0d47a1;
+}
+
+.error-text {
+  text-align: center;
+  color: #d50000;
+  margin-top: 30px;
+  font-weight: bold;
 }

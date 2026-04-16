@@ -23,11 +23,11 @@ import { FaKey, FaUserCircle } from "react-icons/fa";
 import { NavLink } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useAuth } from "../../../contexts/AuthContext"; // اضافه شده
+import { useAuth } from "../../../contexts/AuthContext";
+import "../../../../components/ReportLayout"; // اضافه شده
 
 export default function UsersPage() {
-  // استفاده از AuthContext به جای currentUser موقت
-  const { user: currentUser, updateUser } = useAuth(); // اصلاح شده
+  const { user: currentUser, updateUser } = useAuth();
 
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
@@ -66,9 +66,11 @@ export default function UsersPage() {
   if (loading) {
     return (
       <ReportLayout>
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
-          <CircularProgress />
-        </Box>
+        <div className="report-page">
+          <div className="loading-box">
+            <CircularProgress />
+          </div>
+        </div>
       </ReportLayout>
     );
   }
@@ -76,14 +78,16 @@ export default function UsersPage() {
   if (currentUser?.role === "hospital_head") {
     return (
       <ReportLayout>
-        <Box sx={{ textAlign: "center", mt: 5 }}>
-          <h2>شما فقط اجازه مشاهده گزارش‌ها را دارید</h2>
-          <NavLink to="/reports" style={{ textDecoration: "none" }}>
-            <Button variant="contained" color="primary" sx={{ mt: 2 }}>
-              مشاهده گزارش‌ها
-            </Button>
-          </NavLink>
-        </Box>
+        <div className="report-page">
+          <div style={{ textAlign: "center", marginTop: "40px" }}>
+            <h2 className="report-title">شما فقط اجازه مشاهده گزارش‌ها را دارید</h2>
+            <NavLink to="/reports" style={{ textDecoration: "none" }}>
+              <Button variant="contained" color="primary" sx={{ mt: 2 }}>
+                مشاهده گزارش‌ها
+              </Button>
+            </NavLink>
+          </div>
+        </div>
       </ReportLayout>
     );
   }
@@ -166,7 +170,6 @@ export default function UsersPage() {
         const updatedUser = res.data;
         setUsers(users.map(u => (u.id === editingUser.id ? updatedUser : u)));
         
-        // ✅ به‌روزرسانی کاربر فعلی اگر خودش باشد
         if (currentUser && currentUser.id === editingUser.id) {
           updateUser(updatedUser);
           toast.success("✅ اطلاعات شما با موفقیت به‌روزرسانی شد");
@@ -226,151 +229,216 @@ export default function UsersPage() {
 
   return (
     <ReportLayout>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={true}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="colored"
-        limit={5}
-        style={{
-          zIndex: 9999999,
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          left: 'auto',
-          width: 'auto',
-          maxWidth: '350px',
-          transform: 'none'
-        }}
-      />
+      <div className="report-page">
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          rtl={true}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="colored"
+          limit={5}
+          style={{
+            zIndex: 9999999,
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            left: 'auto',
+            width: 'auto',
+            maxWidth: '350px',
+            transform: 'none'
+          }}
+        />
 
-      <h2 style={{ textAlign: "center", marginBottom: 20 }}>مدیریت کاربران</h2>
+        <h1 className="report-title">مدیریت کاربران</h1>
 
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead>
-          <tr>
-            <th>عکس</th>
-            <th>نام</th>
-            <th>ایمیل</th>
-            <th>نقش</th>
-            <th>عملیات</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map(u => (
-            <tr key={u.id}>
-              <td style={{ textAlign: "center" }}>
-                <Avatar 
-                  src={u.avatar_url} 
-                  alt={u.name}
-                  sx={{ width: 40, height: 40 }}
-                >
-                  {!u.avatar_url && <FaUserCircle />}
-                </Avatar>
-              </td>
-              <td>{u.name} <FaKey style={{ marginLeft: 5, color: "#007bff" }} /></td>
-              <td>{u.email}</td>
-              <td>
-                {u.roles && u.roles.length > 0
-                  ? u.roles.map(r => r.name).join(", ")
-                  : "بدون رول"}
-              </td>
-              <td>
-                <IconButton color="primary" onClick={() => handleOpenDialog(u)}>
-                  <EditIcon />
-                </IconButton>
-                <IconButton color="error" onClick={() => handleDelete(u.id)}>
-                  <DeleteIcon />
-                </IconButton>
-              </td>
+        {/* جدول کاربران با خط آبی بین هر ردیف */}
+        <table style={{ 
+          width: "100%", 
+          borderCollapse: "collapse",
+          backgroundColor: "white",
+          borderRadius: "12px",
+          overflow: "hidden",
+          boxShadow: "0 6px 18px rgba(0, 0, 0, 0.1)"
+        }}>
+          <thead style={{ backgroundColor: "#0d47a1", color: "white" }}>
+            <tr>
+              <th style={{ padding: "15px", textAlign: "center", borderBottom: "2px solid #64b5f6" }}>عکس</th>
+              <th style={{ padding: "15px", textAlign: "center", borderBottom: "2px solid #64b5f6" }}>نام</th>
+              <th style={{ padding: "15px", textAlign: "center", borderBottom: "2px solid #64b5f6" }}>ایمیل</th>
+              <th style={{ padding: "15px", textAlign: "center", borderBottom: "2px solid #64b5f6" }}>نقش</th>
+              <th style={{ padding: "15px", textAlign: "center", borderBottom: "2px solid #64b5f6" }}>عملیات</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-        <Button variant="contained" color="primary" startIcon={<FaKey />} onClick={() => handleOpenDialog()}>
-          افزودن کاربر جدید
-        </Button>
-      </Box>
-
-      <Dialog open={openDialog} onClose={handleCloseDialog}>
-        <DialogTitle>{editingUser ? "ویرایش کاربر" : "افزودن کاربر"}</DialogTitle>
-        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 300 }}>
-          <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
-            <Box sx={{ position: "relative", display: "inline-block" }}>
-              <Avatar
-                src={avatarPreview || (editingUser?.avatar_url)}
-                alt={formData.name || "Avatar"}
-                sx={{ width: 100, height: 100, cursor: "pointer" }}
-                onClick={() => document.getElementById('avatar-input').click()}
+          </thead>
+          <tbody>
+            {users.map((u, index) => (
+              <tr 
+                key={u.id} 
+                style={{ 
+                  borderBottom: index !== users.length - 1 ? "2px solid #64b5f6" : "none", // خط آبی بین ردیف‌ها
+                  transition: "0.3s ease"
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "#f0f7ff";
+                  e.currentTarget.style.transform = "translateX(-3px)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                  e.currentTarget.style.transform = "translateX(0)";
+                }}
               >
-                {!avatarPreview && !editingUser?.avatar_url && <FaUserCircle style={{ fontSize: 80 }} />}
-              </Avatar>
-              <input
-                id="avatar-input"
-                type="file"
-                accept="image/*"
-                style={{ display: "none" }}
-                onChange={handleAvatarChange}
-              />
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={() => document.getElementById('avatar-input').click()}
-                sx={{ mt: 1, display: "block", mx: "auto" }}
-              >
-                انتخاب عکس
-              </Button>
-            </Box>
-          </Box>
-          <TextField
-            label="نام"
-            value={formData.name}
-            onChange={e => setFormData({ ...formData, name: e.target.value })}
-          />
-          <TextField
-            label="ایمیل"
-            value={formData.email}
-            onChange={e => setFormData({ ...formData, email: e.target.value })}
-          />
-          <TextField
-            label={editingUser ? "تغییر پسورد (اختیاری)" : "پسورد"}
-            type="password"
-            value={formData.password}
-            onChange={e => setFormData({ ...formData, password: e.target.value })}
-          />
-          <FormControl fullWidth>
-            <InputLabel>نقش</InputLabel>
-            <Select
-              value={formData.role}
-              label="نقش"
-              onChange={e => setFormData({ ...formData, role: e.target.value })}
-            >
-              <MenuItem value="user">User</MenuItem>
-              {roles.map(role => (
-                <MenuItem key={role.id} value={role.name}>
-                  {role.name}
-                </MenuItem>
-              ))}
-              <MenuItem value="hospital_head">رئیس عمومی شفاخانه</MenuItem>
-              {isAdminOrSuper && <MenuItem value="super_admin">Super Admin</MenuItem>}
-            </Select>
-          </FormControl>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>لغو</Button>
-          <Button variant="contained" color="primary" onClick={handleSave} disabled={uploading}>
-            {uploading ? <CircularProgress size={24} /> : (editingUser ? "ذخیره تغییرات" : "افزودن")}
+                <td style={{ padding: "12px", textAlign: "center" }}>
+                  <Avatar 
+                    src={u.avatar_url} 
+                    alt={u.name}
+                    sx={{ width: 45, height: 45, margin: "0 auto" }}
+                  >
+                    {!u.avatar_url && <FaUserCircle />}
+                  </Avatar>
+                </td>
+                <td style={{ padding: "12px", textAlign: "center", fontWeight: "500" }}>
+                  {u.name} <FaKey style={{ marginLeft: 5, color: "#0d47a1" }} />
+                </td>
+                <td style={{ padding: "12px", textAlign: "center", color: "#1565c0" }}>{u.email}</td>
+                <td style={{ padding: "12px", textAlign: "center" }}>
+                  <span style={{
+                    backgroundColor: u.roles && u.roles[0]?.name === "super_admin" ? "#d32f2f" : "#0d47a1",
+                    color: "white",
+                    padding: "4px 12px",
+                    borderRadius: "20px",
+                    fontSize: "12px",
+                    fontWeight: "bold"
+                  }}>
+                    {u.roles && u.roles.length > 0
+                      ? u.roles.map(r => r.name).join(", ")
+                      : "بدون رول"}
+                  </span>
+                </td>
+                <td style={{ padding: "12px", textAlign: "center" }}>
+                  <IconButton 
+                    color="primary" 
+                    onClick={() => handleOpenDialog(u)}
+                    sx={{ color: "#0d47a1" }}
+                  >
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton 
+                    color="error" 
+                    onClick={() => handleDelete(u.id)}
+                    sx={{ color: "#d32f2f" }}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+          <Button 
+            variant="contained" 
+            onClick={() => handleOpenDialog()}
+            sx={{
+              backgroundColor: "#0d47a1",
+              color: "white",
+              padding: "10px 20px",
+              borderRadius: "8px",
+              "&:hover": {
+                backgroundColor: "#1565c0"
+              }
+            }}
+          >
+            افزودن کاربر جدید
           </Button>
-        </DialogActions>
-      </Dialog>
+        </Box>
+
+        <Dialog open={openDialog} onClose={handleCloseDialog}>
+          <DialogTitle sx={{ backgroundColor: "#0d47a1", color: "white" }}>
+            {editingUser ? "ویرایش کاربر" : "افزودن کاربر"}
+          </DialogTitle>
+          <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 300, mt: 2 }}>
+            <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+              <Box sx={{ position: "relative", display: "inline-block" }}>
+                <Avatar
+                  src={avatarPreview || (editingUser?.avatar_url)}
+                  alt={formData.name || "Avatar"}
+                  sx={{ width: 100, height: 100, cursor: "pointer", margin: "0 auto" }}
+                  onClick={() => document.getElementById('avatar-input').click()}
+                >
+                  {!avatarPreview && !editingUser?.avatar_url && <FaUserCircle style={{ fontSize: 80 }} />}
+                </Avatar>
+                <input
+                  id="avatar-input"
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={handleAvatarChange}
+                />
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() => document.getElementById('avatar-input').click()}
+                  sx={{ mt: 1, display: "block", mx: "auto" }}
+                >
+                  انتخاب عکس
+                </Button>
+              </Box>
+            </Box>
+            <TextField
+              label="نام"
+              value={formData.name}
+              onChange={e => setFormData({ ...formData, name: e.target.value })}
+              fullWidth
+            />
+            <TextField
+              label="ایمیل"
+              value={formData.email}
+              onChange={e => setFormData({ ...formData, email: e.target.value })}
+              fullWidth
+            />
+            <TextField
+              label={editingUser ? "تغییر پسورد (اختیاری)" : "پسورد"}
+              type="password"
+              value={formData.password}
+              onChange={e => setFormData({ ...formData, password: e.target.value })}
+              fullWidth
+            />
+            <FormControl fullWidth>
+              <InputLabel>نقش</InputLabel>
+              <Select
+                value={formData.role}
+                label="نقش"
+                onChange={e => setFormData({ ...formData, role: e.target.value })}
+              >
+                <MenuItem value="user">User</MenuItem>
+                {roles.map(role => (
+                  <MenuItem key={role.id} value={role.name}>
+                    {role.name}
+                  </MenuItem>
+                ))}
+                <MenuItem value="hospital_head">رئیس عمومی شفاخانه</MenuItem>
+                {isAdminOrSuper && <MenuItem value="super_admin">Super Admin</MenuItem>}
+              </Select>
+            </FormControl>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseDialog}>لغو</Button>
+            <Button 
+              variant="contained" 
+              onClick={handleSave} 
+              disabled={uploading}
+              sx={{ backgroundColor: "#0d47a1" }}
+            >
+              {uploading ? <CircularProgress size={24} /> : (editingUser ? "ذخیره تغییرات" : "افزودن")}
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </div>
     </ReportLayout>
   );
 }

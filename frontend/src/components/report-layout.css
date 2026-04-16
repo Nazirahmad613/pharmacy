@@ -1,83 +1,135 @@
-/* ===== Page Wrapper ===== */
-.report-wrapper {
-  background: #cbd9e7;
+/* ReportLayout.css */
+.report-page {
+  direction: rtl;
+  padding: 30px;
+  background: #eaf2ff; /* روشن‌تر برای کنتراست بهتر */
   min-height: 100vh;
-  padding: 20px;
 }
 
-/* ===== Header ===== */
-.report-header {
-  background: #ffffff;
-  padding: 15px 20px;
-  border-radius: 10px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-
-/* ===== Title ===== */
 .report-title {
-  font-weight: bold;
-  color: #0a4c97da;
   text-align: center;
-}
-
-/* ===== Content Box ===== */
-.report-content {
-  background: #ffffff;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(255, 255, 255, 0.952);
-}
-/* ===== Page Wrapper ===== */
-.report-wrapper {
-  background: #cbd9e7;
-  min-height: 100vh;
-  padding: 20px;
-}
-
-/* ===== Header ===== */
-.report-header {
-  background: #ffffff;
-  padding: 15px 20px;
-  border-radius: 10px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-
-/* ===== Title ===== */
-.report-title {
   font-weight: bold;
-  color: #0a4c97da;
-  text-align: center;
-  font-size: 1.5rem;   /* larger title */
+  margin-bottom: 30px;
+  color: #0b1b3a;
 }
 
-/* ===== Content Box ===== */
-.report-content {
-  background: #ffffff;
+/* کارت اصلی */
+.account-card {
+  background: #0d47a1; /* آبی واضح */
+  border-radius: 12px;
   padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(255, 255, 255, 0.952);
-  font-size: 1.125rem;   /* larger base text (18px if root 16px) */
-  font-weight: 500;      /* semi-bold, adjust as needed (600 for bold) */
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: center;
+  border-right: 5px solid #64b5f6;
+  margin-bottom: 15px;
+
+  color: #ffffff; /* 👈 مهم: همه محتوا سفید شود */
 }
 
-/* Optional: make all text inside report-content bold (if you want full bold) */
-.report-content p,
-.report-content span,
-.report-content div,
-.report-content table,
-.report-content td,
-.report-content th,
-.report-content label,
-.report-content input,
-.report-content button {
-  font-weight: 500;      /* or 600 for bold */
-  font-size: inherit;    /* inherit from parent */
+/* hover */
+.account-card:hover {
+  transform: translateY(-3px);
+  transition: 0.3s ease;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 }
 
-/* If you want tables inside to have larger bold text */
-.report-content table {
-  font-size: 1rem;
+/* متن‌ها داخل کارت */
+.account-name {
+  font-weight: bold;
+  font-size: 18px;
+  min-width: 180px;
+  color: #ffffff;
+}
+
+.account-info {
+  min-width: 150px;
+  font-size: 14px;
+  color: #e3f2fd;
   font-weight: 500;
+}
+
+.account-number {
+  font-weight: bold;
+  font-size: 15px;
+  color: #bbdefb;
+}
+
+/* بالانس‌ها */
+.balance-positive {
+  color: #00e676;
+  font-weight: bold;
+  font-size: large;
+}
+
+.balance-negative {
+  color: #ff5252;
+  font-weight: bold;
+  font-size: large;
+}
+
+/* فیلتر */
+.filter-section {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 25px;
+  justify-content: center;
+}
+
+.filter-section input {
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: 1px solid #90caf9;
+  font-size: 16px;
+  min-width: 250px;
+}
+
+/* pagination */
+.pagination-wrapper {
+  margin-top: 30px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pagination-wrapper button {
+  background-color: #0d47a1;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.pagination-wrapper button:hover {
+  background-color: #1565c0;
+}
+
+.pagination-wrapper button:disabled {
+  background-color: #90a4ae;
+}
+
+.pagination-wrapper .active-page {
+  background-color: #00c853;
+  font-weight: bold;
+}
+
+/* حالت‌ها */
+.loading-box,
+.no-data {
+  text-align: center;
+  margin-top: 40px;
+  font-size: 18px;
+  color: #0d47a1;
+}
+
+.error-text {
+  text-align: center;
+  color: #d50000;
+  margin-top: 30px;
+  font-weight: bold;
 }
