@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "app/contexts/AuthContext";
 import { accountStyles } from "./AccountSummaryStyles";
-import "./AccountSummary.css";
+import ReportLayout from "../../../../components/ReportLayout";
 
 import {
   Box,
@@ -146,7 +146,8 @@ export default function AccountSummaryText() {
   return map[type] || type;
 };
 
-  return (
+  return ( 
+    <ReportLayout title="گزارش حساب‌ها">
     <Box className="account-page">
       <Typography variant="h4" className="account-title">
         گزارش حساب‌ها
@@ -269,5 +270,6 @@ export default function AccountSummaryText() {
         </Box>
       )}
     </Box>
+    </ReportLayout> 
   );
 }

@@ -1,3 +1,4 @@
+// PrescriptionPrint.jsx - Fixed version with proper styling and bold text
 import React, { forwardRef } from "react";
 import "./sale-print.css";
 
@@ -9,78 +10,186 @@ const PrescriptionPrint = forwardRef(({ data }, ref) => {
       ? "زن"
       : "-";
 
+  // Get current date for Persian calendar display
+  const getCurrentDate = () => {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}/${month}/${day}`;
+  };
+
   return (
-    <div ref={ref} className="print-container" style={{ padding: "20px", direction: "rtl" }}>
+    <div ref={ref} className="print-container">
       {data ? (
         <>
-          <div className="bill-header" style={{ textAlign: "center", marginBottom: "20px", borderBottom: "2px solid #333", paddingBottom: "10px" }}>
-            <h2 style={{ margin: "0 0 10px 0", fontSize: "24px" }}>نسخه طبی</h2>
-            <div className="bill-meta" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px", textAlign: "right" }}>
-              <div><strong>شماره نسخه:</strong> {data.pres_num || "-"}</div>
-              <div><strong>مریض:</strong> {data.patient || "-"}</div>
-              <div><strong>سن:</strong> {data.age || "-"}</div>
-              <div><strong>جنسیت:</strong> {genderFa}</div>
-              <div><strong>گروپ خون:</strong> {data.blood_group || "-"}</div>
-              <div><strong>داکتر:</strong> {data.doctor || "-"}</div>
-              <div><strong>تذکره:</strong> {data.tazkira_number || "-"}</div>
-              <div><strong>تاریخ:</strong> {data.date || "-"}</div>
+          {/* Header - Matching Appointment Card */}
+          <div className="print-header">
+            <div className="logo-left">
+              <div className="logo-left-inner">⚕</div>
+            </div>
+            <div className="hospital-name">
+              <div className="hospital-name-persian">شفاخانه معالجوی آروین</div>
+              <div className="hospital-name-english">Avrin Skin Hospital</div>
+            </div>
+            <div className="logo-right">
+              <div className="logo-right-inner">⚕</div>
+            </div>
+            <div className="date-section">
+              تاریخ: {data.date || getCurrentDate()}
             </div>
           </div>
 
-          {/* بخش جدید: تشخیص، فشار خون، وزن، حرارت، اکسیژن */}
-          <div style={{ marginBottom: "15px", padding: "10px", backgroundColor: "#f9f9f9", borderRadius: "5px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px", textAlign: "right" }}>
-            <div><strong>تشخیص:</strong> {data.diagnosis || "-"}</div>
-            <div><strong>فشار خون:</strong> {data.blood_pressure || "-"}</div>
-            <div><strong>وزن (کیلوگرم):</strong> {data.weight || "-"}</div>
-            <div><strong>حرارت (درجه سانتی‌گراد):</strong> {data.temperature || "-"}</div>
-            <div><strong>اکسیژن (%):</strong> {data.oxygen || "-"}</div>
+          {/* Prescription Info Section */}
+          <div className="prescription-info">
+            <div className="prescription-left">
+              <div className="doctor-info">
+                <div className="doctor-name">
+                  <strong>{data.doctor || "دکتر نامشخص"}</strong>
+                </div>
+                <div className="doctor-specialty">
+                  <strong>متخصص پوست و اعصاب</strong>
+                </div>
+              </div>
+              <div className="timing-section">
+                <div className="diagnosis-title">
+                  <strong>تشخیص</strong>
+                </div>
+                <div className="diagnosis-value">
+                  <strong>{data.diagnosis || "-"}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div className="prescription-right">
+              <div className="patient-details">
+                <div className="detail-row">
+                  <div className="detail-field">
+                    <span className="detail-label"><strong>نام مریض:</strong></span>
+                    <span className="detail-value"><strong>{data.patient || "-"}</strong></span>
+                  </div>
+                  <div className="detail-field">
+                    <span className="detail-label"><strong>شماره نسخه:</strong></span>
+                    <span className="detail-value"><strong>{data.pres_num || "-"}</strong></span>
+                  </div>
+                </div>
+                <div className="detail-row">
+                  <div className="detail-field">
+                    <span className="detail-label"><strong>سن:</strong></span>
+                    <span className="detail-value"><strong>{data.age || "-"}</strong></span>
+                  </div>
+                  <div className="detail-field">
+                    <span className="detail-label"><strong>جنسیت:</strong></span>
+                    <span className="detail-value"><strong>{genderFa}</strong></span>
+                  </div>
+                </div>
+                <div className="detail-row">
+                  <div className="detail-field">
+                    <span className="detail-label"><strong>گروپ خون:</strong></span>
+                    <span className="detail-value"><strong>{data.blood_group || "-"}</strong></span>
+                  </div>
+                  <div className="detail-field">
+                    <span className="detail-label"><strong>تذکره:</strong></span>
+                    <span className="detail-value"><strong>{data.tazkira_number || "-"}</strong></span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <table className="print-table" style={{ width: "100%", borderCollapse: "collapse", marginBottom: "20px" }}>
+          {/* Vital Signs Section */}
+          <div className="vital-signs">
+            <div className="vital-signs-grid">
+              <div className="vital-item">
+                <span className="vital-label"><strong>فشار خون:</strong></span>
+                <span className="vital-value"><strong>{data.blood_pressure || "-"}</strong></span>
+              </div>
+              <div className="vital-item">
+                <span className="vital-label"><strong>وزن (کیلوگرم):</strong></span>
+                <span className="vital-value"><strong>{data.weight || "-"}</strong></span>
+              </div>
+              <div className="vital-item">
+                <span className="vital-label"><strong>حرارت (درجه سانتی‌گراد):</strong></span>
+                <span className="vital-value"><strong>{data.temperature || "-"}</strong></span>
+              </div>
+              <div className="vital-item">
+                <span className="vital-label"><strong>اکسیژن (%):</strong></span>
+                <span className="vital-value"><strong>{data.oxygen || "-"}</strong></span>
+              </div>
+            </div>
+          </div>
+
+          {/* Medicines Table */}
+          <table className="print-table">
             <thead>
-              <tr style={{ backgroundColor: "#f2f2f2" }}>
-                <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>ردیف</th>
-                <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>کتگوری</th>
-                <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>نام دوا</th>
-                <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>حمایت‌کننده</th>
-                <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>نوع دوا</th>
-                <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>مقدار مصرف</th>
-                <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>تعداد</th>
-                <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>قیمت واحد</th>
-                <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>قیمت کل</th>
-                <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>ملاحظات</th>
+              <tr>
+                <th><strong>ردیف</strong></th>
+                <th><strong>کتگوری</strong></th>
+                <th><strong>نام دوا</strong></th>
+                <th><strong>حمایت‌کننده</strong></th>
+                <th><strong>نوع دوا</strong></th>
+                <th><strong>مقدار مصرف</strong></th>
+                <th><strong>تعداد</strong></th>
+                <th><strong>قیمت واحد</strong></th>
+                <th><strong>قیمت کل</strong></th>
+                <th><strong>ملاحظات</strong></th>
               </tr>
             </thead>
             <tbody>
               {data.items?.map((item, i) => (
                 <tr key={i}>
-                  <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>{i + 1}</td>
-                  <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>{item.category_name || "-"}</td>
-                  <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>{item.med_name || "-"}</td>
-                  <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>{item.supplier_name || "-"}</td>
-                  <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>{item.type || "-"}</td>
-                  <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>{item.dosage || "-"}</td>
-                  <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>{item.quantity}</td>
-                  <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>{Number(item.unit_price).toLocaleString()}</td>
-                  <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>{Number(item.total_price).toLocaleString()}</td>
-                  <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>{item.remarks || "-"}</td>
+                  <td><strong>{i + 1}</strong></td>
+                  <td><strong>{item.category_name || "-"}</strong></td>
+                  <td><strong>{item.med_name || "-"}</strong></td>
+                  <td><strong>{item.supplier_name || "-"}</strong></td>
+                  <td><strong>{item.type || "-"}</strong></td>
+                  <td><strong>{item.dosage || "-"}</strong></td>
+                  <td><strong>{item.quantity}</strong></td>
+                  <td><strong>{Number(item.unit_price).toLocaleString()}</strong></td>
+                  <td><strong>{Number(item.total_price).toLocaleString()}</strong></td>
+                  <td><strong>{item.remarks || "-"}</strong></td>
                 </tr>
               ))}
+              {(!data.items || data.items.length === 0) && (
+                <tr>
+                  <td colSpan="10" style={{ textAlign: "center", padding: "20px" }}>
+                    <strong>هیچ آیتمی وجود ندارد</strong>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
 
-          <div className="bill-summary-horizontal" style={{ display: "flex", justifyContent: "space-around", marginBottom: "20px", padding: "10px", backgroundColor: "#f9f9f9", borderRadius: "5px" }}>
-            <div><strong>مجموع:</strong> {Number(data.total).toLocaleString()}</div>
-            <div><strong>تخفیف:</strong> {Number(data.discount).toLocaleString()}</div>
-            <div><strong>خالص:</strong> {Number(data.net).toLocaleString()}</div>
+          {/* Summary Section */}
+          <div className="summary-section">
+            <div className="summary-item">
+              <span className="summary-label"><strong>مجموع</strong></span>
+              <span className="summary-value"><strong>{Number(data.total).toLocaleString()}</strong></span>
+            </div>
+            <div className="summary-item">
+              <span className="summary-label"><strong>تخفیف</strong></span>
+              <span className="summary-value"><strong>{Number(data.discount).toLocaleString()}</strong></span>
+            </div>
+            <div className="summary-item">
+              <span className="summary-label"><strong>خالص</strong></span>
+              <span className="summary-value"><strong>{Number(data.net).toLocaleString()}</strong></span>
+            </div>
           </div>
 
-          <div className="bill-footer" style={{ textAlign: "center", marginTop: "30px", padding: "10px", borderTop: "1px solid #333" }}>
-            <p>تشکر از مراجعه شما</p>
+          {/* Watermark */}
+          <div className="watermark">شفاخانه جلدی آروین</div>
+
+          {/* Footer - Matching Appointment Card */}
+          <div className="print-footer">
+            <div className="footer-icon"><strong>☎</strong></div>
+            <div className="footer-contact">
+              <div className="footer-phones"><strong>+93 77 5481818 | +93 77 5481818</strong></div>
+              <div className="footer-address"><strong>مرکز تخصصی مراقبت و تداوی جلد آدرس چهار راهی جمهوری</strong></div>
+            </div>
           </div>
         </>
       ) : (
-        <div style={{ padding: "20px", textAlign: "center" }}>در حال آماده‌سازی...</div>
+        <div className="loading-placeholder">در حال آماده‌سازی...</div>
       )}
     </div>
   );

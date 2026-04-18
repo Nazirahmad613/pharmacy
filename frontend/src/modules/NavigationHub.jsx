@@ -144,7 +144,7 @@ export default function NavigationHub() {
                   }}
                 >
                   <CardContent sx={{ p: 1, "&:last-child": { pb: 1 } }}>
-                    <Box sx={{ fontSize: 40, mb: 1, color: "secondary.main" }}>
+                    <Box sx={{ fontSize: 40, mb: 1, color: "secondary.main" }}>   
                       {renderIcon(item.icon, 40)}
                     </Box>
                     <Typography variant="body1" fontWeight="bold" sx={{ fontSize: "1rem" }}>
